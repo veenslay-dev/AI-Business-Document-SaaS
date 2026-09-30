@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Wordmark } from "@/components/ui/logo";
+import { createFirstWorkspace } from "@/lib/auth/bootstrap";
 import { OnboardingWizard } from "@/components/onboarding/wizard";
-import { bootstrapWorkspaceAction } from "@/lib/actions/workspace";
 import { getActiveMembership, getMemberships, getUser } from "@/lib/auth/session";
 import { getWorkspaceBranding } from "@/lib/db/workspace";
 import { FIRST_DOCUMENT_HREF } from "@/lib/onboarding";
@@ -10,25 +10,24 @@ import { FIRST_DOCUMENT_HREF } from "@/lib/onboarding";
 export const metadata: Metadata = { title: "Set up your workspace", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const user = await getUser();
   if (!user) redirect("/login");
 
   // First visit after signup: create the workspace from the company name given at signup.
   if ((await getMemberships()).length === 0) {
-    const res = await bootstrapWorkspaceAction();
-    if (!res.ok) {
+    if ((await searchParams).error === "workspace" || !(await createFirstWorkspace())) {
       return (
         <main className="grid min-h-dvh place-items-center p-6 text-center">
           <div>
-            <h1 className="font-serif text-2xl">We couldn’t create your workspace</h1>
-            <p className="mt-2 text-sm text-ink-soft">{res.error}</p>
+            <h1 className="font-serif text-2xl">We couldn't create your workspace</h1>
+            <p className="mt-2 text-sm text-ink-soft">Something went wrong on our side. Please try again.</p>
             <a href="/onboarding" className="mt-4 inline-block text-sm font-medium text-brand hover:underline">Try again</a>
           </div>
         </main>
       );
     }
-    redirect("/onboarding");
+    redirect("/onboarding"); // re-render with the new membership
   }
 
   const membership = await getActiveMembership();

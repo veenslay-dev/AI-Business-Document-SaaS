@@ -27,7 +27,7 @@ export function openAiProvider(apiKey: string, model: string): AiProvider {
   return {
     name: "openai",
     async complete(req: CompletionRequest) {
-      const data = (await postJson("https://api.openai.com/v1/chat/completions", { authorization: `Bearer ${apiKey}` }, {
+      const data = (await postJson(`${(process.env.OPENAI_BASE_URL ?? "https://api.openai.com").replace(/\/$/, "")}/v1/chat/completions`, { authorization: `Bearer ${apiKey}` }, {
         model, temperature: req.temperature ?? 0.6, max_tokens: req.maxTokens ?? 3000,
         ...(req.json ? { response_format: { type: "json_object" } } : {}),
         messages: [{ role: "system", content: req.system }, { role: "user", content: req.user }],
@@ -43,7 +43,7 @@ export function anthropicProvider(apiKey: string, model: string): AiProvider {
   return {
     name: "anthropic",
     async complete(req: CompletionRequest) {
-      const data = (await postJson("https://api.anthropic.com/v1/messages", { "x-api-key": apiKey, "anthropic-version": "2023-06-01" }, {
+      const data = (await postJson(`${(process.env.ANTHROPIC_BASE_URL ?? "https://api.anthropic.com").replace(/\/$/, "")}/v1/messages`, { "x-api-key": apiKey, "anthropic-version": "2023-06-01" }, {
         model, max_tokens: req.maxTokens ?? 3000, temperature: req.temperature ?? 0.6,
         system: req.json ? `${req.system}\n\nRespond with a single JSON object and nothing else.` : req.system,
         messages: [{ role: "user", content: req.user }],

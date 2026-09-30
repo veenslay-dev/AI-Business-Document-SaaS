@@ -28,3 +28,22 @@ export function formatDate(iso: string | null | undefined): string {
 }
 
 export const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3, passed: 4 } as const;
+
+import type { Section } from "./content";
+
+/** True when a section has nothing a reader would see. Such sections are left out of the rendered document (the editor still shows them). */
+export function isSectionEmpty(section: Section): boolean {
+  return section.blocks.every((b) => {
+    switch (b.type) {
+      case "paragraph": case "callout": return b.content.trim() === "";
+      case "heading": return true; // a heading alone says nothing
+      case "list": return b.items.every((i) => i.trim() === "");
+      case "table": return b.rows.every((r) => r.every((c) => c.trim() === ""));
+      case "image": return safeImageUrl(b.url) === null;
+      case "pricing": return b.rows.length === 0 && b.packages.length === 0;
+      case "timeline": return b.items.every((i) => !i.phase.trim() && !i.description.trim());
+      case "page_break": return false;
+      default: return false; // signature, quotation and audit blocks always render
+    }
+  });
+}

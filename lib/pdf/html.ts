@@ -1,5 +1,5 @@
 import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderToStaticMarkup } from "./static-markup";
 import { DocumentRenderer, type RenderMeta } from "@/components/documents/document-renderer";
 import type { BrandContext } from "@/lib/documents/branding";
 import type { DocumentContent } from "@/lib/documents/content";

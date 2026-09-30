@@ -1,10 +1,10 @@
 import type { BrandContext } from "@/lib/documents/branding";
 import { calculateQuotation, formatMinor, formatMoney } from "@/lib/documents/quotation";
 import type { Block, DocumentContent, Section } from "@/lib/documents/content";
-import { documentCss } from "@/lib/documents/css";
+import { documentCss, documentScope } from "@/lib/documents/css";
 import { googleFontsUrl } from "@/lib/documents/fonts";
 import type { TemplateConfig } from "@/lib/documents/templates";
-import { SEVERITY_ORDER, formatDate, pricingTotal, safeImageUrl } from "@/lib/documents/util";
+import { SEVERITY_ORDER, formatDate, isSectionEmpty, pricingTotal, safeImageUrl } from "@/lib/documents/util";
 
 export type Acceptance = { name: string; designation?: string; date: string; signatureDataUrl?: string | null };
 export type RenderMeta = { type: "proposal" | "quotation" | "seo_audit" | "report"; acceptance?: Acceptance | null };
@@ -17,11 +17,12 @@ export function DocumentRenderer({
   content, brand, template, meta,
 }: { content: DocumentContent; brand: BrandContext; template: TemplateConfig; meta: RenderMeta }) {
   const fonts = googleFontsUrl([brand.brand.headingFont, brand.brand.bodyFont]);
-  const cls = `doc sec-${template.sectionStyle} tbl-${template.tableStyle}`;
+  const cls = `doc ${documentScope(brand.brand, template)} sec-${template.sectionStyle} tbl-${template.tableStyle}`;
   const hasCover = template.cover !== "none";
   // Section numbers skip sections whose title is hidden.
+  const visible = content.sections.filter((s) => !isSectionEmpty(s));
   const numbers = new Map<string, number>();
-  content.sections.reduce((n, s) => { if (s.hideTitle) return n; numbers.set(s.id, n + 1); return n + 1; }, 0);
+  visible.reduce((n, s) => { if (s.hideTitle) return n; numbers.set(s.id, n + 1); return n + 1; }, 0);
 
   return (
     <div className={cls}>
@@ -30,7 +31,7 @@ export function DocumentRenderer({
       {hasCover ? <Cover content={content} brand={brand} template={template} /> : <Letterhead content={content} brand={brand} meta={meta} />}
       {!hasCover && <Parties content={content} brand={brand} />}
       <div className="page">
-        {content.sections.map((s) => {
+        {visible.map((s) => {
           return <SectionView key={s.id} section={s} index={numbers.get(s.id) ?? 0} numbered={template.sectionStyle === "numbered"} content={content} brand={brand} meta={meta} />;
         })}
         <div className="foot">

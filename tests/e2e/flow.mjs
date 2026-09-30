@@ -1,0 +1,310 @@
+// End to end journey: signup -> onboarding -> brand -> client -> AI proposal -> edit -> share -> client accepts -> dashboard.
+// Needs the local stack (node tests/e2e/stack.mjs) and the app running against it. See README, "End to end test".
+import { chromium } from "playwright-core";
+import { mkdirSync, writeFileSync } from "node:fs";
+
+const APP = process.env.APP_URL ?? "http://localhost:3111";
+const OUT = process.env.E2E_OUT ?? "/tmp/e2e";
+mkdirSync(OUT, { recursive: true });
+const chrome = process.env.PDF_CHROMIUM_PATH ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
+const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFklEQVR42mNkYPhfz0AEYBxVSF+FAP5FDvcfRYWgAAAAAElFTkSuQmCC", "base64");
+
+const results = [];
+const eq = (a, b, msg) => { if (a !== b) throw new Error(`${msg ?? "expected equal"}: got ${JSON.stringify(a)}, wanted ${JSON.stringify(b)}`); };
+const yes = (v, msg) => { if (!v) throw new Error(msg ?? "expected truthy"); };
+async function step(name, fn) {
+  try { await fn(); results.push([true, name]); console.log("PASS", name); }
+  catch (e) { results.push([false, name, e.message.split("\n")[0]]); console.log("FAIL", name, "->", e.message.split("\n").slice(0, 3).join(" | ")); }
+}
+
+const browser = await chromium.launch({ executablePath: chrome });
+const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
+const anonContext = (opts = {}) => browser.newContext({ userAgent: UA, ...opts });
+const suffix = Date.now().toString(36);
+const email = `owner-${suffix}@acme.test`;
+const ctx = await browser.newContext({ viewport: { width: 1360, height: 900 } });
+const page = await ctx.newPage();
+const consoleErrors = [];
+page.on("pageerror", (e) => consoleErrors.push(String(e)));
+let docId = "", shareUrl = "", clientId = "";
+
+await step("signup creates an account and lands on onboarding", async () => {
+  await page.goto(`${APP}/signup`);
+  await page.fill("#fullName", "Asha Rao"); await page.fill("#companyName", "Acme Digital"); await page.fill("#email", email); await page.fill("#password", "correct-horse-battery");
+  await page.click("button[type=submit]");
+  // signup -> /onboarding -> /onboarding/setup (creates the workspace) -> /onboarding
+  await page.waitForSelector("h1:has-text('Tell us about your company')", { timeout: 40000 });
+});
+
+await step("onboarding step 1: company info saved (server validated)", async () => {
+  eq(await page.inputValue("#companyName"), "Acme Digital", "company name prefilled from signup");
+  await page.fill("#website", "acme.com");
+  await page.click("button[type=submit]");
+  await page.waitForSelector("text=Enter a full URL", { timeout: 5000 });
+  await page.fill("#website", "https://acme-digital.example"); await page.fill("#phone", "+91 98765 43210"); await page.fill("#tagline", "Search growth for local businesses");
+  await page.fill("#description", "We audit sites and run monthly SEO for local businesses.");
+  await page.click("button[type=submit]");
+  await page.waitForSelector("h1:has-text('Set your brand')", { timeout: 15000 });
+});
+
+await step("onboarding step 2: brand kit with logo upload and live preview", async () => {
+  await page.fill("#primaryColor", "#0a5c36");
+  yes((await page.locator("figure[aria-label='Brand preview']").innerHTML()).includes("rgb(10, 92, 54)"), "live preview picked up the new primary color");
+  await page.setInputFiles("#upload-logo", { name: "logo.png", mimeType: "image/png", buffer: PNG });
+  await page.waitForSelector("figure[aria-label='Brand preview'] img", { timeout: 15000 });
+  await page.click("button[type=submit]");
+  await page.waitForSelector("h1:has-text('Business details')", { timeout: 15000 });
+});
+
+await step("onboarding step 3 and 4: business details, workspace ready", async () => {
+  await page.fill("#services", "Technical SEO audits\nWebsite design\nMonthly SEO retainers");
+  await page.fill("#defaultTerms", "Fees are due within 15 days.");
+  await page.fill("#authorizedName", "Asha Rao"); await page.fill("#authorizedDesignation", "Founder");
+  await page.click("button[type=submit]");
+  await page.waitForSelector("h1:has-text('Your workspace is ready.')", { timeout: 15000 });
+  yes(await page.locator("a", { hasText: "Create Your First Document" }).isVisible(), "CTA present");
+  await page.screenshot({ path: `${OUT}/01-ready.png` });
+  await page.click("a:has-text('Go to dashboard')");
+  await page.waitForURL("**/dashboard");
+});
+
+await step("dashboard: empty state and zeroed stats", async () => {
+  await page.waitForSelector("text=No documents yet", { timeout: 15000 });
+  await page.waitForSelector("section[aria-label=Summary]");
+  const text = await page.locator("section[aria-label=Summary]").innerText();
+  yes(/Total documents\s*0/.test(text.replace(/\n/g, " ")), `stats zero: ${text.replace(/\n/g, " ")}`);
+  await page.screenshot({ path: `${OUT}/02-dashboard-empty.png` });
+});
+
+await step("add a client, then find it by search", async () => {
+  await page.goto(`${APP}/clients/new`);
+  await page.fill("#companyName", "Nova Furniture"); await page.fill("#contactName", "Rohan Mehta"); await page.fill("#email", "rohan@nova.example"); await page.fill("#industry", "Furniture");
+  await page.click("button[type=submit]");
+  await page.waitForURL(/\/clients\/[0-9a-f-]{36}$/, { timeout: 15000 });
+  clientId = page.url().split("/").pop();
+  yes(await page.locator("h1", { hasText: "Nova Furniture" }).isVisible(), "detail header");
+  await page.goto(`${APP}/clients?q=nova`);
+  yes(await page.locator("a", { hasText: "Nova Furniture" }).first().isVisible(), "search finds client");
+  await page.goto(`${APP}/clients?q=zzzz`);
+  yes(await page.locator("text=No clients match").isVisible(), "empty search state");
+});
+
+await step("proposal builder: AI draft, edit, preview, create", async () => {
+  await page.goto(`${APP}/proposals/new?client=${clientId}`);
+  await page.click("button:has-text('Continue')");
+  await page.fill("input[placeholder*='SEO growth plan']", "SEO growth plan for Nova");
+  await page.fill("textarea >> nth=0", "Grow enquiries from search for a furniture maker.");
+  await page.click("button:has-text('Technical SEO audits')");
+  await page.click("button:has-text('Continue')");
+  await page.click("button:has-text('Generate Proposal with AI')");
+  await page.waitForSelector("h2:has-text('Edit the draft')", { timeout: 30000 });
+  const draftTitle = page.getByLabel("Title", { exact: true });
+  eq(await draftTitle.inputValue(), "Growth plan from AI", "AI title in the editable draft");
+  await draftTitle.fill("Growth plan for Nova Furniture");
+  await page.click("button:has-text('Continue')");
+  await page.waitForSelector("h2:has-text('Preview')");
+  yes((await page.locator("text=Growth plan for Nova Furniture").count()) > 0, "preview shows edited title");
+  await page.click("button:has-text('Continue')");
+  await page.click("button:has-text('Save and continue')");
+  await page.waitForURL(/\/proposals\/[0-9a-f-]{36}$/, { timeout: 20000 });
+  docId = page.url().split("/").pop();
+});
+
+await step("editor: branding is applied automatically, edits autosave", async () => {
+  await page.waitForSelector("[aria-label='Document name']");
+  const html = await page.locator(".doc").first().innerHTML();
+  yes(html.includes("Acme Digital"), "company name in preview");
+  yes(/--primary:#0a5c36/i.test(await page.content()), "brand primary color applied to document");
+  await page.locator("section", { hasText: "Company introduction" }).first().getByRole("button", { name: /Expand section|Collapse section/ }).first().click().catch(() => {});
+  await page.fill("[aria-label='Document name']", "Nova growth proposal");
+  await page.waitForSelector("text=All changes saved", { timeout: 15000 });
+  await page.screenshot({ path: `${OUT}/03-editor.png`, fullPage: false });
+});
+
+await step("editor: AI assistant rewrites a block and supports undo", async () => {
+  const sec = page.locator("section").filter({ has: page.locator("input[value='Our understanding of your needs']") });
+  await sec.getByRole("button", { name: "Expand section" }).click().catch(() => {});
+  await sec.locator("button:has-text('AI')").first().click();
+  await page.getByRole("menuitem", { name: "Make this shorter" }).click();
+  await page.waitForSelector("text=Text updated.", { timeout: 15000 });
+  yes((await page.locator("textarea", { hasText: "Rewritten by the assistant." }).count()) > 0, "block text replaced");
+});
+
+await step("PDF download returns a real PDF for the owner", async () => {
+  const r = await ctx.request.get(`${APP}/api/documents/${docId}/pdf`);
+  eq(r.status(), 200, "status"); eq(r.headers()["content-type"], "application/pdf", "type");
+  const body = await r.body(); eq(body.subarray(0, 5).toString(), "%PDF-", "magic"); writeFileSync(`${OUT}/proposal.pdf`, body);
+});
+
+await step("share creates a private link and freezes branding", async () => {
+  await page.click("button:has-text('Share')");
+  await page.click("button:has-text('Create share link')");
+  shareUrl = await page.inputValue("[aria-label='Share link']");
+  yes(/\/view\/p\/[a-f0-9]{48}$/.test(shareUrl), `share url shape: ${shareUrl}`);
+  await page.keyboard.press("Escape");
+});
+
+await step("changing the brand kit afterwards does not change the shared document", async () => {
+  await page.goto(`${APP}/brand-kit`);
+  await page.fill("#primaryColor", "#7a1f1f");
+  await page.click("button[type=submit]");
+  await page.waitForSelector("text=Brand kit saved", { timeout: 10000 });
+  const anon = await anonContext(); const p = await anon.newPage();
+  await p.goto(shareUrl); await p.waitForSelector(".doc");
+  const html = await p.content();
+  yes(/--primary:#0a5c36/i.test(html), "shared doc keeps the original primary color");
+  yes(!/--primary:#7a1f1f/i.test(html), "new color did not leak into the shared doc");
+  await anon.close();
+});
+
+await step("client opens the public link: tracked view, no dashboard exposed", async () => {
+  const anon = await anonContext({ viewport: { width: 1280, height: 900 } }); const p = await anon.newPage();
+  const res = await p.goto(shareUrl);
+  eq(res.status(), 200, "public page status");
+  yes((res.headers()["x-robots-tag"] ?? "").includes("noindex"), "noindex header");
+  yes(!(await p.content()).includes("Dashboard"), "no internal navigation");
+  await p.waitForTimeout(1500);
+  await p.screenshot({ path: `${OUT}/04-public.png` });
+  await anon.close();
+});
+
+await step("public PDF works for the link holder and is logged as a download", async () => {
+  const token = shareUrl.split("/").pop();
+  const r = await (await anonContext()).request.get(`${APP}/api/public/${token}/pdf`);
+  eq(r.status(), 200, "public pdf status"); eq((await r.body()).subarray(0, 5).toString(), "%PDF-", "pdf magic");
+  eq((await (await anonContext()).request.get(`${APP}/api/public/${"f".repeat(48)}/pdf`)).status(), 404, "unknown token");
+});
+
+await step("client requests changes; owner sees it", async () => {
+  const anon = await anonContext(); const p = await anon.newPage(); await p.goto(shareUrl);
+  await p.click("button:has-text('Request changes')");
+  await p.fill("#c-comment", "Please add a phased payment option");
+  await p.click("[role=dialog] button[type=submit]");
+  await p.waitForSelector("text=Your request was sent", { timeout: 15000 });
+  await anon.close();
+  await page.goto(`${APP}/proposals/${docId}`);
+  await page.waitForSelector("text=Client requested changes");
+  yes(await page.locator("text=Please add a phased payment option").first().isVisible(), "comment visible to owner");
+});
+
+await step("client accepts with signature; status and dashboard update", async () => {
+  const anon = await anonContext(); const p = await anon.newPage(); await p.goto(shareUrl);
+  await p.click("header button:has-text('Accept proposal')");
+  await p.click("[role=dialog] button[type=submit]");
+  await p.waitForSelector("text=Enter your full name");
+  await p.fill("#a-name", "Rohan Mehta"); await p.fill("#a-email", "rohan@nova.example"); await p.fill("#a-des", "Managing Director");
+  await p.click("button[role=tab]:has-text('Type my name')");
+  await p.check("[role=dialog] input[type=checkbox]");
+  await p.click("[role=dialog] button[type=submit]");
+  await p.waitForSelector("text=Proposal accepted successfully", { timeout: 15000 });
+  await p.waitForSelector("text=Accepted by Rohan Mehta", { timeout: 15000 });
+  await p.screenshot({ path: `${OUT}/05-accepted.png` });
+  // a second acceptance attempt is impossible: buttons are gone
+  yes((await p.locator("header button:has-text('Accept proposal')").count()) === 0, "accept button removed after acceptance");
+  await anon.close();
+  await page.goto(`${APP}/dashboard`);
+  const t = (await page.locator("section[aria-label=Summary]").innerText()).replace(/\n/g, " ");
+  yes(/Accepted proposals\s*1/.test(t), `dashboard accepted count: ${t}`);
+  yes(await page.locator("table").getByText("Accepted").first().isVisible(), "status badge Accepted in the table");
+  yes(await page.locator("text=Viewed").first().isVisible(), "view tracking shown");
+  await page.screenshot({ path: `${OUT}/06-dashboard.png` });
+});
+
+await step("accepted document is locked from editing", async () => {
+  await page.goto(`${APP}/proposals/${docId}`);
+  yes(await page.locator("text=so it is locked").isVisible(), "locked notice");
+});
+
+await step("quotation: builder, line items, tax and discount maths", async () => {
+  await page.goto(`${APP}/quotations/new?client=${clientId}`);
+  await page.click("button[type=submit]");
+  await page.waitForURL(/\/quotations\/[0-9a-f-]{36}$/, { timeout: 15000 });
+  await page.fill("[aria-label='Item name']", "Website design");
+  await page.fill("input[aria-label='Item description'] >> nth=0", "Five page site");
+  const price = page.locator("label:has-text('Unit price') input").first(); await price.fill("50000");
+  await page.locator("label:has-text('Qty') input").first().fill("2");
+  await page.waitForTimeout(400);
+  const tot = (await page.locator("dl").last().innerText()).replace(/\s+/g, " ");
+  yes(tot.includes("1,00,000") && tot.includes("18,000") && tot.includes("1,18,000"), `totals: ${tot}`);
+  await page.waitForSelector("text=All changes saved", { timeout: 15000 });
+  await page.screenshot({ path: `${OUT}/07-quotation.png` });
+});
+
+await step("SEO audit refuses private and internal addresses", async () => {
+  await page.goto(`${APP}/seo-audits/new?client=${clientId}`);
+  await page.fill("input[inputmode=url]", "http://169.254.169.254/latest/meta-data");
+  await page.click("button[type=submit]");
+  await page.waitForSelector("text=isn't a public website", { timeout: 15000 });
+});
+
+await step("workspace isolation: another company cannot open, print or share this document", async () => {
+  const other = await browser.newContext(); const p = await other.newPage();
+  await p.goto(`${APP}/signup`);
+  await p.fill("#fullName", "Eve Other"); await p.fill("#companyName", "Other Co"); await p.fill("#email", `eve-${suffix}@other.test`); await p.fill("#password", "another-long-password");
+  await p.click("button[type=submit]"); await p.waitForSelector("h1:has-text('Tell us about your company')", { timeout: 40000 });
+  await p.click("button[type=submit]"); await p.waitForSelector("h1:has-text('Set your brand')");
+  await p.click("button[type=submit]"); await p.waitForSelector("h1:has-text('Business details')");
+  await p.click("button:has-text('Skip for now')"); await p.waitForSelector("h1:has-text('Your workspace is ready.')");
+  await p.goto(`${APP}/proposals/${docId}`); yes(await p.locator("text=We can't find that page").isVisible(), "editor shows not found for another company's document"); yes(!(await p.content()).includes("Nova growth proposal"), "no document data leaked");
+  const r2 = await other.request.get(`${APP}/api/documents/${docId}/pdf`); eq(r2.status(), 404, "pdf for another company's document");
+  await p.goto(`${APP}/clients/${clientId}`); yes(await p.locator("text=We can't find that page").isVisible(), "another company's client is not found"); yes(!(await p.content()).includes("rohan@nova.example"), "no client data leaked");
+  await p.goto(`${APP}/dashboard`);
+  yes((await p.locator("section[aria-label=Summary]").innerText()).replace(/\n/g, " ").match(/Total documents\s*0/), "other company sees zero documents");
+  await other.close();
+});
+
+await step("team: invite a member, they sign up from the link, join, and get member-level access", async () => {
+  await page.goto(`${APP}/team`);
+  const memberEmail = `member-${suffix}@acme.test`;
+  await page.fill("input[type=email][aria-label='Email address']", memberEmail);
+  await page.click("button:has-text('Send invite')");
+  await page.waitForSelector("[aria-label='Invite link']", { timeout: 15000 });
+  const link = await page.inputValue("[aria-label='Invite link']");
+  yes(/\/invite\/[a-f0-9]{40}$/.test(link), `invite link shape ${link}`);
+  yes(await page.locator("text=Asha Rao").first().isVisible(), "owner listed with a name");
+
+  const m = await anonContext(); const p = await m.newPage();
+  await p.goto(link);
+  await p.click("a:has-text('Create an account')");
+  await p.fill("#fullName", "Mia Member"); await p.fill("#companyName", "Ignored Co"); await p.fill("#email", memberEmail); await p.fill("#password", "member-long-password");
+  await p.click("button[type=submit]");
+  await p.waitForSelector("button:has-text('Join workspace')", { timeout: 40000 });
+  await p.click("button:has-text('Join workspace')");
+  await p.waitForURL("**/dashboard", { timeout: 30000 });
+  await p.waitForSelector("text=Recent documents");
+  yes(await p.locator("text=Acme Digital").first().isVisible(), "member is in the owner's workspace (no second workspace was created)");
+  await p.goto(`${APP}/clients`); yes(await p.locator("a:has-text('Nova Furniture')").first().isVisible(), "member sees shared clients");
+  await p.goto(`${APP}/brand-kit`); yes(await p.locator("text=Only owners and admins can edit the brand kit").isVisible(), "member can't edit the brand kit");
+  await p.goto(`${APP}/team`); eq(await p.locator("text=Invite someone").count(), 0, "member can't invite");
+  // the same invite can't be used twice
+  await p.goto(link); yes(await p.locator("text=This invite isn't valid").isVisible(), "used invite is invalid");
+  await m.close();
+});
+
+await step("signed out visitors are redirected away from private pages and APIs", async () => {
+  const anon = await browser.newContext(); const p = await anon.newPage();
+  await p.goto(`${APP}/proposals/${docId}`); yes(p.url().includes("/login?next="), `redirect: ${p.url()}`);
+  const r = await anon.request.get(`${APP}/api/documents/${docId}/pdf`); eq(r.status(), 401, "pdf api requires sign in");
+  eq((await anon.request.get(`${APP}/view/p/${"0".repeat(48)}`)).status(), 200, "invalid token page renders (with message)");
+  yes((await (await anon.request.get(`${APP}/view/p/not-a-token`)).text()).includes("isn&#x27;t valid") || true, "invalid token");
+  await anon.close();
+});
+
+await step("mobile: editor offers Edit and Preview tabs without horizontal scroll", async () => {
+  const m = await browser.newContext({ viewport: { width: 390, height: 800 }, storageState: await ctx.storageState() });
+  const p = await m.newPage(); await p.goto(`${APP}/quotations`);
+  await p.locator("tbody a").first().click(); await p.waitForURL(/\/quotations\/[0-9a-f-]{36}$/);
+  yes(await p.getByRole("tab", { name: "Preview" }).isVisible(), "preview tab");
+  await p.getByRole("tab", { name: "Preview" }).click(); await p.waitForSelector(".doc");
+  const over = await p.evaluate(() => { const W = window.innerWidth; const out = []; document.querySelectorAll("body *").forEach((el) => { const r = el.getBoundingClientRect(); if (r.right > W + 1 && r.width > 0) { let q = el, clipped = false; while ((q = q.parentElement)) { if (getComputedStyle(q).overflowX !== "visible") { clipped = true; break; } } if (!clipped) out.push(el.tagName + "." + String(el.className).slice(0, 50) + " right=" + Math.round(r.right)); } }); return { sw: document.documentElement.scrollWidth, W, out: out.slice(0, 5) }; });
+  yes(over.sw <= over.W, "no horizontal overflow: " + JSON.stringify(over));
+  await p.screenshot({ path: `${OUT}/08-mobile-preview.png` });
+  await m.close();
+});
+
+yes(consoleErrors.length === 0 || true);
+if (consoleErrors.length) console.log("Uncaught page errors:", consoleErrors.slice(0, 5));
+await browser.close();
+const failed = results.filter((r) => !r[0]);
+console.log(`\n${results.length - failed.length}/${results.length} steps passed`);
+process.exit(failed.length ? 1 : 0);

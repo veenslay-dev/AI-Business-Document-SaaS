@@ -6,7 +6,6 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { ACTIVE_WORKSPACE_COOKIE, getActiveMembership, getMemberships, getUser } from "@/lib/auth/session";
 import { can } from "@/lib/permissions/roles";
-import { slugify } from "@/lib/utils";
 import { businessInfoSchema, companyInfoSchema, type BusinessInfoInput, type CompanyInfoInput } from "@/lib/validation/company";
 import { brandKitSchema, ALLOWED_ASSET_TYPES, ASSET_KINDS, MAX_ASSET_BYTES, type BrandKitInput } from "@/lib/validation/brand";
 import { fail, fromZod, GENERIC_ERROR, type ActionResult } from "./result";
@@ -15,32 +14,6 @@ async function setActiveCookie(workspaceId: string) {
   (await cookies()).set(ACTIVE_WORKSPACE_COOKIE, workspaceId, {
     httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 365,
   });
-}
-
-/**
- * Creates the user's first workspace from the company name captured at signup.
- * Idempotent: does nothing when the user already belongs to a workspace.
- */
-export async function bootstrapWorkspaceAction(): Promise<ActionResult> {
-  const user = await getUser();
-  if (!user) return fail("Please sign in again.");
-  const existing = await getMemberships();
-  if (existing.length > 0) return { ok: true };
-
-  const name = String(user.user_metadata?.company_name ?? "").trim() || "My Company";
-  const base = slugify(name) || "workspace";
-  const supabase = await createClient();
-
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const slug = attempt === 0 ? base : `${base}-${Math.random().toString(36).slice(2, 6)}`;
-    const { data, error } = await supabase.rpc("create_workspace", { p_name: name, p_slug: slug });
-    if (!error && data) {
-      await setActiveCookie(data as string);
-      return { ok: true };
-    }
-    if (error?.code !== "23505") return fail(GENERIC_ERROR); // only retry slug collisions
-  }
-  return fail(GENERIC_ERROR);
 }
 
 export async function switchWorkspaceAction(workspaceId: string) {

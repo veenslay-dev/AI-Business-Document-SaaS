@@ -94,3 +94,30 @@ describe("audit sample", () => {
     expect(html).toContain("sev critical".replace("critical", "high"));
   });
 });
+
+describe("style scoping", () => {
+  it("gives each brand its own CSS scope so documents in different brands can share a page", async () => {
+    const { HARBOR_BRAND } = await import("@/lib/documents/samples");
+    const { documentCss, documentScope } = await import("@/lib/documents/css");
+    const t = tpl("proposal-modern");
+    const a = documentScope(ACME_BRAND.brand, t), b = documentScope(HARBOR_BRAND.brand, t);
+    expect(a).not.toBe(b);
+    expect(documentScope(ACME_BRAND.brand, t)).toBe(a); // deterministic, so server and client agree
+    const css = documentCss(ACME_BRAND.brand, t);
+    expect(css).toContain(`.${a}{--primary:#1f3a5f`);
+    expect(css).not.toMatch(/(^|[,}\s])\.doc[\s.{]/m);
+  });
+});
+
+describe("empty sections", () => {
+  it("are left out of the rendered document but numbering stays continuous", async () => {
+    const { emptySection } = await import("@/lib/documents/content");
+    const c = sampleProposal();
+    const blank = emptySection("Zzz Empty Section");
+    c.sections.splice(2, 0, blank);
+    const html = renderToStaticMarkup(createElement(DocumentRenderer, { content: c, brand: ACME_BRAND, template: tpl("proposal-modern"), meta: { type: "proposal" } }));
+    expect(html).not.toContain("Zzz Empty Section");
+    expect(html).toContain("Company introduction");
+    expect(html).toContain(">03<"); // the blank section didn't consume a number
+  });
+});

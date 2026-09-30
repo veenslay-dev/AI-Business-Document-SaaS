@@ -10,7 +10,29 @@ const color = (c: string, fallback: string) => (isHexColor(c) ? c : fallback);
  * All colors and fonts come from the brand kit through CSS variables.
  * Values are validated (hex colors, whitelisted font stacks) before being written.
  */
+/** Stable short hash used to give each brand and template combination its own CSS scope. */
+function hash(str: string): string {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
+}
+
+/** Class name that scopes one document's stylesheet, so several branded documents can share a page. */
+export function documentScope(brand: BrandContext["brand"], t: TemplateConfig): string {
+  return `doc-${hash(JSON.stringify([brand.primary, brand.secondary, brand.accent, brand.headingStack, brand.bodyStack, t]))}`;
+}
+
 export function documentCss(brand: BrandContext["brand"], t: TemplateConfig): string {
+  const scope = documentScope(brand, t);
+  return scoped(baseCss(brand, t), scope);
+}
+
+/** Rewrites the `.doc` selectors in the base stylesheet to the scope class. */
+function scoped(css: string, scope: string): string {
+  return css.replace(/\.doc(?![A-Za-z0-9_-])/g, `.${scope}`);
+}
+
+function baseCss(brand: BrandContext["brand"], t: TemplateConfig): string {
   const primary = color(brand.primary, "#1f3a5f");
   const secondary = color(brand.secondary, "#e8eef6");
   const accent = color(brand.accent, "#c8553d");

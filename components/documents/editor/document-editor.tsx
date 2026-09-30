@@ -180,9 +180,9 @@ export function DocumentEditor(props: EditorProps) {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,500px)_minmax(0,1fr)]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,500px)_minmax(0,1fr)]">
         {editorPane}
-        <div className={cn("lg:sticky lg:top-32 lg:max-h-[calc(100dvh-9rem)] lg:self-start lg:overflow-y-auto", tab !== "preview" && "hidden lg:block")}>
+        <div className={cn("min-w-0 lg:sticky lg:top-32 lg:max-h-[calc(100dvh-9rem)] lg:self-start lg:overflow-y-auto", tab !== "preview" && "hidden lg:block")}>
           <p className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-ink-faint"><Undo2 className="hidden" />Live preview</p>
           <PreviewFrame>
             <DocumentRenderer content={content} brand={brand} template={template.config} meta={{ type: doc.type, acceptance: props.acceptance }} />
