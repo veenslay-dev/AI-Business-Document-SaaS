@@ -108,3 +108,13 @@ describe("fonts, screenshots and page color", () => {
     expect(documentContentSchema.safeParse({ ...sampleInvoice(), style: { background: "red" } }).success).toBe(false);
   });
 });
+
+describe("invoice form", () => {
+  it("accepts a blank tax name when tax is 0", async () => {
+    const { invoiceFormSchema, quotationFormSchema } = await import("@/lib/validation/documents");
+    const base = { clientId: "3f2b1c7e-8a4d-4c1e-9b7a-5d6e7f8a9b0c", issueDate: "2026-09-30", taxLabel: "", taxRate: 0 };
+    const inv = invoiceFormSchema.safeParse(base);
+    expect(inv.success).toBe(true);
+    expect(quotationFormSchema.safeParse(base).success).toBe(true);
+  });
+});
