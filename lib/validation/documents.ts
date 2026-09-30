@@ -31,7 +31,11 @@ export const quotationFormSchema = z.object({
   taxLabel: z.string().trim().min(1).max(30).default("GST"),
   taxRate: z.coerce.number().min(0).max(100).default(18),
   notes: z.string().trim().max(4000).default(""),
-  templateKey: z.string().max(60).default("quotation-professional"),
+  overview: z.string().trim().max(4000).default(""),
+  scope: z.string().max(6000).default(""),
+  deliverables: z.string().max(4000).default(""),
+  timeline: z.string().trim().max(400).default(""),
+  templateKey: z.string().max(60).default("quotation-executive"),
   templateId: z.string().uuid().nullable().default(null),
 });
 export type QuotationFormInput = z.input<typeof quotationFormSchema>;

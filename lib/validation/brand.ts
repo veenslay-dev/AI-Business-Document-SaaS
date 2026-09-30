@@ -7,6 +7,9 @@ export const brandKitSchema = z.object({
   primaryColor: hex,
   secondaryColor: hex,
   accentColor: hex,
+  // null means automatic (derived from the primary color)
+  headerColor: z.union([hex, z.null()]).optional().transform((v) => v ?? null),
+  headingColor: z.union([hex, z.null()]).optional().transform((v) => v ?? null),
   headingFont: z.enum(HEADING_FONTS),
   bodyFont: z.enum(BODY_FONTS),
   defaultFooter: z.string().trim().max(300).optional().transform((v) => (v ? v : null)),

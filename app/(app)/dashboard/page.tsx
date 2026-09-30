@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle2, Circle, FileText, Plus, Receipt, SearchCheck, UserPlus } from "lucide-react";
+import { CheckCircle2, Circle, FileText, Megaphone, Plus, Receipt, SearchCheck, UserPlus } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { DocumentTable } from "@/components/documents/document-table";
 import { Button } from "@/components/ui/button";
@@ -55,6 +55,7 @@ export default async function DashboardPage() {
             <Button asChild><Link href="/proposals/new"><FileText className="size-4" aria-hidden />New proposal</Link></Button>
             <Button asChild variant="secondary"><Link href="/quotations/new"><Receipt className="size-4" aria-hidden />New quotation</Link></Button>
             <Button asChild variant="secondary"><Link href="/seo-audits/new"><SearchCheck className="size-4" aria-hidden />New SEO audit</Link></Button>
+            <Button asChild variant="secondary"><Link href="/social-audits/new"><Megaphone className="size-4" aria-hidden />New social audit</Link></Button>
             <Button asChild variant="secondary"><Link href="/clients/new"><UserPlus className="size-4" aria-hidden />Add client</Link></Button>
           </div>)} />
 

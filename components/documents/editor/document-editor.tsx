@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ChevronDown, FilePlus2, Loader2, Plus, Save, Undo2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, FilePlus2, Lightbulb, ListChecks, ListPlus, Loader2, Plus, Save, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { DocumentRenderer } from "@/components/documents/document-renderer";
 import { Button } from "@/components/ui/button";
-import { Dropdown, DropdownContent, DropdownItem, DropdownTrigger } from "@/components/ui/dropdown";
+import { Dropdown, DropdownContent, DropdownItem, DropdownLabel, DropdownSeparator, DropdownTrigger } from "@/components/ui/dropdown";
 import { DocStatusBadge } from "@/components/ui/status";
 import { AiMenu } from "./ai-menu";
 import { AuditFindingsEditor } from "./audit-editors";
+import { ChecklistEditor } from "./checklist-editor";
 import {
   HeadingEditor, ImageEditor, ListEditor, PricingEditor, SimpleBlockEditor, TableEditor, TextBlockEditor, TimelineEditor, blockFromGenerated, type BlockCtx,
 } from "./block-editors";
@@ -21,6 +22,8 @@ import { ShareDialog } from "./share-dialog";
 import { IconButton, Labeled, MoveControls, inputCls, move } from "./ui";
 import { saveDocumentAction } from "@/lib/actions/documents";
 import type { BrandContext } from "@/lib/documents/branding";
+import { GENERAL_SECTIONS, PLATFORM_SECTIONS } from "@/lib/social/library";
+import { checklistSection, customChecklistSection, customFindingsSection } from "@/lib/social/build";
 import { BLOCK_LABELS, emptyBlock, emptySection, type Block, type BlockType, type DocumentContent } from "@/lib/documents/content";
 import type { DocType, TemplateConfig } from "@/lib/documents/templates";
 import { cn } from "@/lib/utils";
@@ -47,7 +50,7 @@ export function DocumentEditor(props: EditorProps) {
   const [templateValue, setTemplateValue] = useState(doc.templateValue);
   const [status, setStatus] = useState(doc.status);
   const [tab, setTab] = useState<"edit" | "preview">("edit");
-  const [open, setOpen] = useState<Set<string>>(() => new Set(props.initialContent.sections.slice(0, 1).map((s) => s.id)));
+  const [open, setOpen] = useState<Set<string>>(() => new Set(props.initialContent.sections.filter((s, i) => i === 0 || s.blocks.some((b) => b.type === "quotation" || b.type === "audit_summary" || b.type === "scorecard")).map((s) => s.id)));
   const [saveState, setSaveState] = useState<"saved" | "dirty" | "saving" | "error">("saved");
   const dirty = useRef(false);
   const seq = useRef(0);
@@ -86,7 +89,7 @@ export function DocumentEditor(props: EditorProps) {
     return () => window.removeEventListener("beforeunload", warn);
   }, []);
 
-  const allowed: BlockType[] = [...COMMON, ...(doc.type === "quotation" ? (["quotation"] as BlockType[]) : []), ...(doc.type === "seo_audit" ? (["audit_findings"] as BlockType[]) : [])];
+  const allowed: BlockType[] = [...COMMON, ...(doc.type === "quotation" ? (["quotation"] as BlockType[]) : []), ...(doc.type === "seo_audit" || doc.type === "social_audit" ? (["audit_findings", "checklist"] as BlockType[]) : []), ...(doc.type === "social_audit" ? (["scorecard"] as BlockType[]) : [])];
 
   const setBlock = (si: number, bi: number, b: Block) => mutate((d) => { d.sections[si].blocks[bi] = b; });
   const statusLabel = { saved: "All changes saved", dirty: "Unsaved changes", saving: "Saving", error: "Not saved" }[saveState];
@@ -152,7 +155,25 @@ export function DocumentEditor(props: EditorProps) {
       })}
 
       {!locked && (
-        <Button variant="secondary" onClick={() => mutate((d) => { const s = emptySection(); d.sections.push(s); setOpen((o) => new Set(o).add(s.id)); })}><FilePlus2 className="size-4" aria-hidden />Add section</Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={() => mutate((d) => { const s = emptySection(); d.sections.push(s); setOpen((o) => new Set(o).add(s.id)); })}><FilePlus2 className="size-4" aria-hidden />Add section</Button>
+          {doc.type === "social_audit" && (
+            <>
+              <Dropdown>
+                <DropdownTrigger className="inline-flex h-9 items-center gap-1.5 rounded-md border border-line-strong bg-surface px-4 text-sm font-medium shadow-soft hover:bg-paper"><ListChecks className="size-4" aria-hidden />Add from checklist library</DropdownTrigger>
+                <DropdownContent align="start" className="max-h-80 min-w-64 overflow-y-auto">
+                  <DropdownLabel>General</DropdownLabel>
+                  {GENERAL_SECTIONS.map((l) => <DropdownItem key={l.key} onSelect={() => mutate((d) => { const s = checklistSection(l); d.sections.push(s); setOpen((o) => new Set(o).add(s.id)); })}>{l.title}</DropdownItem>)}
+                  <DropdownSeparator />
+                  <DropdownLabel>Platforms</DropdownLabel>
+                  {PLATFORM_SECTIONS.map((l) => <DropdownItem key={l.key} onSelect={() => mutate((d) => { const s = checklistSection(l); d.sections.push(s); setOpen((o) => new Set(o).add(s.id)); })}>{l.title}</DropdownItem>)}
+                </DropdownContent>
+              </Dropdown>
+              <Button variant="secondary" onClick={() => mutate((d) => { const s = customChecklistSection(); d.sections.push(s); setOpen((o) => new Set(o).add(s.id)); })}><ListPlus className="size-4" aria-hidden />Add custom checklist</Button>
+              <Button variant="secondary" onClick={() => mutate((d) => { const s = customFindingsSection(); d.sections.push(s); setOpen((o) => new Set(o).add(s.id)); })}><Lightbulb className="size-4" aria-hidden />Add custom finding</Button>
+            </>
+          )}
+        </div>
       )}
     </div>
   );
@@ -193,6 +214,15 @@ export function DocumentEditor(props: EditorProps) {
   );
 }
 
+function ScorecardEditor({ block, ctx, onChange }: { block: Extract<Block, { type: "scorecard" }>; ctx: BlockCtx; onChange: (b: Block) => void }) {
+  return (
+    <div className="space-y-2">
+      <p className="text-sm text-ink-soft">Scores are worked out from your checklists as you fill them in. Nothing to enter here except an optional introduction.</p>
+      <Labeled label="Introduction"><textarea className={`${inputCls} min-h-16`} value={block.intro} disabled={ctx.disabled} onChange={(e) => onChange({ ...block, intro: e.target.value })} /></Labeled>
+    </div>
+  );
+}
+
 function BlockEditor({ block, ctx, onChange }: { block: Block; ctx: BlockCtx; onChange: (b: Block) => void }) {
   switch (block.type) {
     case "paragraph": case "callout": return <TextBlockEditor block={block} ctx={ctx} onChange={onChange} />;
@@ -204,6 +234,8 @@ function BlockEditor({ block, ctx, onChange }: { block: Block; ctx: BlockCtx; on
     case "timeline": return <TimelineEditor block={block} ctx={ctx} onChange={onChange} />;
     case "quotation": return <QuotationEditor block={block} disabled={ctx.disabled} onChange={onChange} />;
     case "audit_findings": return <AuditFindingsEditor block={block} disabled={ctx.disabled} onChange={onChange} />;
+    case "checklist": return <ChecklistEditor block={block} disabled={ctx.disabled} onChange={onChange} />;
+    case "scorecard": return <ScorecardEditor block={block} ctx={ctx} onChange={onChange} />;
     case "signature": case "page_break": case "audit_summary": return <SimpleBlockEditor block={block} ctx={ctx} onChange={onChange} />;
   }
 }

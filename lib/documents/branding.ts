@@ -11,6 +11,10 @@ export type BrandKitRow = {
   primary_color: string; secondary_color: string; accent_color: string; heading_font: string;
   body_font: string; logo_url: string | null; dark_logo_url: string | null; favicon_url: string | null;
   default_footer: string | null;
+  /** Optional. Background for the cover band, table headers and total bars. Null derives it from the primary color. */
+  header_color?: string | null;
+  /** Optional. Color of headings on white paper. Null derives a readable version of the primary color. */
+  heading_color?: string | null;
 };
 
 /**
@@ -27,6 +31,10 @@ export type BrandContext = {
   };
   brand: {
     primary: string; secondary: string; accent: string;
+    /** Background of cover bands, table headers and total bars. */
+    header: string;
+    /** Heading text color on white paper, always readable. */
+    headingText: string;
     headingFont: string; bodyFont: string;
     headingStack: string; bodyStack: string;
     logoUrl: string | null; darkLogoUrl: string | null; faviconUrl: string | null;
@@ -47,6 +55,8 @@ export function buildBrandContext(company: CompanyProfileRow, brand: BrandKitRow
     },
     brand: {
       primary: brand.primary_color, secondary: brand.secondary_color, accent: brand.accent_color,
+      header: brand.header_color ?? brand.primary_color,
+      headingText: ensureReadableOnWhite(brand.heading_color ?? brand.primary_color),
       headingFont: brand.heading_font, bodyFont: brand.body_font,
       headingStack: fontStack(brand.heading_font), bodyStack: fontStack(brand.body_font),
       logoUrl: brand.logo_url, darkLogoUrl: brand.dark_logo_url, faviconUrl: brand.favicon_url,
@@ -66,4 +76,56 @@ export function readableOn(hex: string): "#ffffff" | "#111111" {
   });
   const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
   return luminance > 0.4 ? "#111111" : "#ffffff";
+}
+
+function channels(hex: string): [number, number, number] {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return [0, 0, 0];
+  const n = parseInt(m[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+export function relativeLuminance(hex: string): number {
+  const [r, g, b] = channels(hex).map((c) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** WCAG contrast ratio between two colors, from 1 to 21. */
+export function contrastRatio(a: string, b: string): number {
+  const [hi, lo] = [relativeLuminance(a), relativeLuminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+const toHex = (c: [number, number, number]) => `#${c.map((v) => Math.round(v).toString(16).padStart(2, "0")).join("")}`;
+
+/**
+ * Returns the color itself when it reads well on white, otherwise the closest darker shade that does.
+ * Keeps the hue, so a bright cyan brand color becomes a deep teal for headings instead of unreadable text.
+ */
+export function ensureReadableOnWhite(hex: string, minRatio = 4.5): string {
+  if (contrastRatio(hex, "#ffffff") >= minRatio) return hex.toLowerCase();
+  const base = channels(hex);
+  for (let step = 1; step <= 20; step++) {
+    const k = 1 - step * 0.05;
+    const c = toHex([base[0] * k, base[1] * k, base[2] * k]);
+    if (contrastRatio(c, "#ffffff") >= minRatio) return c;
+  }
+  return "#111111";
+}
+
+/** Mixes a color with white. `share` is how much of the original color stays (0 to 1). */
+export function mixWithWhite(hex: string, share: number): string {
+  const c = channels(hex);
+  return toHex([c[0] * share + 255 * (1 - share), c[1] * share + 255 * (1 - share), c[2] * share + 255 * (1 - share)]);
+}
+
+/**
+ * A soft tint of the secondary color for backgrounds (striped rows, callouts, section bars).
+ * A light secondary keeps most of its color; a dark one, such as black, is diluted so backgrounds stay light.
+ */
+export function softTint(secondary: string): string {
+  return mixWithWhite(secondary, relativeLuminance(secondary) > 0.6 ? 0.55 : 0.1);
 }

@@ -6,7 +6,7 @@ import { buildBrandContext, type BrandContext, type BrandKitRow, type CompanyPro
 const COMPANY_COLUMNS =
   "company_name, tagline, description, website, email, phone, address, gst_number, pan_number, services, default_terms, authorized_name, authorized_designation, signature_url";
 const BRAND_COLUMNS =
-  "primary_color, secondary_color, accent_color, heading_font, body_font, logo_url, dark_logo_url, favicon_url, default_footer";
+  "primary_color, secondary_color, accent_color, heading_font, body_font, logo_url, dark_logo_url, favicon_url, default_footer, header_color, heading_color";
 
 /** Both queries are scoped by workspace_id AND protected by RLS. */
 export const getWorkspaceBranding = cache(async (workspaceId: string) => {

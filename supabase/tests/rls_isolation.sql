@@ -218,3 +218,27 @@ begin
   end;
 end $$;
 reset role;
+
+-- 10. Social audits are tenant data too, and count as audits in the dashboard.
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+insert into public.documents (workspace_id, client_id, type, title) values (:'ws_a', :'client_a', 'social_audit', 'Social audit');
+do $$
+declare s jsonb;
+begin
+  s := public.dashboard_stats(current_setting('app.ws_a')::uuid);
+  if (s->>'audits')::int <> 1 then raise exception 'FAIL: audits should count social audits %', s; end if;
+  update public.brand_kits set header_color = '#112233', heading_color = null where workspace_id = current_setting('app.ws_a')::uuid;
+  begin
+    update public.brand_kits set header_color = 'red' where workspace_id = current_setting('app.ws_a')::uuid;
+    raise exception 'FAIL: bad header color accepted';
+  exception when check_violation then null;
+  end;
+end $$;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+do $$
+declare n int;
+begin
+  select count(*) into n from public.documents where type::text = 'social_audit';
+  if n <> 0 then raise exception 'FAIL: Bob sees Alice social audit'; end if;
+end $$;
+reset role;

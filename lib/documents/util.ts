@@ -43,7 +43,9 @@ export function isSectionEmpty(section: Section): boolean {
       case "pricing": return b.rows.length === 0 && b.packages.length === 0;
       case "timeline": return b.items.every((i) => !i.phase.trim() && !i.description.trim());
       case "page_break": return false;
-      default: return false; // signature, quotation and audit blocks always render
+      case "audit_findings": return b.findings.length === 0;
+      case "checklist": return b.items.length === 0;
+      default: return false; // signature, quotation, scorecard and audit summary blocks always render
     }
   });
 }

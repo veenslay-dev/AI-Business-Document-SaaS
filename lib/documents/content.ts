@@ -78,6 +78,20 @@ export const blockSchema = z.discriminatedUnion("type", [
     intro: text(1500).default(""),
   }),
   z.object({
+    id, type: z.literal("checklist"),
+    /** Optional overall observation for the section, written by the auditor. */
+    summary: text(2000).default(""),
+    items: z.array(z.object({
+      id,
+      item: text(300),
+      status: z.enum(["unchecked", "good", "needs_work", "poor", "na"]).default("unchecked"),
+      priority: z.enum(["", "high", "medium", "low"]).default(""),
+      note: text(1500).default(""),
+      recommendation: text(1500).default(""),
+    })).max(80),
+  }),
+  z.object({ id, type: z.literal("scorecard"), intro: text(1500).default("") }),
+  z.object({
     id, type: z.literal("audit_findings"),
     category: text(60),
     findings: z.array(z.object({
@@ -153,6 +167,8 @@ export function emptyBlock(type: BlockType): Block {
       return { ...base, type, data: { number: "", issueDate: "", validUntil: "", currency: "INR", taxLabel: "GST", taxRate: 18, taxInclusive: false, discountType: "percent", discount: 0, items: [] } };
     case "audit_summary": return { ...base, type, scores: [], overall: 0, intro: "" };
     case "audit_findings": return { ...base, type, category: "Findings", findings: [] };
+    case "checklist": return { ...base, type, summary: "", items: [{ id: newId(), item: "", status: "unchecked", priority: "", note: "", recommendation: "" }] };
+    case "scorecard": return { ...base, type, intro: "" };
   }
 }
 
@@ -169,5 +185,5 @@ export function parseContent(raw: unknown): DocumentContent | null {
 export const BLOCK_LABELS: Record<BlockType, string> = {
   heading: "Heading", paragraph: "Paragraph", list: "List", callout: "Callout", table: "Table", image: "Image",
   pricing: "Pricing table", timeline: "Timeline", signature: "Signature", page_break: "Page break",
-  quotation: "Line items", audit_summary: "Audit summary", audit_findings: "Audit findings",
+  quotation: "Line items", audit_summary: "Audit summary", audit_findings: "Findings", checklist: "Checklist", scorecard: "Scorecard",
 };

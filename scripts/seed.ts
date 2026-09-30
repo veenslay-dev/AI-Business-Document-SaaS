@@ -10,7 +10,7 @@
  */
 import { createClient } from "@supabase/supabase-js";
 import { randomBytes } from "node:crypto";
-import { ACME_BRAND, SAMPLE_CLIENTS, sampleAudit, sampleProposal, sampleQuotation } from "../lib/documents/samples";
+import { ACME_BRAND, SAMPLE_CLIENTS, sampleAudit, sampleProposal, sampleQuotation, sampleSocialAudit } from "../lib/documents/samples";
 import { documentTotals } from "../lib/documents/totals";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -81,7 +81,7 @@ async function main() {
   ]).select("id"), "knowledge base");
 
   const brandSnapshot = ACME_BRAND;
-  const insertDoc = async (type: "proposal" | "quotation" | "seo_audit", title: string, clientIdx: number, content: unknown, status: string, tpl: string, extra: Record<string, unknown> = {}) => {
+  const insertDoc = async (type: "proposal" | "quotation" | "seo_audit" | "social_audit", title: string, clientIdx: number, content: unknown, status: string, tpl: string, extra: Record<string, unknown> = {}) => {
     const t = documentTotals(content as never);
     return must(await admin.from("documents").insert({
       workspace_id: wsId, client_id: clientIds[clientIdx], type, title, status, content_json: content, template_key: tpl, created_by: userId,
@@ -90,8 +90,9 @@ async function main() {
   };
 
   const proposalId = await insertDoc("proposal", "SEO growth plan for Nova Furniture", 0, sampleProposal(SAMPLE_CLIENTS[0]), "viewed", "proposal-modern");
-  const quoteId = await insertDoc("quotation", "Website quotation for Bright Dental", 1, sampleQuotation(SAMPLE_CLIENTS[1]), "sent", "quotation-professional");
+  const quoteId = await insertDoc("quotation", "Website quotation for Bright Dental", 1, sampleQuotation(SAMPLE_CLIENTS[1]), "sent", "quotation-executive");
   await insertDoc("seo_audit", "SEO Audit: novafurniture.example", 0, sampleAudit(SAMPLE_CLIENTS[0]), "draft", "audit-seo-professional");
+  await insertDoc("social_audit", "Social Media Audit: Bright Dental", 1, sampleSocialAudit(SAMPLE_CLIENTS[1]), "draft", "social-audit-scorecard");
 
   const ago = (min: number) => new Date(Date.now() - min * 60_000).toISOString();
   must(await admin.from("document_views").insert([

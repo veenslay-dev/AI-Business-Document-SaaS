@@ -24,7 +24,7 @@ export const FEATURES = [
   { title: "One company profile", body: "Company details, logo, colors, fonts, terms and signature live in one place. Nobody retypes a phone number into a proposal again." },
   { title: "AI that knows your business", body: "Drafts come back as structured sections, not one wall of text. Rewrite, shorten, simplify or generate a timeline for any part." },
   { title: "Quotations that add up", body: "Line items, discounts, configurable tax and four currencies, calculated in whole paise and cents so totals never drift." },
-  { title: "SEO audits as reports", body: "Scan a site, get scored findings with plain-language explanations and a fix for each, in your branding." },
+  { title: "SEO and social media audits", body: "Scan a website for scored findings with plain-language fixes, or work through a social media checklist by hand and let the scorecard add itself up. Add your own sections for anything new." },
   { title: "PDFs and share links", body: "The same document becomes a PDF with page numbers or a private web link. Nothing is designed twice." },
   { title: "Know what the client did", body: "See when a link was opened, download activity, and whether they accepted, declined or asked for changes." },
 ];

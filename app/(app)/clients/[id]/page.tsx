@@ -75,6 +75,7 @@ export default async function ClientDetailPage({ params, searchParams }: { param
               <Button asChild variant="secondary"><Link href={`/proposals/new?client=${id}`}>New proposal</Link></Button>
               <Button asChild variant="secondary"><Link href={`/quotations/new?client=${id}`}>New quotation</Link></Button>
               <Button asChild variant="secondary"><Link href={`/seo-audits/new?client=${id}`}>New SEO audit</Link></Button>
+              <Button asChild variant="secondary"><Link href={`/social-audits/new?client=${id}`}>New social audit</Link></Button>
             </div>
             <p className="mt-4 text-sm text-ink-soft">{docs.total} document{docs.total === 1 ? "" : "s"} · {projects.total} project{projects.total === 1 ? "" : "s"}</p>
           </section>

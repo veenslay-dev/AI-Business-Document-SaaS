@@ -10,13 +10,14 @@ Stack: Next.js 16 (App Router), TypeScript, Tailwind CSS 4, Supabase (Postgres, 
 | --- | --- |
 | Auth and onboarding | Email and password, password reset, four step onboarding with live brand preview |
 | Workspaces | Owner, admin and member roles, team invites, workspace switcher, RLS on every table |
-| Company and brand | Company profile, services, terms, signatory, logo and signature upload, colors, fonts, footer |
+| Company and brand | Company profile, services, terms, signatory, logo and signature upload, colors (including separate header and heading colors with automatic contrast), fonts, footer |
 | Clients and projects | CRUD, search, filters, archive, client detail with documents, projects and activity |
 | Document engine | One structured JSON format rendered by one renderer for the editor preview, the public page and the PDF |
 | Editor | Sections and blocks (heading, paragraph, list, table, image, pricing, timeline, signature, page break), reorder, autosave, live preview, mobile tabs |
 | Proposals | Six step builder, AI draft validated with Zod, editable draft, pricing packages |
-| Quotations | Line items, sections, per-line and overall discounts, configurable tax, INR, USD, GBP, EUR, exact integer maths |
+| Quotations | A priced scope of work: overview, scope, deliverables, timeline, assumptions, line items with discounts and configurable tax (INR, USD, GBP, EUR, exact integer maths), payment schedule, acceptance |
 | SEO audits | Real scan (SSRF safe), scored findings, optional AI rewrite in plain language, branded report |
+| Social media audits | Manual checklist audit: section-wise library per platform, status and notes per checkpoint, auto-calculated scorecard, custom checklists and findings |
 | Templates | Built-in layouts, saved workspace templates, default template per type |
 | Sharing | Private link, expiry, revoke and regenerate, view tracking, PDF download, accept, reject, request changes |
 | AI | Provider independent layer (OpenAI or Anthropic), knowledge base, rate limits, safe error messages |
@@ -25,7 +26,7 @@ Stack: Next.js 16 (App Router), TypeScript, Tailwind CSS 4, Supabase (Postgres, 
 ## Run it locally
 
 1. Create a Supabase project (or run `supabase start`).
-2. Apply the migrations in `supabase/migrations/` in order (SQL editor, or `supabase db push`).
+2. Apply the migrations in `supabase/migrations/` in order: `0001`, `0002`, then `0003` (SQL editor, or `supabase db push`).
 3. Copy `.env.example` to `.env.local` and fill it in (see below).
 4. In Supabase, Authentication, URL configuration: add `http://localhost:3000/auth/callback` as a redirect URL. For quick local testing you can turn off "Confirm email".
 5. `npm install`

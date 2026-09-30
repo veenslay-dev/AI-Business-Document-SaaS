@@ -51,6 +51,6 @@ export async function listDocuments(f: DocumentFilter): Promise<{ rows: Document
   return { rows, total: count ?? 0 };
 }
 
-export const TYPE_ROUTE: Record<DocType, string> = { proposal: "proposals", quotation: "quotations", seo_audit: "seo-audits", report: "proposals" };
-export const TYPE_LABEL: Record<DocType, string> = { proposal: "Proposal", quotation: "Quotation", seo_audit: "SEO audit", report: "Report" };
+export const TYPE_ROUTE: Record<DocType, string> = { proposal: "proposals", quotation: "quotations", seo_audit: "seo-audits", social_audit: "social-audits", report: "proposals" };
+export const TYPE_LABEL: Record<DocType, string> = { proposal: "Proposal", quotation: "Quotation", seo_audit: "SEO audit", social_audit: "Social media audit", report: "Report" };
 export const documentHref = (type: DocType, id: string) => `/${TYPE_ROUTE[type]}/${id}`;

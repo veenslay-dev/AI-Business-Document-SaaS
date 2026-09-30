@@ -7,7 +7,7 @@ import { ExampleTabs } from "@/components/marketing/example-tabs";
 import { PlanGrid } from "@/components/marketing/plan-grid";
 import { Button } from "@/components/ui/button";
 import { PRODUCT_NAME } from "@/components/ui/logo";
-import { ACME_BRAND, HARBOR_BRAND, sampleAudit, sampleProposal, sampleQuotation } from "@/lib/documents/samples";
+import { ACME_BRAND, HARBOR_BRAND, sampleAudit, sampleProposal, sampleQuotation, sampleSocialAudit } from "@/lib/documents/samples";
 import { getSystemTemplate, type TemplateConfig } from "@/lib/documents/templates";
 import type { DocumentContent } from "@/lib/documents/content";
 import { FAQ, FEATURES } from "@/lib/marketing";
@@ -30,8 +30,8 @@ function only(content: DocumentContent, titles: string[]): DocumentContent {
 export default function HomePage() {
   const proposal = sampleProposal();
   const investment = only(proposal, ["Timeline", "Investment"]);
-  const heroA = <DocumentRenderer content={proposal} brand={ACME_BRAND} template={cfg("proposal-modern")} meta={{ type: "proposal" }} />;
-  const heroB = <DocumentRenderer content={proposal} brand={HARBOR_BRAND} template={cfg("proposal-corporate")} meta={{ type: "proposal" }} />;
+  const heroA = <DocumentRenderer content={proposal} brand={ACME_BRAND} template={cfg("proposal-bold")} meta={{ type: "proposal" }} />;
+  const heroB = <DocumentRenderer content={proposal} brand={HARBOR_BRAND} template={cfg("proposal-elegant")} meta={{ type: "proposal" }} />;
   const letter = cfg("proposal-modern", { cover: "none" });
 
   const jsonLd = [
@@ -82,8 +82,10 @@ export default function HomePage() {
         <ExampleTabs panels={[
           { id: "proposal", label: "Proposal", caption: "Proposals follow a sensible 13 part structure, but sections can be added, removed and reordered. Pricing packages sit next to itemised fees, with the recommended one highlighted.",
             node: <CroppedPreview label="Sample proposal page with timeline and pricing packages" height={900}><DocumentRenderer content={investment} brand={ACME_BRAND} template={letter} meta={{ type: "proposal" }} /></CroppedPreview> },
-          { id: "quotation", label: "Quotation", caption: "Line items with per-line discounts and tax, section headings, and totals that are calculated in whole paise or cents. Choose from INR, USD, GBP and EUR, and set your own tax name and rate.",
-            node: <CroppedPreview label="Sample quotation with line items and totals" height={880}><DocumentRenderer content={sampleQuotation()} brand={ACME_BRAND} template={cfg("quotation-professional")} meta={{ type: "quotation" }} /></CroppedPreview> },
+          { id: "quotation", label: "Quotation", caption: "A quotation here is a priced scope of work: overview, what is included, deliverables and timeline, then line items with per-line discounts and configurable tax, a payment schedule and acceptance. Totals are calculated in whole paise or cents in INR, USD, GBP or EUR.",
+            node: <CroppedPreview label="Sample quotation with scope of work" height={900}><DocumentRenderer content={sampleQuotation()} brand={ACME_BRAND} template={cfg("quotation-executive")} meta={{ type: "quotation" }} /></CroppedPreview> },
+          { id: "social", label: "Social media audit", caption: "A checklist audit you complete by hand while reviewing a client's accounts. Mark each checkpoint Good, Needs work or Poor, add notes and a recommendation, and the scorecard works itself out. Add your own sections for anything new you find.",
+            node: <CroppedPreview label="Sample social media audit scorecard and checklist" height={900}><DocumentRenderer content={sampleSocialAudit()} brand={ACME_BRAND} template={cfg("social-audit-scorecard", { cover: "none", headerStyle: "studio" })} meta={{ type: "social_audit" }} /></CroppedPreview> },
           { id: "audit", label: "SEO audit", caption: "The scan produces scored categories and findings, each with why it matters, the recommended action, its priority and the pages affected. Edit anything before you send it.",
             node: <CroppedPreview label="Sample SEO audit summary and findings" height={900}><DocumentRenderer content={sampleAudit()} brand={ACME_BRAND} template={cfg("audit-seo-professional", { cover: "none" })} meta={{ type: "seo_audit" }} /></CroppedPreview> },
         ]} />

@@ -85,6 +85,7 @@ export async function saveBrandKitAction(input: BrandKitInput): Promise<ActionRe
     .update({
       primary_color: v.primaryColor.toLowerCase(), secondary_color: v.secondaryColor.toLowerCase(),
       accent_color: v.accentColor.toLowerCase(), heading_font: v.headingFont, body_font: v.bodyFont,
+      header_color: v.headerColor ? v.headerColor.toLowerCase() : null, heading_color: v.headingColor ? v.headingColor.toLowerCase() : null,
       default_footer: v.defaultFooter,
     })
     .eq("workspace_id", membership.workspaceId);

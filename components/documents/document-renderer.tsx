@@ -3,11 +3,12 @@ import { calculateQuotation, formatMinor, formatMoney } from "@/lib/documents/qu
 import type { Block, DocumentContent, Section } from "@/lib/documents/content";
 import { documentCss, documentScope } from "@/lib/documents/css";
 import { googleFontsUrl } from "@/lib/documents/fonts";
-import type { TemplateConfig } from "@/lib/documents/templates";
+import type { DocType, TemplateConfig } from "@/lib/documents/templates";
+import { STATUS_LABEL, checklistScore, computeScorecard } from "@/lib/social/score";
 import { SEVERITY_ORDER, formatDate, isSectionEmpty, pricingTotal, safeImageUrl } from "@/lib/documents/util";
 
 export type Acceptance = { name: string; designation?: string; date: string; signatureDataUrl?: string | null };
-export type RenderMeta = { type: "proposal" | "quotation" | "seo_audit" | "report"; acceptance?: Acceptance | null };
+export type RenderMeta = { type: DocType; acceptance?: Acceptance | null };
 
 /**
  * The one document renderer. It is a pure function of (content, brand, template),
@@ -17,7 +18,7 @@ export function DocumentRenderer({
   content, brand, template, meta,
 }: { content: DocumentContent; brand: BrandContext; template: TemplateConfig; meta: RenderMeta }) {
   const fonts = googleFontsUrl([brand.brand.headingFont, brand.brand.bodyFont]);
-  const cls = `doc ${documentScope(brand.brand, template)} sec-${template.sectionStyle} tbl-${template.tableStyle}`;
+  const cls = `doc ${documentScope(brand.brand, template)} sec-${template.sectionStyle} tbl-${template.tableStyle} tot-${template.totals}`;
   const hasCover = template.cover !== "none";
   // Section numbers skip sections whose title is hidden.
   const visible = content.sections.filter((s) => !isSectionEmpty(s));
@@ -28,16 +29,20 @@ export function DocumentRenderer({
     <div className={cls}>
       {fonts && <link rel="stylesheet" href={fonts} />}
       <style dangerouslySetInnerHTML={{ __html: documentCss(brand.brand, template) }} />
-      {hasCover ? <Cover content={content} brand={brand} template={template} /> : <Letterhead content={content} brand={brand} meta={meta} />}
+      {hasCover ? <Cover content={content} brand={brand} template={template} /> : <Letterhead content={content} brand={brand} meta={meta} template={template} />}
       {!hasCover && <Parties content={content} brand={brand} />}
+      {!hasCover && template.totals === "banner" && <TotalBanner content={content} />}
       <div className="page">
         {visible.map((s) => {
-          return <SectionView key={s.id} section={s} index={numbers.get(s.id) ?? 0} numbered={template.sectionStyle === "numbered"} content={content} brand={brand} meta={meta} />;
+          return <SectionView key={s.id} section={s} index={numbers.get(s.id) ?? 0} numbered={template.sectionStyle === "numbered" || template.sectionStyle === "bar"} content={content} brand={brand} meta={meta} />;
         })}
-        <div className="foot">
-          {brand.brand.footer ?? [brand.company.name, brand.company.email, brand.company.phone, brand.company.website].filter(Boolean).join("  ·  ")}
-        </div>
+        {!template.footerBar && (
+          <div className="foot">
+            {brand.brand.footer ?? [brand.company.name, brand.company.email, brand.company.phone, brand.company.website].filter(Boolean).join("  ·  ")}
+          </div>
+        )}
       </div>
+      {template.footerBar && <FooterBar brand={brand} />}
     </div>
   );
 }
@@ -50,37 +55,85 @@ function Logo({ brand, onDark }: { brand: BrandContext; onDark: boolean }) {
 
 function Cover({ content, brand, template }: { content: DocumentContent; brand: BrandContext; template: TemplateConfig }) {
   const c = content.cover;
-  const onDark = template.cover === "band";
+  const onDark = template.cover === "band" || template.cover === "block";
+  const meta = (
+    <dl className="meta">
+      {c.preparedFor && <div><dt>Prepared for</dt><dd>{c.preparedFor}</dd></div>}
+      <div><dt>Prepared by</dt><dd>{c.preparedBy || brand.company.name}</dd></div>
+      {c.date && <div><dt>Date</dt><dd>{formatDate(c.date)}</dd></div>}
+      {c.reference && <div><dt>Reference</dt><dd>{c.reference}</dd></div>}
+    </dl>
+  );
+  const titleBlock = (
+    <div>
+      {c.kicker && <p className="kicker">{c.kicker}</p>}
+      <h1>{c.title}</h1>
+      <div className="rule" />
+      {c.subtitle && <p className="sub">{c.subtitle}</p>}
+    </div>
+  );
+  if (template.cover === "block") {
+    return (
+      <header className="cover block">
+        <div className="top"><Logo brand={brand} onDark />{titleBlock}</div>
+        <div className="bottom">{meta}</div>
+      </header>
+    );
+  }
   return (
     <header className={`cover ${template.cover}`}>
       <Logo brand={brand} onDark={onDark} />
-      <div>
-        {c.kicker && <p className="kicker">{c.kicker}</p>}
-        <h1>{c.title}</h1>
-        <div className="rule" />
-        {c.subtitle && <p className="sub">{c.subtitle}</p>}
-      </div>
-      <dl className="meta">
-        {c.preparedFor && <div><dt>Prepared for</dt><dd>{c.preparedFor}</dd></div>}
-        <div><dt>Prepared by</dt><dd>{c.preparedBy || brand.company.name}</dd></div>
-        {c.date && <div><dt>Date</dt><dd>{formatDate(c.date)}</dd></div>}
-        {c.reference && <div><dt>Reference</dt><dd>{c.reference}</dd></div>}
-      </dl>
+      {titleBlock}
+      {meta}
     </header>
   );
 }
 
-function Letterhead({ content, brand, meta }: { content: DocumentContent; brand: BrandContext; meta: RenderMeta }) {
+function FooterBar({ brand }: { brand: BrandContext }) {
+  const c = brand.company;
+  const items = brand.brand.footer ? [brand.brand.footer] : [c.name, c.email, c.phone, c.website].filter(Boolean) as string[];
+  return <div className="footbar">{items.map((i) => <span key={i}>{i}</span>)}</div>;
+}
+
+function TotalBanner({ content }: { content: DocumentContent }) {
+  for (const s of content.sections) {
+    for (const b of s.blocks) {
+      if (b.type === "quotation") {
+        const t = calculateQuotation(b.data);
+        return <div className="totalbanner"><span>Total investment<small>{b.data.taxInclusive ? "Including" : "Plus"} {b.data.taxLabel}</small></span><span>{formatMinor(t.grandTotal, b.data.currency)}</span></div>;
+      }
+    }
+  }
+  return null;
+}
+
+function Letterhead({ content, brand, meta, template }: { content: DocumentContent; brand: BrandContext; meta: RenderMeta; template: TemplateConfig }) {
   const c = content.cover;
   const co = brand.company;
   const lines = [co.address, co.email, co.phone, co.website, co.gst ? `GST: ${co.gst}` : "", co.pan ? `PAN: ${co.pan}` : ""].filter(Boolean).join("\n");
+  const refLine = [c.reference, c.date && formatDate(c.date)].filter(Boolean).join("  ·  ");
+  const kind = c.kicker || (meta.type === "quotation" ? "Quotation" : "");
+  if (template.headerStyle === "banner") {
+    return (
+      <header className="lh banner">
+        <div><Logo brand={brand} onDark /><div className="co">{[co.email, co.phone, co.website].filter(Boolean).join("  ·  ")}</div></div>
+        <div className="title"><div className="doctype">{kind || c.title}</div>{kind && <div className="doctitle">{c.title}</div>}<div className="ref">{refLine}</div></div>
+      </header>
+    );
+  }
+  if (template.headerStyle === "studio") {
+    return (
+      <header className="lh studio">
+        <div className="row"><Logo brand={brand} onDark={false} /><div className="doctype">{kind || c.title}</div></div>
+        <div className="rule"><i /><b /><span>{co.website?.replace(/^https?:\/\//, "")}</span></div>
+        <div className="row"><div className="co">{lines}</div><div style={{ textAlign: "right" }}>{kind && <div className="doctitle"><strong>{c.title}</strong></div>}<div className="ref">{refLine}</div></div></div>
+      </header>
+    );
+  }
   return (
-    <header className="letterhead">
+    <header className="lh classic">
       <div><Logo brand={brand} onDark={false} /><div className="co">{lines}</div></div>
-      <div className="title">
-        <h1>{c.title}</h1>
-        <p className="ref">{[c.reference, c.date && formatDate(c.date)].filter(Boolean).join("  ·  ")}{meta.type === "quotation" ? "" : ""}</p>
-      </div>
+      <div className="title"><h1>{c.title}</h1><p className="ref">{refLine}</p></div>
     </header>
   );
 }
@@ -105,7 +158,7 @@ function SectionView({ section, index, numbered, content, brand, meta }: { secti
   );
 }
 
-function BlockView({ block: b, brand, meta }: { block: Block; brand: BrandContext; content: DocumentContent; meta: RenderMeta }) {
+function BlockView({ block: b, brand, meta, content }: { block: Block; brand: BrandContext; content: DocumentContent; meta: RenderMeta }) {
   switch (b.type) {
     case "heading": return b.level === 2 ? <h2>{b.content}</h2> : <h3>{b.content}</h3>;
     case "paragraph":
@@ -145,6 +198,8 @@ function BlockView({ block: b, brand, meta }: { block: Block; brand: BrandContex
     case "page_break": return <div style={{ breakAfter: "page", pageBreakAfter: "always" }} aria-hidden />;
     case "audit_summary": return <AuditSummary b={b} />;
     case "audit_findings": return <AuditFindings b={b} />;
+    case "checklist": return <ChecklistView b={b} />;
+    case "scorecard": return <ScorecardView b={b} content={content} />;
   }
 }
 
@@ -253,7 +308,7 @@ function Donut({ score, size = 76 }: { score: number; size?: number }) {
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e6e8ec" strokeWidth="7" />
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={tone} strokeWidth="7" strokeLinecap="round"
         strokeDasharray={`${(c * score) / 100} ${c}`} transform={`rotate(-90 ${size / 2} ${size / 2})`} />
-      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" fontSize={size / 4} fontWeight="700" fill="#1b1d22">{Math.round(score)}%</text>
+      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" fontSize={score >= 100 ? size / 5 : size / 4} fontWeight="700" fill="#1b1d22">{Math.round(score)}%</text>
     </svg>
   );
 }
@@ -286,6 +341,67 @@ function AuditFindings({ b }: { b: Extract<Block, { type: "audit_findings" }> })
           </dl>
         </div>
       ))}
+    </>
+  );
+}
+
+const STATUS_CLASS = { good: "good", needs_work: "needs", poor: "poor", na: "na", unchecked: "unchecked" } as const;
+
+function ChecklistView({ b }: { b: Extract<Block, { type: "checklist" }> }) {
+  const rows = b.items.filter((i) => i.item.trim());
+  const r = checklistScore(rows);
+  return (
+    <>
+      {r.score !== null && (
+        <div className="sectionscore"><strong>{r.score}%</strong><span className="bar"><i style={{ width: `${r.score}%` }} /></span><span>{r.checked} of {r.total} checked</span></div>
+      )}
+      {b.summary.trim() && <div className="sectionnote">{b.summary}</div>}
+      <table className="checklist">
+        <thead><tr><th>Checkpoint</th><th>Status</th><th>Observation and recommendation</th></tr></thead>
+        <tbody>
+          {rows.map((i) => (
+            <tr key={i.id}>
+              <td className="item">{i.item}</td>
+              <td className="status"><span className={`sev ${STATUS_CLASS[i.status]}`}>{STATUS_LABEL[i.status]}</span>{i.priority && i.status !== "good" && i.status !== "na" && <span className="pri">{i.priority} priority</span>}</td>
+              <td>{i.note && <div className="note" style={{ whiteSpace: "pre-line" }}>{i.note}</div>}{i.recommendation && <div className="rec"><strong>Recommendation:</strong> {i.recommendation}</div>}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
+function ScorecardView({ b, content }: { b: Extract<Block, { type: "scorecard" }>; content: DocumentContent }) {
+  const sc = computeScorecard(content);
+  const scored = sc.sections.filter((s) => s.score !== null);
+  return (
+    <>
+      {b.intro && <p>{b.intro}</p>}
+      {sc.overall === null ? (
+        <p className="empty">Scores appear here as the checklists are filled in.</p>
+      ) : (
+        <>
+          <div className="scores">
+            <div className="score"><Donut score={sc.overall} size={92} /><div className="label"><strong>Overall</strong></div></div>
+            {scored.map((s) => <div className="score" key={s.title}><Donut score={s.score ?? 0} /><div className="label">{s.title}</div></div>)}
+          </div>
+          <p className="desc">{sc.counts.good + sc.counts.needs_work + sc.counts.poor} checkpoints reviewed: {sc.counts.good} good, {sc.counts.needs_work} need work, {sc.counts.poor} poor.{sc.counts.unchecked > 0 ? ` ${sc.counts.unchecked} not checked yet.` : ""}</p>
+          {sc.priorities.length > 0 && (
+            <>
+              <h3>Biggest opportunities</h3>
+              <table>
+                <thead><tr><th>Area</th><th>Checkpoint</th><th>Status</th><th>Recommended action</th></tr></thead>
+                <tbody>
+                  {sc.priorities.slice(0, 8).map((p, i) => (
+                    <tr key={i}><td>{p.section}</td><td>{p.item}</td><td><span className={`sev ${p.status === "poor" ? "poor" : "needs"}`}>{STATUS_LABEL[p.status]}</span></td><td>{p.recommendation || <span className="empty">To be discussed</span>}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+        </>
+      )}
     </>
   );
 }

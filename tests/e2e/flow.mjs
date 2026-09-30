@@ -26,7 +26,7 @@ const ctx = await browser.newContext({ viewport: { width: 1360, height: 900 } })
 const page = await ctx.newPage();
 const consoleErrors = [];
 page.on("pageerror", (e) => consoleErrors.push(String(e)));
-let docId = "", shareUrl = "", clientId = "";
+let docId = "", shareUrl = "", clientId = "", quoteId = "";
 
 await step("signup creates an account and lands on onboarding", async () => {
   await page.goto(`${APP}/signup`);
@@ -219,6 +219,7 @@ await step("quotation: builder, line items, tax and discount maths", async () =>
   await page.goto(`${APP}/quotations/new?client=${clientId}`);
   await page.click("button[type=submit]");
   await page.waitForURL(/\/quotations\/[0-9a-f-]{36}$/, { timeout: 15000 });
+  quoteId = page.url().split("/").pop();
   await page.fill("[aria-label='Item name']", "Website design");
   await page.fill("input[aria-label='Item description'] >> nth=0", "Five page site");
   const price = page.locator("label:has-text('Unit price') input").first(); await price.fill("50000");
@@ -228,6 +229,66 @@ await step("quotation: builder, line items, tax and discount maths", async () =>
   yes(tot.includes("1,00,000") && tot.includes("18,000") && tot.includes("1,18,000"), `totals: ${tot}`);
   await page.waitForSelector("text=All changes saved", { timeout: 15000 });
   await page.screenshot({ path: `${OUT}/07-quotation.png` });
+});
+
+await step("quotation is a scope of work document with overview, scope, investment and payment schedule", async () => {
+  await page.goto(`${APP}/quotations/${quoteId}`);
+  await page.waitForSelector("[aria-label='Document name']");
+  const titles = await page.locator("section input[aria-label='Section title']").evaluateAll((els) => els.map((e) => e.value));
+  for (const t of ["Project overview", "Scope of work", "Deliverables", "Investment", "Payment schedule", "Terms and conditions", "Acceptance"]) yes(titles.includes(t), `quotation has a "${t}" section: ${titles.join(", ")}`);
+});
+
+await step("bright brand colors stay readable, and header and heading colors can be set separately", async () => {
+  await page.goto(`${APP}/brand-kit`);
+  await page.fill("#primaryColor", "#00fff7");
+  await page.click("button[type=submit]"); await page.waitForSelector("text=Brand kit saved", { timeout: 10000 });
+  await page.goto(`${APP}/quotations/${quoteId}`); await page.waitForSelector(".doc");
+  let css = await page.content();
+  yes(/--header:#00fff7/i.test(css), "header follows the primary color when automatic");
+  yes(!/--heading:#00fff7/i.test(css), "heading text is darkened, not the same bright cyan as its background");
+  yes(/--on-header:#111111/i.test(css), "dark text on the bright header");
+  // pick a custom header color
+  await page.goto(`${APP}/brand-kit`);
+  await page.locator("div.space-y-1\\.5", { has: page.locator("#headerColor") }).getByLabel("Automatic").uncheck();
+  await page.fill("#headerColor", "#111827");
+  await page.click("button[type=submit]"); await page.waitForSelector("text=Brand kit saved", { timeout: 10000 });
+  await page.goto(`${APP}/quotations/${quoteId}`); await page.waitForSelector(".doc");
+  css = await page.content();
+  yes(/--header:#111827/i.test(css), "custom header color applied");
+  yes(/--on-header:#ffffff/i.test(css), "light text on the dark header");
+});
+
+await step("social media audit: create, work through checklists, scorecard updates, add custom sections, saved", async () => {
+  await page.goto(`${APP}/social-audits/new?client=${clientId}`);
+  await page.getByLabel("Instagram", { exact: true }).check();
+  await page.fill("input[aria-label='Instagram handle or link']", "@novafurniture");
+  await page.click("button[type=submit]");
+  await page.waitForURL(/\/social-audits\/[0-9a-f-]{36}$/, { timeout: 20000 });
+  const auditId = page.url().split("/").pop();
+  await page.waitForSelector("[aria-label='Document name']");
+  yes(await page.locator("text=Scores appear here as the checklists are filled in").count() > 0, "scorecard starts empty");
+  const sec = page.locator("section").filter({ has: page.locator("input[value='Profiles and branding']") });
+  await sec.getByRole("button", { name: "Expand section" }).click();
+  await sec.getByRole("group", { name: "Status for checkpoint 1" }).getByRole("button", { name: "Good" }).click();
+  await sec.getByRole("group", { name: "Status for checkpoint 2" }).getByRole("button", { name: "Poor" }).click();
+  await sec.getByLabel("Observation for checkpoint 2").fill("Logo is blurry on the profile");
+  await sec.getByLabel("Recommendation for checkpoint 2").fill("Upload a 1080px square logo");
+  await page.waitForSelector("text=Biggest opportunities", { timeout: 10000 });
+  yes(await page.locator(".doc >> text=50%").count() > 0, "scorecard shows 50% after one good and one poor");
+  await page.getByRole("button", { name: "Add custom checklist" }).click();
+  await page.getByRole("button", { name: "Add custom finding" }).click();
+  await page.getByRole("button", { name: "Add from checklist library" }).click();
+  await page.getByRole("menuitem", { name: "YouTube" }).click();
+  await page.waitForSelector("text=All changes saved", { timeout: 15000 });
+  await page.goto(`${APP}/social-audits/${auditId}`); await page.waitForSelector("[aria-label='Document name']");
+  const titles = await page.locator("section input[aria-label='Section title']").evaluateAll((els) => els.map((e) => e.value));
+  for (const t of ["Custom checklist", "Additional findings", "YouTube"]) yes(titles.includes(t), `saved section "${t}" in ${titles.join(", ")}`);
+  const sec2 = page.locator("section").filter({ has: page.locator("input[value='Profiles and branding']") });
+  await sec2.getByRole("button", { name: "Expand section" }).click();
+  eq(await sec2.getByRole("group", { name: "Status for checkpoint 2" }).getByRole("button", { name: "Poor" }).getAttribute("aria-pressed"), "true", "status persisted after reload");
+  await page.goto(`${APP}/social-audits`); yes(await page.locator("a", { hasText: "Social Media Audit" }).first().isVisible(), "listed");
+  const pdf = await ctx.request.get(`${APP}/api/documents/${auditId}/pdf`); eq(pdf.status(), 200, "social audit pdf");
+  await page.screenshot({ path: `${OUT}/09-social-audits.png` });
 });
 
 await step("SEO audit refuses private and internal addresses", async () => {

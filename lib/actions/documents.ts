@@ -17,6 +17,8 @@ import { fail, fromZod, GENERIC_ERROR, type ActionResult } from "./result";
 
 type Ctx = Extract<Awaited<ReturnType<typeof actionContext>>, { ok: true }>;
 
+const splitLines = (t: string) => t.split(/\r?\n/).map((l) => l.replace(/^[-*•\d.)\s]+/, "").trim()).filter(Boolean).slice(0, 40);
+
 async function loadClientInfo(ctx: Ctx, clientId: string): Promise<{ info: ClientInfo; name: string } | null> {
   const { data } = await ctx.supabase.from("clients").select("company_name, contact_name, email, phone, address")
     .eq("id", clientId).eq("workspace_id", ctx.workspaceId).maybeSingle();
@@ -106,6 +108,7 @@ export async function createQuotationAction(input: QuotationFormInput): Promise<
   const content = buildQuotationContent({
     brand, client: client.info, number, issueDate: v.issueDate, validUntil: v.validUntil, currency: v.currency,
     taxLabel: v.taxLabel, taxRate: v.taxRate, notes: v.notes, title: v.title || `Quotation for ${client.name}`,
+    scope: { overview: v.overview, scope: splitLines(v.scope), deliverables: splitLines(v.deliverables), timeline: v.timeline },
     items: [{ kind: "item", id: `i${Date.now().toString(36)}`, name: "", description: "", quantity: 1, unit: "", unitPrice: 0, discountType: "percent", discount: 0, taxRate: null }],
   });
   const totals = documentTotals(content);

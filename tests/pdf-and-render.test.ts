@@ -121,3 +121,66 @@ describe("empty sections", () => {
     expect(html).toContain(">03<"); // the blank section didn't consume a number
   });
 });
+
+describe("brand colors and contrast", () => {
+  it("darkens a bright brand color until headings are readable on white", async () => {
+    const { contrastRatio, ensureReadableOnWhite, softTint } = await import("@/lib/documents/branding");
+    expect(contrastRatio("#00fff7", "#ffffff")).toBeLessThan(1.5); // the original problem
+    const h = ensureReadableOnWhite("#00fff7");
+    expect(contrastRatio(h, "#ffffff")).toBeGreaterThanOrEqual(4.5);
+    expect(h).not.toBe("#00fff7");
+    expect(ensureReadableOnWhite("#1f3a5f")).toBe("#1f3a5f"); // already fine: unchanged
+    expect(ensureReadableOnWhite("#ffff00")).toMatch(/^#/); // yellow is fixed as well
+    expect(softTint("#000000")).not.toBe("#000000"); // a black secondary can't become a dark background
+  });
+  it("uses separate colors for header backgrounds and heading text", async () => {
+    const { buildBrandContext } = await import("@/lib/documents/branding");
+    const row = { primary_color: "#00fff7", secondary_color: "#000000", accent_color: "#c8553d", heading_font: "Inter", body_font: "Inter", logo_url: null, dark_logo_url: null, favicon_url: null, default_footer: null };
+    const co = { ...ACME_BRAND.company, name: "X" };
+    const auto = buildBrandContext({ company_name: "X", tagline: null, description: null, website: null, email: null, phone: null, address: null, gst_number: null, pan_number: null, services: [], default_terms: null, authorized_name: null, authorized_designation: null, signature_url: null }, row);
+    expect(auto.brand.header).toBe("#00fff7");
+    expect(auto.brand.headingText).not.toBe("#00fff7");
+    const custom = buildBrandContext({ company_name: "X", tagline: null, description: null, website: null, email: null, phone: null, address: null, gst_number: null, pan_number: null, services: [], default_terms: null, authorized_name: null, authorized_designation: null, signature_url: null }, { ...row, header_color: "#111827", heading_color: "#0f766e" });
+    expect(custom.brand.header).toBe("#111827");
+    expect(custom.brand.headingText).toBe("#0f766e");
+    void co;
+    const html = renderToStaticMarkup(createElement(DocumentRenderer, { content: sampleQuotation(), brand: custom, template: tpl("quotation-executive"), meta: { type: "quotation" } }));
+    expect(html).toContain("--header:#111827");
+    expect(html).toContain("--on-header:#ffffff"); // light text on a dark header
+    expect(html).toContain("--heading:#0f766e");
+  });
+  it("old snapshots without header colors still render as they did", async () => {
+    const { parseSnapshot } = await import("@/lib/documents/snapshot");
+    const old = JSON.parse(JSON.stringify(ACME_BRAND));
+    delete old.brand.header; delete old.brand.headingText;
+    const parsed = parseSnapshot(old)!;
+    expect(parsed.brand.header).toBe("#1f3a5f");
+  });
+});
+
+describe("templates", () => {
+  it("every system template renders every matching sample without throwing", async () => {
+    const { SYSTEM_TEMPLATES } = await import("@/lib/documents/templates");
+    const { sampleAudit } = await import("@/lib/documents/samples");
+    const docs: Record<string, ReturnType<typeof sampleProposal>> = { proposal: sampleProposal(), quotation: sampleQuotation(), seo_audit: sampleAudit() };
+    for (const t of SYSTEM_TEMPLATES) {
+      if (!docs[t.type]) continue;
+      const html = renderToStaticMarkup(createElement(DocumentRenderer, { content: docs[t.type], brand: ACME_BRAND, template: t.config, meta: { type: t.type } }));
+      expect(html.length).toBeGreaterThan(2000);
+    }
+  });
+  it("normalizeConfig fills in new options for templates saved before they existed", async () => {
+    const { normalizeConfig } = await import("@/lib/documents/templates");
+    const fb = tpl("proposal-modern");
+    const old = normalizeConfig({ cover: "split", headings: "sans", sectionStyle: "ruled", tableStyle: "boxed", density: "compact", showHeader: false, showPageNumbers: true }, fb);
+    expect(old.cover).toBe("split");
+    expect(old.totals).toBe(fb.totals);
+    expect(old.footerBar).toBe(fb.footerBar);
+    expect(normalizeConfig({ cover: "<script>", totals: "nope" }, fb).cover).toBe(fb.cover);
+  });
+  it("quotations read as a scope of work, not an invoice", () => {
+    const titles = sampleQuotation().sections.map((s) => s.title);
+    expect(titles).toEqual(expect.arrayContaining(["Project overview", "Scope of work", "Deliverables", "Timeline", "Investment", "Payment schedule", "Terms and conditions", "Acceptance"]));
+    expect(titles.indexOf("Scope of work")).toBeLessThan(titles.indexOf("Investment"));
+  });
+});

@@ -10,6 +10,7 @@ import { AssetUploader } from "./asset-uploader";
 import { BrandPreview, type PreviewBrand } from "./brand-preview";
 import { saveBrandKitAction } from "@/lib/actions/workspace";
 import { BODY_FONTS, HEADING_FONTS } from "@/lib/documents/fonts";
+import { contrastRatio, ensureReadableOnWhite } from "@/lib/documents/branding";
 import { brandKitSchema, type BrandKitInput, type BrandKitOutput } from "@/lib/validation/brand";
 
 export type BrandKitDefaults = BrandKitInput & { logoUrl: string | null; darkLogoUrl: string | null };
@@ -26,6 +27,25 @@ function ColorField({ id, label, value, onChange, error }: { id: string; label: 
         <Input id={id} value={value} onChange={(e) => onChange(e.target.value)} className="font-mono uppercase" maxLength={7} aria-invalid={!!error} />
       </div>
     </Field>
+  );
+}
+
+/** A color that can be left on automatic (null), in which case it follows the primary color. */
+function AutoColorField({ id, label, hint, value, fallback, onChange, disabled }: {
+  id: string; label: string; hint: string; value: string | null | undefined; fallback: string; onChange: (v: string | null) => void; disabled?: boolean;
+}) {
+  const auto = !value;
+  const shown = value ?? fallback;
+  return (
+    <div className="space-y-1.5">
+      <label htmlFor={id} className="block text-sm font-medium">{label}</label>
+      <div className="flex items-center gap-2">
+        <input type="color" aria-label={`${label} picker`} disabled={auto || disabled} value={/^#[0-9a-f]{6}$/i.test(shown) ? shown : "#000000"} onChange={(e) => onChange(e.target.value)} className="h-9 w-11 cursor-pointer rounded-md border border-line-strong bg-white p-1 disabled:cursor-not-allowed disabled:opacity-50" />
+        <Input id={id} value={auto ? "" : value ?? ""} placeholder="Automatic" disabled={auto || disabled} onChange={(e) => onChange(e.target.value)} className="font-mono uppercase" maxLength={7} />
+      </div>
+      <label className="flex items-center gap-2 text-xs text-ink-soft"><input type="checkbox" checked={auto} disabled={disabled} onChange={(e) => onChange(e.target.checked ? null : fallback)} />Automatic</label>
+      <p className="text-xs text-ink-faint">{hint}</p>
+    </div>
   );
 }
 
@@ -71,6 +91,17 @@ export function BrandKitForm({
             ))}
           </div>
           <div className="grid gap-5 sm:grid-cols-2">
+            <Controller control={control} name="headerColor" render={({ field }) => (
+              <AutoColorField id="headerColor" label="Header color" hint="Cover band, table headers and total bars. Automatic uses the primary color." value={field.value} fallback={v.primaryColor} onChange={field.onChange} />
+            )} />
+            <Controller control={control} name="headingColor" render={({ field }) => (
+              <AutoColorField id="headingColor" label="Heading text color" hint="Titles on white pages. Automatic uses a readable shade of the primary color." value={field.value} fallback={ensureReadableOnWhite(v.primaryColor)} onChange={field.onChange} />
+            )} />
+          </div>
+          {v.headingColor && contrastRatio(v.headingColor, "#ffffff") < 4.5 && (
+            <p role="status" className="rounded-md border border-warn/30 bg-warn-soft px-3 py-2 text-sm text-warn">This heading color is hard to read on white paper. Documents will darken it automatically, or pick a darker one.</p>
+          )}
+          <div className="grid gap-5 sm:grid-cols-2">
             <Field label="Heading font" htmlFor="headingFont" error={errors.headingFont?.message}>
               <Select id="headingFont" {...register("headingFont")}>{HEADING_FONTS.map((f) => <option key={f}>{f}</option>)}</Select>
             </Field>
@@ -88,7 +119,7 @@ export function BrandKitForm({
       <div className="lg:sticky lg:top-6 lg:self-start">
         <p className="mb-2 text-xs font-medium uppercase tracking-wider text-ink-faint">Live preview</p>
         <BrandPreview brand={{
-          ...company, primary: v.primaryColor, secondary: v.secondaryColor, accent: v.accentColor,
+          ...company, primary: v.primaryColor, secondary: v.secondaryColor, accent: v.accentColor, header: v.headerColor, headingText: v.headingColor,
           headingFont: v.headingFont, bodyFont: v.bodyFont, logoUrl, footer: v.defaultFooter,
         }} />
       </div>

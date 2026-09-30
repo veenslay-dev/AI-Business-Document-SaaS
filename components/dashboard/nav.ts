@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Users, FolderKanban, FileText, Receipt, SearchCheck, LayoutTemplate, Palette, UsersRound, Settings,
+  LayoutDashboard, Users, FolderKanban, FileText, Receipt, SearchCheck, Megaphone, LayoutTemplate, Palette, UsersRound, Settings,
   type LucideIcon,
 } from "lucide-react";
 
@@ -16,6 +16,7 @@ export const NAV: NavItem[] = [
   { href: "/proposals", label: "Proposals", icon: FileText, ready: true },
   { href: "/quotations", label: "Quotations", icon: Receipt, ready: true },
   { href: "/seo-audits", label: "SEO Audits", icon: SearchCheck, ready: true },
+  { href: "/social-audits", label: "Social Audits", icon: Megaphone, ready: true },
   { href: "/templates", label: "Templates", icon: LayoutTemplate, ready: true },
   { href: "/brand-kit", label: "Brand Kit", icon: Palette, ready: true },
   { href: "/team", label: "Team", icon: UsersRound, ready: true },

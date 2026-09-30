@@ -27,7 +27,7 @@ export default async function BrandKitPage() {
         company={{ companyName: c.company_name, tagline: c.tagline, email: c.email, phone: c.phone, website: c.website }}
         defaults={{
           primaryColor: b.primary_color, secondaryColor: b.secondary_color, accentColor: b.accent_color,
-          headingFont: b.heading_font as never, bodyFont: b.body_font as never, defaultFooter: b.default_footer ?? "",
+          headerColor: b.header_color ?? null, headingColor: b.heading_color ?? null, headingFont: b.heading_font as never, bodyFont: b.body_font as never, defaultFooter: b.default_footer ?? "",
           logoUrl: b.logo_url, darkLogoUrl: b.dark_logo_url,
         }}
       />

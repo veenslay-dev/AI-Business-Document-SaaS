@@ -20,7 +20,7 @@ export const DOC_COLUMNS =
 export const COMPANY_COLS =
   "company_name, tagline, description, website, email, phone, address, gst_number, pan_number, services, default_terms, authorized_name, authorized_designation, signature_url";
 export const BRAND_COLS =
-  "primary_color, secondary_color, accent_color, heading_font, body_font, logo_url, dark_logo_url, favicon_url, default_footer";
+  "primary_color, secondary_color, accent_color, heading_font, body_font, logo_url, dark_logo_url, favicon_url, default_footer, header_color, heading_color";
 
 export async function loadLiveBrand(client: SupabaseClient, workspaceId: string): Promise<BrandContext | null> {
   const [c, b] = await Promise.all([

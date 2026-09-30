@@ -100,27 +100,59 @@ export function formatQuotationNumber(year: number, seq: number, prefix = "QT"):
   return `${prefix}-${year}-${String(seq).padStart(4, "0")}`;
 }
 
+export type QuotationScope = {
+  /** What the project is and why the client needs it. */
+  overview?: string;
+  /** What the work includes, one item per entry. */
+  scope?: string[];
+  /** What the client receives at the end. */
+  deliverables?: string[];
+  /** Free text such as "8 weeks from kickoff". */
+  timeline?: string;
+};
+
+/** A quotation is a priced scope of work: what we'll do, what you get, when, for how much, and on what terms. */
 export function buildQuotationContent(args: {
   brand: BrandContext; client: ClientInfo; number: string; issueDate: string; validUntil: string; currency: Currency;
-  taxLabel: string; taxRate: number; items?: QuotationItem[]; notes?: string; title?: string;
+  taxLabel: string; taxRate: number; items?: QuotationItem[]; notes?: string; title?: string; scope?: QuotationScope;
 }): DocumentContent {
   const co = args.brand.company;
+  const sc = args.scope ?? {};
+  const list = (items: string[] | undefined): Block => (items?.length ? bullets(items) : para(""));
   const sections: Section[] = [
-    section("Items", [{
+    section("Project overview", [para(sc.overview ?? "")]),
+    section("Scope of work", [list(sc.scope)]),
+    section("Deliverables", [list(sc.deliverables)]),
+    section("Timeline", [sc.timeline?.trim()
+      ? { id: newId(), type: "timeline", items: [{ id: newId(), phase: "Project timeline", duration: sc.timeline.trim(), description: "" }] }
+      : para("")]),
+    section("Assumptions and exclusions", [bullets([
+      "Content, images and account access needed for the work are provided by the client on time.",
+      "Work outside the scope above is quoted separately before it starts.",
+      "Third-party costs such as domains, hosting, stock media and advertising spend are not included unless listed below.",
+    ])]),
+    section("Investment", [{
       id: newId(), type: "quotation",
       data: {
         number: args.number, issueDate: args.issueDate, validUntil: args.validUntil, currency: args.currency,
         taxLabel: args.taxLabel, taxRate: args.taxRate, taxInclusive: false, discountType: "percent", discount: 0,
         items: args.items ?? [],
       },
-    }], { hideTitle: true }),
+    }]),
+    section("Payment schedule", [{
+      id: newId(), type: "table", headers: ["Milestone", "Share", "When"],
+      rows: [["On acceptance", "50%", "Before work starts"], ["On completion", "50%", "When the work is delivered"]],
+    }]),
     section("Notes", [para(args.notes ?? "")]),
     section("Terms and conditions", [para(co.terms ?? "")]),
-    section("Authorization", [{ id: newId(), type: "signature", label: "Authorized signatory" }], { hideTitle: true }),
+    section("Acceptance", [
+      para("By signing below, the client accepts this quotation and its terms."),
+      { id: newId(), type: "signature", label: "Authorized signatory" },
+    ]),
   ];
   return {
     version: 1,
-    cover: { kicker: "Quotation", title: args.title || "Quotation", subtitle: "", preparedFor: args.client.company, preparedBy: co.name, date: args.issueDate, reference: args.number },
+    cover: { kicker: "Quotation", title: args.title || "Quotation", subtitle: sc.overview ? sc.overview.slice(0, 180) : "", preparedFor: args.client.company, preparedBy: co.name, date: args.issueDate, reference: args.number },
     client: args.client,
     sections,
   };

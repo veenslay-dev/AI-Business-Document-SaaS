@@ -3,6 +3,7 @@ import { buildBrandContext, type BrandContext } from "./branding";
 import { analyze } from "@/lib/audit/analyze";
 import { buildAuditContent } from "@/lib/audit/build";
 import type { SiteSignals } from "@/lib/audit/types";
+import { buildSocialAuditContent } from "@/lib/social/build";
 import { buildProposalContent, buildQuotationContent } from "./builders";
 import type { DocumentContent } from "./content";
 
@@ -69,7 +70,13 @@ export function sampleQuotation(client = SAMPLE_CLIENTS[1]): DocumentContent {
   return buildQuotationContent({
     brand: ACME_BRAND, client: { company: client.company, contact: client.contact, email: client.email, phone: client.phone, address: client.address },
     number: "QT-2026-0001", issueDate: "2026-03-05", validUntil: "2026-04-04", currency: "INR", taxLabel: "GST", taxRate: 18,
-    title: "Website quotation", notes: "50% payable at kickoff, 50% on launch.",
+    title: "Website relaunch quotation", notes: "50% payable at kickoff, 50% on launch.",
+    scope: {
+      overview: "Bright Dental needs a faster, clearer website that helps new patients find the clinic and book online.",
+      scope: ["Design five key pages: home, services, about, team and contact", "Build on a CMS the front desk can edit", "Set up online booking and a Google Business Profile"],
+      deliverables: ["Live responsive website", "Design source files", "One training session for the team"],
+      timeline: "8 weeks from kickoff",
+    },
     items: [
       { kind: "section", id: "g1", title: "Design" },
       { kind: "item", id: "i1", name: "Website design", description: "Home, services, about, contact and four treatment pages", quantity: 1, unit: "", unitPrice: 75000, discountType: "percent", discount: 0, taxRate: null },
@@ -109,4 +116,37 @@ export function sampleAudit(client = SAMPLE_CLIENTS[0]): DocumentContent {
   });
   content.cover.title = "SEO Audit: novafurniture.example";
   return content;
+}
+
+/** A partly completed social media audit, the way an auditor would leave it mid-review. */
+export function sampleSocialAudit(client = SAMPLE_CLIENTS[1]): DocumentContent {
+  const c = buildSocialAuditContent({
+    brand: ACME_BRAND, date: "2026-03-12",
+    client: { company: client.company, contact: client.contact, email: client.email, phone: client.phone, address: client.address },
+    accounts: [{ platform: "instagram", handle: "@brightdental", url: "https://instagram.com/brightdental" }, { platform: "facebook", handle: "Bright Dental Kochi", url: "https://facebook.com/brightdental" }],
+    sectionKeys: ["profile-branding", "content-strategy", "engagement-community", "instagram", "facebook"],
+  });
+  // [item index, status, observation, recommendation, priority]
+  const fill: Record<string, [number, "good" | "needs_work" | "poor" | "na", string, string, "high" | "medium" | "low" | ""][]> = {
+    "Profiles and branding": [
+      [0, "good", "Same handle and logo on both accounts.", "", ""],
+      [2, "needs_work", "Bio lists services but not the city or a booking number.", "Add the city, hours and a booking link to the bio.", "high"],
+      [4, "poor", "Link in bio goes to the old website homepage.", "Point it to the booking page and add UTM tags.", "high"],
+    ],
+    "Content strategy": [
+      [1, "needs_work", "Posts appear in bursts, then nothing for two weeks.", "Plan three posts a week on a calendar.", "medium"],
+      [2, "poor", "Almost all posts are static images.", "Add Reels showing procedures, team intros and patient tips.", "high"],
+    ],
+    "Engagement and community": [[0, "good", "Comments are answered the same day.", "", ""], [6, "na", "", "", ""]],
+  };
+  for (const sec of c.sections) {
+    const rows = fill[sec.title];
+    if (!rows) continue;
+    const list = sec.blocks.find((b) => b.type === "checklist");
+    if (list?.type !== "checklist") continue;
+    for (const [i, status, note, recommendation, priority] of rows) if (list.items[i]) Object.assign(list.items[i], { status, note, recommendation, priority });
+  }
+  const found = c.sections.find((s) => s.title === "Key findings and recommendations")?.blocks[0];
+  if (found?.type === "audit_findings") found.findings.push({ id: "f-custom-1", issue: "Google reviews are not linked from social profiles", severity: "medium", explanation: "The clinic has strong reviews on Google but none of the social profiles mention or link to them.", recommendation: "Add a review highlight on Instagram and pin a review post on Facebook.", affectedUrl: "Instagram, Facebook", status: "open" });
+  return c;
 }
