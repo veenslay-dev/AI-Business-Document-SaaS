@@ -11,13 +11,13 @@ export type NavItem = { href: string; label: string; icon: LucideIcon; ready: bo
  */
 export const NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, ready: true },
-  { href: "/clients", label: "Clients", icon: Users, ready: false },
-  { href: "/projects", label: "Projects", icon: FolderKanban, ready: false },
-  { href: "/proposals", label: "Proposals", icon: FileText, ready: false },
-  { href: "/quotations", label: "Quotations", icon: Receipt, ready: false },
-  { href: "/seo-audits", label: "SEO Audits", icon: SearchCheck, ready: false },
-  { href: "/templates", label: "Templates", icon: LayoutTemplate, ready: false },
+  { href: "/clients", label: "Clients", icon: Users, ready: true },
+  { href: "/projects", label: "Projects", icon: FolderKanban, ready: true },
+  { href: "/proposals", label: "Proposals", icon: FileText, ready: true },
+  { href: "/quotations", label: "Quotations", icon: Receipt, ready: true },
+  { href: "/seo-audits", label: "SEO Audits", icon: SearchCheck, ready: true },
+  { href: "/templates", label: "Templates", icon: LayoutTemplate, ready: true },
   { href: "/brand-kit", label: "Brand Kit", icon: Palette, ready: true },
-  { href: "/team", label: "Team", icon: UsersRound, ready: false },
+  { href: "/team", label: "Team", icon: UsersRound, ready: true },
   { href: "/settings", label: "Settings", icon: Settings, ready: true },
 ];

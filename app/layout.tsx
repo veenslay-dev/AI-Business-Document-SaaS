@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { Toaster } from "sonner";
 import { PRODUCT_NAME } from "@/components/ui/logo";
 import { siteUrl } from "@/lib/utils";
 
@@ -13,7 +14,7 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>{children}<Toaster position="bottom-right" richColors closeButton /></body>
     </html>
   );
 }

@@ -11,7 +11,7 @@ import { Field, FormMessage } from "@/components/ui/field";
 import { signUpAction } from "@/lib/actions/auth";
 import { signupSchema, type SignupInput } from "@/lib/validation/auth";
 
-export function SignupForm() {
+export function SignupForm({ next }: { next?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -21,7 +21,7 @@ export function SignupForm() {
     setError(null);
     start(async () => {
       try {
-        const res = await signUpAction(values);
+        const res = await signUpAction(values, next);
         if (res && !res.ok) setError(res.error);
         else if (res?.ok && res.data?.needsConfirmation) setSentTo(values.email);
       } catch (e) {
@@ -65,7 +65,7 @@ export function SignupForm() {
       </Field>
       <Button type="submit" className="w-full" loading={pending}>Create account</Button>
       <p className="text-center text-sm text-ink-soft">
-        Already have an account? <Link href="/login" className="font-medium text-brand hover:underline">Sign in</Link>
+        Already have an account? <Link href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} className="font-medium text-brand hover:underline">Sign in</Link>
       </p>
     </form>
   );

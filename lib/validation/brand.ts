@@ -15,7 +15,7 @@ export const brandKitSchema = z.object({
 export type BrandKitInput = z.input<typeof brandKitSchema>;
 export type BrandKitOutput = z.output<typeof brandKitSchema>;
 
-export const ASSET_KINDS = ["logo", "dark_logo", "favicon", "signature"] as const;
+export const ASSET_KINDS = ["logo", "dark_logo", "favicon", "signature", "doc_image"] as const;
 export type AssetKind = (typeof ASSET_KINDS)[number];
 
 export const MAX_ASSET_BYTES = 2 * 1024 * 1024;

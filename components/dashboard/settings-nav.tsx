@@ -8,6 +8,9 @@ const LINKS = [
   { href: "/settings", label: "Profile" },
   { href: "/settings/company", label: "Company" },
   { href: "/brand-kit", label: "Brand Kit" },
+  { href: "/team", label: "Team" },
+  { href: "/settings/knowledge", label: "Knowledge base" },
+  { href: "/settings/notifications", label: "Notifications" },
   { href: "/settings/security", label: "Security" },
   { href: "/settings/subscription", label: "Subscription" },
 ];

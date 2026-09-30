@@ -154,9 +154,10 @@ export async function uploadBrandAssetAction(formData: FormData): Promise<Action
     ({ error: dbError } = await supabase.from("brand_kits").update({ dark_logo_url: url }).eq("workspace_id", wsId));
   } else if (kind === "favicon") {
     ({ error: dbError } = await supabase.from("brand_kits").update({ favicon_url: url }).eq("workspace_id", wsId));
-  } else {
+  } else if (kind === "signature") {
     ({ error: dbError } = await supabase.from("company_profiles").update({ signature_url: url }).eq("workspace_id", wsId));
   }
+  // "doc_image" files are only stored; the document that uses them keeps the URL in its content.
   if (dbError) return fail(GENERIC_ERROR);
 
   revalidatePath("/", "layout");
@@ -186,4 +187,25 @@ export async function updateProfileAction(input: { fullName: string }): Promise<
   if (error) return fail(GENERIC_ERROR);
   revalidatePath("/", "layout");
   return { ok: true, message: "Profile updated." };
+}
+
+export async function markNotificationsSeenAction(): Promise<ActionResult> {
+  const user = await getUser();
+  if (!user) return fail("Your session has expired. Please sign in again.");
+  const supabase = await createClient();
+  await supabase.from("profiles").update({ notifications_seen_at: new Date().toISOString() }).eq("user_id", user.id);
+  return { ok: true };
+}
+
+export async function saveNotificationPrefsAction(prefs: { document_viewed: boolean; document_accepted: boolean; changes_requested: boolean }): Promise<ActionResult> {
+  const user = await getUser();
+  if (!user) return fail("Your session has expired. Please sign in again.");
+  const clean = {
+    document_viewed: !!prefs.document_viewed, document_accepted: !!prefs.document_accepted, changes_requested: !!prefs.changes_requested,
+  };
+  const supabase = await createClient();
+  const { error } = await supabase.from("profiles").update({ notification_prefs: clean }).eq("user_id", user.id);
+  if (error) return fail(GENERIC_ERROR);
+  revalidatePath("/", "layout");
+  return { ok: true, message: "Notification settings saved." };
 }

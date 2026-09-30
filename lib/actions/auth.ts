@@ -29,7 +29,7 @@ export async function signInAction(input: LoginInput, next?: string): Promise<Ac
   redirect(safeNext(next, "/dashboard"));
 }
 
-export async function signUpAction(input: SignupInput): Promise<ActionResult<{ needsConfirmation: boolean }>> {
+export async function signUpAction(input: SignupInput, next?: string): Promise<ActionResult<{ needsConfirmation: boolean }>> {
   const parsed = signupSchema.safeParse(input);
   if (!parsed.success) return fromZod(parsed.error);
   const { email, password, fullName, companyName } = parsed.data;
@@ -40,7 +40,7 @@ export async function signUpAction(input: SignupInput): Promise<ActionResult<{ n
     password,
     options: {
       data: { full_name: fullName, company_name: companyName },
-      emailRedirectTo: `${siteUrl()}/auth/callback?next=/onboarding`,
+      emailRedirectTo: `${siteUrl()}/auth/callback?next=${encodeURIComponent(safeNext(next, "/onboarding"))}`,
     },
   });
   if (error) {
@@ -52,7 +52,7 @@ export async function signUpAction(input: SignupInput): Promise<ActionResult<{ n
   if (data.user && data.user.identities?.length === 0) {
     return fail("An account with this email already exists. Try signing in.");
   }
-  if (data.session) redirect("/onboarding");
+  if (data.session) redirect(safeNext(next, "/onboarding"));
   return { ok: true, data: { needsConfirmation: true } };
 }
 

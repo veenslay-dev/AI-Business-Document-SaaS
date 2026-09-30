@@ -10,7 +10,8 @@ export const ALL_FONTS: readonly string[] = Array.from(new Set([...HEADING_FONTS
 
 const SERIF = new Set(["Fraunces", "Playfair Display", "DM Serif Display", "Lora", "Merriweather"]);
 
-export function fontStack(name: string): string {
+export function fontStack(rawName: string): string {
+  const name = ALL_FONTS.includes(rawName) ? rawName : "Inter";
   const fallback = SERIF.has(name) ? "Georgia, 'Times New Roman', serif" : "system-ui, -apple-system, 'Segoe UI', sans-serif";
   return `'${name}', ${fallback}`;
 }

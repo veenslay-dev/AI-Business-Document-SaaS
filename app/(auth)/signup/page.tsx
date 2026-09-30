@@ -2,4 +2,4 @@ import type { Metadata } from "next";
 import { SignupForm } from "@/components/auth/signup-form";
 
 export const metadata: Metadata = { title: "Create your account", robots: { index: false } };
-export default function SignupPage() { return <SignupForm />; }
+export default async function SignupPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) { return <SignupForm next={(await searchParams).next} />; }

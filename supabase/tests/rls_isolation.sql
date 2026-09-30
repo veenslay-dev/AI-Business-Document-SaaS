@@ -174,3 +174,47 @@ begin
   end;
 end $$;
 reset role;
+
+-- 9. Stats view, dashboard_stats and invites respect tenancy.
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+insert into public.documents (workspace_id, client_id, type, title, status, total_amount, currency)
+  values (:'ws_a', :'client_a', 'quotation', 'Q1', 'sent', 1500, 'INR');
+insert into public.documents (workspace_id, client_id, type, title, status)
+  values (:'ws_a', :'client_a', 'proposal', 'P1', 'accepted');
+do $$
+declare s jsonb;
+begin
+  s := public.dashboard_stats(current_setting('app.ws_a')::uuid);
+  if (s->>'total')::int <> 3 then raise exception 'FAIL: stats total %', s; end if;
+  if (s->>'accepted_proposals')::int <> 1 then raise exception 'FAIL: accepted proposals %', s; end if;
+  if (s->'quotation_value'->>'INR')::numeric <> 1500 then raise exception 'FAIL: quotation value %', s; end if;
+  insert into public.workspace_invites (workspace_id, email, role) values (current_setting('app.ws_a')::uuid, 'new@a.test', 'member');
+end $$;
+
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+do $$
+declare s jsonb; n int;
+begin
+  s := public.dashboard_stats(current_setting('app.ws_a')::uuid);
+  if (s->>'total')::int <> 0 then raise exception 'FAIL: Bob sees Alice stats %', s; end if;
+  select count(*) into n from public.document_stats;
+  if n <> 0 then raise exception 'FAIL: Bob sees Alice document_stats'; end if;
+  select count(*) into n from public.workspace_invites;
+  if n <> 0 then raise exception 'FAIL: Bob sees Alice invites'; end if;
+end $$;
+
+-- Carol (member) cannot read or create invites.
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+do $$
+declare n int;
+begin
+  select count(*) into n from public.workspace_invites;
+  if n <> 0 then raise exception 'FAIL: member sees invites'; end if;
+  begin
+    insert into public.workspace_invites (workspace_id, email) values (current_setting('app.ws_a')::uuid, 'x@x.test');
+    raise exception 'FAIL: member created invite';
+  exception when others then
+    if sqlerrm like 'FAIL:%' then raise; end if;
+  end;
+end $$;
+reset role;

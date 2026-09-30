@@ -1,9 +1,9 @@
 import { z } from "zod";
 
-const optionalText = (max: number) =>
+export const optionalText = (max: number) =>
   z.string().trim().max(max).optional().transform((v) => (v ? v : null));
 
-const optionalUrl = z
+export const optionalUrl = z
   .string()
   .trim()
   .max(200)
@@ -13,7 +13,7 @@ const optionalUrl = z
     message: "Enter a full URL, for example https://example.com",
   });
 
-const optionalEmail = z
+export const optionalEmail = z
   .string()
   .trim()
   .max(200)

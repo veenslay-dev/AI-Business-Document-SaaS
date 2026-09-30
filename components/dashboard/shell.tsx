@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Check, ChevronsUpDown, LogOut, Menu, X } from "lucide-react";
+import { Check, ChevronsUpDown, LogOut, Menu, Search, X } from "lucide-react";
+import { NotificationsMenu, type NotificationItem } from "./notifications";
 import { Wordmark } from "@/components/ui/logo";
 import { Dropdown, DropdownContent, DropdownItem, DropdownLabel, DropdownSeparator, DropdownTrigger } from "@/components/ui/dropdown";
 import { NAV } from "./nav";
@@ -14,9 +15,10 @@ import { cn, initials } from "@/lib/utils";
 type WorkspaceOption = { id: string; name: string; logoUrl: string | null; role: string };
 
 export function AppShell({
-  children, workspaces, activeId, userName, userEmail,
+  children, workspaces, activeId, userName, userEmail, notifications, unread,
 }: {
   children: React.ReactNode; workspaces: WorkspaceOption[]; activeId: string; userName: string; userEmail: string;
+  notifications: NotificationItem[]; unread: number;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -84,7 +86,16 @@ export function AppShell({
             </DropdownContent>
           </Dropdown>
 
-          <div className="ml-auto">
+          <form action="/search" role="search" className="ml-2 hidden max-w-sm flex-1 sm:block">
+            <label htmlFor="global-search" className="sr-only">Search</label>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-2 size-4 text-ink-faint" aria-hidden />
+              <input id="global-search" name="q" placeholder="Search clients and documents" className="h-8 w-full rounded-md border border-line bg-surface pl-8 pr-3 text-sm placeholder:text-ink-faint focus-visible:border-brand focus-visible:outline-none" />
+            </div>
+          </form>
+          <div className="ml-auto flex items-center gap-1">
+            <Link href="/search" aria-label="Search" className="grid size-8 place-items-center rounded-md hover:bg-black/5 sm:hidden"><Search className="size-[18px]" /></Link>
+            <NotificationsMenu items={notifications} unread={unread} />
             <Dropdown>
               <DropdownTrigger aria-label="Account menu" className="grid size-8 place-items-center rounded-full bg-black/[0.07] text-xs font-semibold hover:bg-black/10">
                 {initials(userName)}
