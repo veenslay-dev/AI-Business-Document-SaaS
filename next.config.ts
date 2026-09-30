@@ -20,7 +20,11 @@ const nextConfig: NextConfig = {
     ];
   },
   experimental: {
-    serverActions: { bodySizeLimit: "4mb" },
+    serverActions: {
+      bodySizeLimit: "4mb",
+      // Lets form submissions work through GitHub Codespaces / Gitpod style forwarded addresses.
+      allowedOrigins: ["localhost:3000", "*.app.github.dev", "*.githubpreview.dev", "*.gitpod.io"],
+    },
   },
 };
 

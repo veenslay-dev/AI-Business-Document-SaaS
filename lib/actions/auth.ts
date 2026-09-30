@@ -9,6 +9,17 @@ import {
 } from "@/lib/validation/auth";
 import { fail, fromZod, GENERIC_ERROR, type ActionResult } from "./result";
 
+const NOT_CONFIGURED = "The app isn't connected to Supabase yet. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local, then restart the app.";
+const UNREACHABLE = "The app couldn't reach Supabase. Check that the Project URL in .env.local is exactly right (https://<project>.supabase.co) and that the project is running.";
+const supabaseConfigured = () => !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+/** Network failures talking to Supabase surface as thrown errors. Log the cause on the server and return a useful message. */
+function isNetworkFailure(e: unknown): boolean {
+  if (e && typeof e === "object" && "digest" in e && String((e as { digest?: string }).digest).startsWith("NEXT_REDIRECT")) return false;
+  console.error("[auth] request to Supabase failed:", e instanceof Error ? `${e.name}: ${e.message}` : e);
+  return true;
+}
+
 /** Only allow same-site relative redirects. */
 function safeNext(next: string | undefined, fallback: string) {
   return next && next.startsWith("/") && !next.startsWith("//") ? next : fallback;
@@ -18,8 +29,11 @@ export async function signInAction(input: LoginInput, next?: string): Promise<Ac
   const parsed = loginSchema.safeParse(input);
   if (!parsed.success) return fromZod(parsed.error);
 
+  if (!supabaseConfigured()) return fail(NOT_CONFIGURED);
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  let signInError: { message: string } | null;
+  try { signInError = (await supabase.auth.signInWithPassword(parsed.data)).error; } catch (e) { isNetworkFailure(e); return fail(UNREACHABLE); }
+  const error = signInError;
   if (error) {
     if (error.message.toLowerCase().includes("email not confirmed")) {
       return fail("Confirm your email first. We sent you a link when you signed up.");
@@ -34,15 +48,18 @@ export async function signUpAction(input: SignupInput, next?: string): Promise<A
   if (!parsed.success) return fromZod(parsed.error);
   const { email, password, fullName, companyName } = parsed.data;
 
+  if (!supabaseConfigured()) return fail(NOT_CONFIGURED);
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({
+  let result;
+  try { result = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { full_name: fullName, company_name: companyName },
       emailRedirectTo: `${siteUrl()}/auth/callback?next=${encodeURIComponent(safeNext(next, "/onboarding"))}`,
     },
-  });
+  }); } catch (e) { isNetworkFailure(e); return fail(UNREACHABLE); }
+  const { data, error } = result;
   if (error) {
     if (/registered|exists/i.test(error.message)) return fail("An account with this email already exists. Try signing in.");
     if (/password/i.test(error.message)) return fail(error.message);
