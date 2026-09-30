@@ -33,9 +33,9 @@ export function QuotationEditor({ block, onChange, disabled }: { block: Q; onCha
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Labeled label="Quotation no."><input className={inputCls} value={d.number} disabled={disabled} onChange={(e) => setData((x) => { x.number = e.target.value; })} /></Labeled>
+        <Labeled label={d.dueLabel === "Due date" ? "Invoice no." : "Quotation no."}><input className={inputCls} value={d.number} disabled={disabled} onChange={(e) => setData((x) => { x.number = e.target.value; })} /></Labeled>
         <Labeled label="Issue date"><input type="date" className={inputCls} value={d.issueDate} disabled={disabled} onChange={(e) => setData((x) => { x.issueDate = e.target.value; })} /></Labeled>
-        <Labeled label="Valid until"><input type="date" className={inputCls} value={d.validUntil} disabled={disabled} onChange={(e) => setData((x) => { x.validUntil = e.target.value; })} /></Labeled>
+        <Labeled label={d.dueLabel || "Valid until"}><input type="date" className={inputCls} value={d.validUntil} disabled={disabled} onChange={(e) => setData((x) => { x.validUntil = e.target.value; })} /></Labeled>
         <Labeled label="Currency"><select className={inputCls} value={d.currency} disabled={disabled} onChange={(e) => setData((x) => { x.currency = e.target.value as typeof x.currency; })}>{CURRENCIES.map((c) => <option key={c}>{c}</option>)}</select></Labeled>
         <Labeled label="Tax name"><input className={inputCls} value={d.taxLabel} disabled={disabled} onChange={(e) => setData((x) => { x.taxLabel = e.target.value; })} /></Labeled>
         <Labeled label="Default tax %"><input type="number" min={0} max={100} step="0.01" className={inputCls} value={d.taxRate} disabled={disabled} onChange={(e) => setData((x) => { x.taxRate = Math.min(100, num(e.target.value)); })} /></Labeled>

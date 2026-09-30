@@ -34,6 +34,8 @@ export const quotationDataSchema = z.object({
   number: text(40),
   issueDate: text(20),
   validUntil: text(20).default(""),
+  /** Label for the date above: "Valid until" on quotations, "Due date" on invoices. */
+  dueLabel: text(30).optional(),
   currency: z.enum(CURRENCIES).default("INR"),
   /** Configurable tax: label ("GST", "VAT", "Sales tax") and default rate. */
   taxLabel: text(30).default("GST"),
@@ -88,8 +90,11 @@ export const blockSchema = z.discriminatedUnion("type", [
       priority: z.enum(["", "high", "medium", "low"]).default(""),
       note: text(1500).default(""),
       recommendation: text(1500).default(""),
+      /** Optional evidence image (URL). Shown under the row only when present. */
+      screenshot: text(1000).optional(),
     })).max(80),
   }),
+  z.object({ id, type: z.literal("gallery"), columns: z.union([z.literal(1), z.literal(2), z.literal(3)]).default(2), items: z.array(z.object({ id, url: text(1000), caption: text(300).default("") })).max(24) }),
   z.object({ id, type: z.literal("scorecard"), intro: text(1500).default("") }),
   z.object({
     id, type: z.literal("audit_findings"),
@@ -102,6 +107,7 @@ export const blockSchema = z.discriminatedUnion("type", [
       recommendation: text(1500),
       affectedUrl: text(500).default(""),
       status: z.enum(["open", "fixed", "ignored", "passed"]).default("open"),
+      screenshot: text(1000).optional(),
     })).max(80),
   }),
 ]);
@@ -138,6 +144,8 @@ export const documentContentSchema = z.object({
     company: text(200).default(""), contact: text(200).default(""), email: text(200).default(""),
     phone: text(60).default(""), address: text(400).default(""),
   }).default({ company: "", contact: "", email: "", phone: "", address: "" }),
+  /** Whole-document look chosen by the user. Optional. */
+  style: z.object({ background: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional() }).optional(),
   /** Audit-only metadata. */
   audit: z.object({ url: text(500), scannedAt: text(40) }).optional(),
 });
@@ -167,7 +175,8 @@ export function emptyBlock(type: BlockType): Block {
       return { ...base, type, data: { number: "", issueDate: "", validUntil: "", currency: "INR", taxLabel: "GST", taxRate: 18, taxInclusive: false, discountType: "percent", discount: 0, items: [] } };
     case "audit_summary": return { ...base, type, scores: [], overall: 0, intro: "" };
     case "audit_findings": return { ...base, type, category: "Findings", findings: [] };
-    case "checklist": return { ...base, type, summary: "", items: [{ id: newId(), item: "", status: "unchecked", priority: "", note: "", recommendation: "" }] };
+    case "checklist": return { ...base, type, summary: "", items: [{ id: newId(), item: "", status: "unchecked", priority: "", note: "", recommendation: "", screenshot: "" }] };
+    case "gallery": return { ...base, type, columns: 2, items: [] };
     case "scorecard": return { ...base, type, intro: "" };
   }
 }
@@ -185,5 +194,5 @@ export function parseContent(raw: unknown): DocumentContent | null {
 export const BLOCK_LABELS: Record<BlockType, string> = {
   heading: "Heading", paragraph: "Paragraph", list: "List", callout: "Callout", table: "Table", image: "Image",
   pricing: "Pricing table", timeline: "Timeline", signature: "Signature", page_break: "Page break",
-  quotation: "Line items", audit_summary: "Audit summary", audit_findings: "Findings", checklist: "Checklist", scorecard: "Scorecard",
+  quotation: "Line items", audit_summary: "Audit summary", audit_findings: "Findings", checklist: "Checklist", scorecard: "Scorecard", gallery: "Screenshots",
 };

@@ -49,7 +49,27 @@ export function parsePage(url: string, r: FetchResult): PageSignals {
   const words = $("body").text().replace(/\s+/g, " ").trim().split(" ").filter(Boolean).length;
   const links = [...internal];
 
+  const html = r.body;
+  const analytics: string[] = [];
+  if (/gtag\/js\?id=G-|['"]G-[A-Z0-9]{6,}['"]/i.test(html)) analytics.push("Google Analytics 4");
+  if (/googletagmanager\.com\/gtm\.js|GTM-[A-Z0-9]{4,}/i.test(html)) analytics.push("Google Tag Manager");
+  if (/google-analytics\.com\/analytics\.js|['"]UA-\d{4,}-\d+['"]/i.test(html)) analytics.push("Universal Analytics (retired)");
+  if (/connect\.facebook\.net.*fbevents|fbq\(/i.test(html)) analytics.push("Meta Pixel");
+  if (/plausible\.io\/js|cdn\.usefathom|umami/i.test(html)) analytics.push("Privacy analytics");
+  const mixed = r.finalUrl.startsWith("https:") ? $('img[src^="http://"],script[src^="http://"],link[rel="stylesheet"][href^="http://"],iframe[src^="http://"]').length : 0;
+  let skips = 0, last = 0;
+  $("h1,h2,h3,h4,h5,h6").each((_, el) => { const lvl = Number(el.tagName.slice(1)); if (last && lvl > last + 1) skips += 1; last = lvl; });
+  const fp = new URL(r.finalUrl);
+  const secHeaders = ["content-security-policy", "x-frame-options", "x-content-type-options", "referrer-policy", "permissions-policy"].filter((h) => r.headers[h]);
+
   return {
+    hasFavicon: $('link[rel~="icon" i],link[rel="apple-touch-icon"]').length > 0,
+    openGraph: $('meta[property="og:title"],meta[property="og:image"]').length >= 1,
+    twitterCard: $('meta[name="twitter:card"]').length > 0,
+    hreflangCount: $('link[rel="alternate"][hreflang]').length,
+    analytics, searchConsoleVerified: $('meta[name="google-site-verification"]').length > 0,
+    mixedContent: mixed, lazyImages: $('img[loading="lazy"]').length, headingSkips: skips,
+    urlLength: (fp.pathname + fp.search).length, urlHasParams: fp.search.length > 0, securityHeaders: secHeaders,
     url, status: r.status, finalUrl: r.finalUrl, redirects: r.redirects.length, contentType: r.headers["content-type"] ?? "", bytes: r.bytes, ms: r.ms,
     title: text("title"), metaDescription: ($('meta[name="description" i]').attr("content") ?? "").trim(), canonical: ($('link[rel="canonical"]').attr("href") ?? "").trim(),
     robotsMeta: ($('meta[name="robots" i]').attr("content") ?? "").toLowerCase(), xRobots: (r.headers["x-robots-tag"] ?? "").toLowerCase(),
@@ -99,6 +119,13 @@ export async function collectSite(startUrl: string, opts: Pick<FetchOptions, "al
   const home = parsePage(startUrl, homeRes);
   const origin = new URL(homeRes.finalUrl).origin;
 
+  const host = new URL(origin).host;
+  const bare = host.replace(/^www\./, "");
+  const variantUrls = opts.allowPrivate ? [] : [`http://${bare}/`, `https://${bare}/`, `http://www.${bare}/`, `https://www.${bare}/`];
+  const [notFoundRes, variantRes] = await Promise.all([
+    f(`${origin}/this-page-should-not-exist-${Date.now().toString(36)}`, { timeoutMs: 8000, maxBytes: 300_000 }).catch(() => null),
+    pool(variantUrls, 4, async (u) => { try { const r = await f(u, { timeoutMs: 8000, method: "HEAD" }); return r.status && r.status < 400 ? { url: u, final: r.finalUrl.replace(/\/$/, "") } : null; } catch { return null; } }),
+  ]);
   const [robotsRes, psi, httpRes] = await Promise.all([
     f(`${origin}/robots.txt`, { timeoutMs: 8000, maxBytes: 200_000 }).catch(() => null),
     opts.pageSpeed === false ? Promise.resolve(null) : pageSpeed(homeRes.finalUrl),
@@ -131,6 +158,8 @@ export async function collectSite(startUrl: string, opts: Pick<FetchOptions, "al
   return {
     origin, scannedAt: new Date().toISOString(), home, pages: extras.filter((p): p is PageSignals => !!p),
     robots: { status: robotsRes?.status ?? 0, blocksAll, sitemapUrls }, sitemap,
+    notFound: notFoundRes ? { status: notFoundRes.status, custom: notFoundRes.status === 404 && /<(h1|title)[^>]*>[^<]{3,}/i.test(notFoundRes.body) && notFoundRes.body.length > 1500 } : null,
+    variants: variantRes.filter((v): v is { url: string; final: string } => !!v),
     brokenLinks: checked.filter((c) => c.status === 0 || c.status >= 400), httpToHttps: httpRes ? httpRes.finalUrl.startsWith("https://") : null, psi,
   };
 }

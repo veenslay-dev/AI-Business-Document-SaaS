@@ -126,6 +126,34 @@ export function analyze(s: SiteSignals): AuditFinding[] {
           ? { severity: "medium", explanation: "Some Core Web Vitals are close to, but outside, Google's good range.", recommendation: "Tune image loading and reduce script work to move all three into the green.", affectedUrl: h.finalUrl } : null });
   }
 
+  add({ id: "versions", category: "Technical SEO", issue: "One version of the site (www and https)", potential: "high",
+    pass: "All four http/https and www/non-www addresses end up on a single version.",
+    fail: (() => {
+      const finals = new Set((s.variants ?? []).map((v) => v.final));
+      return (s.variants?.length ?? 0) >= 3 && finals.size > 1
+        ? { severity: "high" as const, explanation: `The four ways to type the address end on ${finals.size} different versions of the site (${[...finals].slice(0, 3).join(", ")}). Search engines can treat them as separate, duplicate sites and split link value between them.`, recommendation: "Pick one version (usually https without or with www) and 301 redirect the other three to it.", affectedUrl: [...finals].slice(0, 4).join(", ") } : null;
+    })() });
+
+  add({ id: "404-page", category: "Technical SEO", issue: "Custom 404 page", potential: "medium",
+    pass: s.notFound?.custom ? "Missing pages return a proper 404 status with a helpful custom page." : "Missing pages return a proper 404 status.",
+    fail: s.notFound && s.notFound.status === 200 ? { severity: "medium", explanation: "A made-up address returns a normal page (a soft 404). Search engines may index thousands of empty pages and waste crawl budget.", recommendation: "Return a real 404 status for missing pages and show a helpful page with search and links back to key sections.", affectedUrl: s.origin }
+      : s.notFound && s.notFound.status === 404 && !s.notFound.custom ? { severity: "low", explanation: "Missing pages return a 404 but show a bare default page, so visitors who hit a dead link have nowhere to go.", recommendation: "Design a custom 404 page with a search box and links to your main pages.", affectedUrl: s.origin } : null });
+
+  if (h.mixedContent !== undefined) add({ id: "mixed-content", category: "Technical SEO", issue: "Mixed content", potential: "medium",
+    pass: "No insecure (http) resources were found on the secure home page.",
+    fail: h.mixedContent > 0 ? { severity: "medium", explanation: `${h.mixedContent} resource${h.mixedContent > 1 ? "s" : ""} on the home page load over plain http, which triggers browser warnings and may be blocked.`, recommendation: "Update every image, script and stylesheet address to https.", affectedUrl: h.finalUrl } : null });
+
+  if (h.securityHeaders) add({ id: "security-headers", category: "Technical SEO", issue: "Security headers", potential: "low",
+    pass: `Security headers present: ${h.securityHeaders.join(", ")}.`,
+    fail: h.securityHeaders.length < 2 ? { severity: "low", explanation: `Only ${h.securityHeaders.length} of 5 common security headers were found. They protect visitors and are a trust signal for careful buyers.`, recommendation: "Add Content-Security-Policy, X-Frame-Options, X-Content-Type-Options and Referrer-Policy headers at the server or CDN.", affectedUrl: h.finalUrl } : null });
+
+  if (h.urlLength !== undefined) add({ id: "url-structure", category: "Technical SEO", issue: "URL structure", potential: "low",
+    pass: "Sampled page addresses are short and readable.",
+    fail: (() => {
+      const long = all.filter((p) => { try { const u = new URL(p.finalUrl); return u.pathname.length > 90 || u.search.length > 0 || /[A-Z_]/.test(u.pathname); } catch { return false; } });
+      return long.length ? { severity: "low" as const, explanation: "Some addresses are long, contain parameters, capital letters or underscores. Clean, lowercase, hyphenated URLs are easier to read, share and rank.", recommendation: "Use short lowercase URLs with hyphens that describe the page, and redirect the old ones.", affectedUrl: list(long.map((p) => p.finalUrl)) } : null;
+    })() });
+
   // ---- Structured data
   add({ id: "schema", category: "Structured data", issue: "Schema markup detected", potential: "medium",
     pass: `Structured data found: ${h.jsonLdTypes.slice(0, 5).join(", ")}.`,
@@ -133,6 +161,37 @@ export function analyze(s: SiteSignals): AuditFinding[] {
   add({ id: "schema-errors", category: "Structured data", issue: "Schema errors", potential: "high",
     pass: "No broken structured data was found.",
     fail: h.jsonLdErrors > 0 ? { severity: "high", explanation: `${h.jsonLdErrors} structured data block${h.jsonLdErrors > 1 ? "s" : ""} could not be read because the JSON is invalid, so Google will ignore them.`, recommendation: "Fix the JSON syntax and validate the markup with Google's Rich Results Test.", affectedUrl: h.finalUrl } : null });
+
+  if (h.headingSkips !== undefined) add({ id: "heading-order", category: "On-page SEO", issue: "Heading hierarchy", potential: "low",
+    pass: "Headings follow a logical order without skipped levels.",
+    fail: h.headingSkips > 0 ? { severity: "low", explanation: `The home page skips heading levels ${h.headingSkips} time${h.headingSkips > 1 ? "s" : ""} (for example an H2 followed directly by an H4). This confuses screen readers and weakens the page outline.`, recommendation: "Use headings in order: one H1, then H2s, with H3s nested under them.", affectedUrl: h.finalUrl } : null });
+
+  if (h.hasFavicon !== undefined) add({ id: "favicon", category: "On-page SEO", issue: "Favicon", potential: "low",
+    pass: "A favicon is declared.",
+    fail: !h.hasFavicon ? { severity: "low", explanation: "No favicon is declared. Google shows favicons next to mobile search results, and a missing one looks unfinished in browser tabs.", recommendation: "Add a square favicon (at least 48x48 px) and link it in the page head.", affectedUrl: h.finalUrl } : null });
+
+  if (h.lazyImages !== undefined && h.imgTotal > 6) add({ id: "lazy-images", category: "Performance", issue: "Lazy loading images", potential: "low",
+    pass: "Images below the fold use lazy loading.",
+    fail: h.lazyImages === 0 ? { severity: "low", explanation: `The home page has ${h.imgTotal} images and none use lazy loading, so all of them download before the page feels ready.`, recommendation: "Add loading=\"lazy\" to images that are not visible on first load.", affectedUrl: h.finalUrl } : null });
+
+  // ---- Analytics and social sharing
+  if (h.analytics !== undefined) {
+    const live = h.analytics.filter((a) => !/retired/.test(a));
+    add({ id: "analytics", category: "Analytics and tracking", issue: "Analytics installed", potential: "high",
+      pass: `Tracking found: ${h.analytics.join(", ")}.`,
+      fail: live.length === 0 ? { severity: "high", explanation: h.analytics.length ? "Only retired Universal Analytics was found, which stopped collecting data in 2023." : "No analytics tag was found on the home page, so you can't see how many people visit or where they come from.", recommendation: "Install Google Analytics 4 (directly or through Google Tag Manager) and set up conversion events for calls, forms and bookings.", affectedUrl: h.finalUrl } : null });
+    add({ id: "search-console", category: "Analytics and tracking", issue: "Google Search Console", potential: "medium",
+      pass: "A Search Console verification tag was found.",
+      fail: !h.searchConsoleVerified ? { severity: "medium", explanation: "No Search Console verification tag was found on the home page. It may still be verified another way (DNS or file), so confirm this with the site owner.", recommendation: "Verify the site in Google Search Console, submit the sitemap and watch coverage and performance reports.", affectedUrl: h.finalUrl } : null });
+  }
+  if (h.openGraph !== undefined) {
+    add({ id: "open-graph", category: "Social sharing", issue: "Open Graph tags", potential: "low",
+      pass: "Open Graph tags are set, so shared links show a title and image.",
+      fail: !h.openGraph ? { severity: "low", explanation: "There are no Open Graph tags, so links shared on Facebook, LinkedIn and WhatsApp show a plain or wrong preview.", recommendation: "Add og:title, og:description, og:image and og:url to each page.", affectedUrl: h.finalUrl } : null });
+    add({ id: "twitter-card", category: "Social sharing", issue: "X (Twitter) card", potential: "low",
+      pass: "A Twitter card tag is set.",
+      fail: !h.twitterCard ? { severity: "low", explanation: "No twitter:card tag was found, so links shared on X may show without a large image.", recommendation: "Add <meta name=\"twitter:card\" content=\"summary_large_image\"> plus a title and image.", affectedUrl: h.finalUrl } : null });
+  }
 
   // ---- Content
   const thin = all.filter((p) => p.wordCount < 300);

@@ -8,7 +8,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { DocumentRenderer } from "../components/documents/document-renderer";
 import { buildBrandContext } from "../lib/documents/branding";
-import { ACME_BRAND, sampleAudit, sampleProposal, sampleQuotation, sampleSocialAudit } from "../lib/documents/samples";
+import { ACME_BRAND, sampleAudit, sampleInvoice, sampleProposal, sampleQuotation, sampleSocialAudit } from "../lib/documents/samples";
 import { SYSTEM_TEMPLATES } from "../lib/documents/templates";
 
 const out = process.argv[2] ?? "./preview";
@@ -19,7 +19,7 @@ const cyan = buildBrandContext(
   { primary_color: "#00fff7", secondary_color: "#000000", accent_color: "#c8553d", heading_font: "Space Grotesk", body_font: "DM Sans", logo_url: null, dark_logo_url: null, favicon_url: null, default_footer: null, header_color: null, heading_color: null },
 );
 const navy = ACME_BRAND;
-const docs = { proposal: sampleProposal(), quotation: sampleQuotation(), seo_audit: sampleAudit(), social_audit: sampleSocialAudit() } as const;
+const docs = { proposal: sampleProposal(), quotation: sampleQuotation(), invoice: sampleInvoice(), seo_audit: sampleAudit(), social_audit: sampleSocialAudit() } as const;
 
 for (const t of SYSTEM_TEMPLATES) {
   const content = (docs as Record<string, ReturnType<typeof sampleProposal>>)[t.type];
@@ -28,5 +28,13 @@ for (const t of SYSTEM_TEMPLATES) {
     const html = renderToStaticMarkup(createElement(DocumentRenderer, { content, brand, template: t.config, meta: { type: t.type } }));
     writeFileSync(`${out}/${t.key}.${bn}.html`, `<!doctype html><meta charset="utf-8"><body style="margin:0;background:#888"><div style="width:820px;margin:0 auto">${html}</div>`);
   }
+}
+// Whole-document background colors, to check readability on light and dark pages.
+for (const [name, bg, key] of [["dark", "#0f172a", "audit-seo-noir"], ["cream", "#faf7f2", "quotation-executive"], ["darkq", "#1a1d24", "invoice-studio"]] as const) {
+  const t = SYSTEM_TEMPLATES.find((x) => x.key === key)!;
+  const base = (docs as Record<string, ReturnType<typeof sampleProposal>>)[t.type];
+  const content = { ...base, style: { background: bg } };
+  const html = renderToStaticMarkup(createElement(DocumentRenderer, { content, brand: navy, template: t.config, meta: { type: t.type } }));
+  writeFileSync(`${out}/bg-${name}.html`, `<!doctype html><meta charset="utf-8"><body style="margin:0;background:#888"><div style="width:820px;margin:0 auto">${html}</div>`);
 }
 console.log("wrote", SYSTEM_TEMPLATES.length, "templates to", out);

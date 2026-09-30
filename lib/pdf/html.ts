@@ -15,8 +15,8 @@ export function renderDocumentHtml(args: { content: DocumentContent; brand: Bran
 <style>
 @page{size:A4;margin:18mm 16mm 20mm}
 ${hasCover ? "@page :first{margin:0}" : ""}
-html,body{margin:0;padding:0;background:#fff}
-@media print{.doc .cover{height:297mm;min-height:297mm;padding:22mm 20mm}}
+html,body{margin:0;padding:0;background:${args.content.style?.background ?? "#fff"}}
+@media print{.doc .cover{height:297mm;min-height:297mm;padding:22mm 20mm}.doc .cover.sidebar{padding:0}.doc .cover.sidebar aside{padding:22mm 10mm}.doc .cover.sidebar .main{padding:22mm 16mm}}
 </style></head><body>${body}</body></html>`;
 }
 

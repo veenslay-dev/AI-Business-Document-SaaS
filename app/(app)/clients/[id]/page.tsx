@@ -74,6 +74,7 @@ export default async function ClientDetailPage({ params, searchParams }: { param
             <div className="flex flex-wrap gap-2">
               <Button asChild variant="secondary"><Link href={`/proposals/new?client=${id}`}>New proposal</Link></Button>
               <Button asChild variant="secondary"><Link href={`/quotations/new?client=${id}`}>New quotation</Link></Button>
+              <Button asChild variant="secondary"><Link href={`/invoices/new?client=${id}`}>New invoice</Link></Button>
               <Button asChild variant="secondary"><Link href={`/seo-audits/new?client=${id}`}>New SEO audit</Link></Button>
               <Button asChild variant="secondary"><Link href={`/social-audits/new?client=${id}`}>New social audit</Link></Button>
             </div>

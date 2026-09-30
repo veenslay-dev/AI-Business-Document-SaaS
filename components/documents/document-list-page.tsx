@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileText, Megaphone, Plus, Receipt, SearchCheck, Search } from "lucide-react";
+import { FileText, Megaphone, Plus, Receipt, ReceiptText, SearchCheck, Search } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { DocumentTable } from "@/components/documents/document-table";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { can } from "@/lib/permissions/roles";
 const META: Record<string, { title: string; blurb: string; newHref: string; icon: typeof FileText; cta: string }> = {
   proposal: { title: "Proposals", blurb: "Branded proposals with AI drafting, sharing and client acceptance.", newHref: "/proposals/new", icon: FileText, cta: "New proposal" },
   quotation: { title: "Quotations", blurb: "Itemised quotations with automatic tax and discount maths.", newHref: "/quotations/new", icon: Receipt, cta: "New quotation" },
+  invoice: { title: "Invoices", blurb: "Bills for finished work. Columns you leave empty, such as tax or discount, are hidden automatically.", newHref: "/invoices/new", icon: ReceiptText, cta: "New invoice" },
   social_audit: { title: "Social Media Audits", blurb: "Checklist audits of a client's social accounts, completed by hand and scored automatically.", newHref: "/social-audits/new", icon: Megaphone, cta: "New social audit" },
   seo_audit: { title: "SEO Audits", blurb: "Scan a website and turn the findings into a client-ready report.", newHref: "/seo-audits/new", icon: SearchCheck, cta: "New SEO audit" },
 };

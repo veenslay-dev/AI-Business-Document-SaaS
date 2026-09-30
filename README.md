@@ -1,6 +1,6 @@
 # DocuPro AI
 
-A multi-tenant SaaS for branded business documents: proposals, quotations and SEO audit reports. A company sets up its profile and brand kit once, and every document picks it up automatically.
+A multi-tenant SaaS for branded business documents: proposals, quotations, invoices, SEO audit reports and social media audits. A company sets up its profile and brand kit once, and every document picks it up automatically.
 
 Stack: Next.js 16 (App Router), TypeScript, Tailwind CSS 4, Supabase (Postgres, Auth, Storage, Row Level Security), Zod, React Hook Form. The product name lives in `components/ui/logo.tsx`.
 
@@ -16,9 +16,10 @@ Stack: Next.js 16 (App Router), TypeScript, Tailwind CSS 4, Supabase (Postgres, 
 | Editor | Sections and blocks (heading, paragraph, list, table, image, pricing, timeline, signature, page break), reorder, autosave, live preview, mobile tabs |
 | Proposals | Six step builder, AI draft validated with Zod, editable draft, pricing packages |
 | Quotations | A priced scope of work: overview, scope, deliverables, timeline, assumptions, line items with discounts and configurable tax (INR, USD, GBP, EUR, exact integer maths), payment schedule, acceptance |
-| SEO audits | Real scan (SSRF safe), scored findings, optional AI rewrite in plain language, branded report |
+| Invoices | Bill with due date and payment details. Discount and tax columns and rows are hidden automatically when nothing uses them |
+| SEO audits | Real scan (SSRF safe) covering technical, on-page, performance, analytics, social sharing, structured data and content, plus a 15-point checklist pre-filled from the scan. Optional AI rewrite, charts, screenshots, three premium report templates |
 | Social media audits | Manual checklist audit: section-wise library per platform, status and notes per checkpoint, auto-calculated scorecard, custom checklists and findings |
-| Templates | Built-in layouts, saved workspace templates, default template per type |
+| Templates | Built-in layouts (including premium noir, aurora and sidebar reports with contents pages), saved workspace templates, default template per type, 19 heading and 18 body fonts, whole-document page color |
 | Sharing | Private link, expiry, revoke and regenerate, view tracking, PDF download, accept, reject, request changes |
 | AI | Provider independent layer (OpenAI or Anthropic), knowledge base, rate limits, safe error messages |
 | Marketing | Landing page rendered from the real document engine, pricing, sitemap, robots, Open Graph image, JSON-LD |
@@ -26,7 +27,7 @@ Stack: Next.js 16 (App Router), TypeScript, Tailwind CSS 4, Supabase (Postgres, 
 ## Run it locally
 
 1. Create a Supabase project (or run `supabase start`).
-2. Apply the migrations in `supabase/migrations/` in order: `0001`, `0002`, then `0003` (SQL editor, or `supabase db push`).
+2. Apply the migrations in `supabase/migrations/` in order: `0001`, `0002`, `0003`, then `0004` (invoices) (SQL editor, or `supabase db push`).
 3. Copy `.env.example` to `.env.local` and fill it in (see below).
 4. In Supabase, Authentication, URL configuration: add `http://localhost:3000/auth/callback` as a redirect URL. For quick local testing you can turn off "Confirm email".
 5. `npm install`
@@ -106,7 +107,7 @@ scripts/        seed
 
 ## Adding things later
 
-- **A new document type** (invoice, contract): add it to the `document_type` enum with a migration, add content builders in `lib/documents/builders.ts`, and a route that reuses `DocumentEditorPage`.
+- **A new document type** (contract, receipt; invoices already exist, see `buildInvoiceContent`): add it to the `document_type` enum with a migration, add content builders in `lib/documents/builders.ts`, and a route that reuses `DocumentEditorPage`.
 - **A new template**: add an entry to `SYSTEM_TEMPLATES` in `lib/documents/templates.ts`.
 - **A new AI provider**: implement `AiProvider` in `lib/ai/providers.ts` and add it to `getProvider()`.
 - **Payments**: implement `BillingProvider` in `lib/billing/provider.ts`, add a webhook route that updates `subscriptions` with the service role.

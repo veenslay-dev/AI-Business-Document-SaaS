@@ -242,3 +242,21 @@ begin
   if n <> 0 then raise exception 'FAIL: Bob sees Alice social audit'; end if;
 end $$;
 reset role;
+
+-- 11. Invoices are tenant data too.
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+insert into public.documents (workspace_id, client_id, type, title, total_amount, currency) values (:'ws_a', :'client_a', 'invoice', 'Invoice 1', 500, 'INR');
+do $$
+declare s jsonb;
+begin
+  s := public.dashboard_stats(current_setting('app.ws_a')::uuid);
+  if (s->>'invoices')::int <> 1 then raise exception 'FAIL: invoice count %', s; end if;
+end $$;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+do $$
+declare n int;
+begin
+  select count(*) into n from public.documents where type::text = 'invoice';
+  if n <> 0 then raise exception 'FAIL: Bob sees Alice invoice'; end if;
+end $$;
+reset role;

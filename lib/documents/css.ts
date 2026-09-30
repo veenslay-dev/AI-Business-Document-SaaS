@@ -1,5 +1,5 @@
 import type { BrandContext } from "./branding";
-import { ensureReadableOnWhite, readableOn, softTint } from "./branding";
+import { ensureReadableOn, mixColors, pageTheme, readableOn } from "./branding";
 import type { TemplateConfig } from "./templates";
 import { isHexColor } from "./util";
 
@@ -13,12 +13,12 @@ function hash(str: string): string {
 }
 
 /** Class name that scopes one document's stylesheet, so several branded documents can share a page. */
-export function documentScope(brand: BrandContext["brand"], t: TemplateConfig): string {
-  return `doc-${hash(JSON.stringify([brand.primary, brand.secondary, brand.accent, brand.header, brand.headingText, brand.headingStack, brand.bodyStack, t]))}`;
+export function documentScope(brand: BrandContext["brand"], t: TemplateConfig, pageBg?: string | null): string {
+  return `doc-${hash(JSON.stringify([brand.primary, brand.secondary, brand.accent, brand.header, brand.headingText, brand.headingStack, brand.bodyStack, t, pageBg ?? ""]))}`;
 }
 
-export function documentCss(brand: BrandContext["brand"], t: TemplateConfig): string {
-  return scoped(baseCss(brand, t), documentScope(brand, t));
+export function documentCss(brand: BrandContext["brand"], t: TemplateConfig, pageBg?: string | null): string {
+  return scoped(baseCss(brand, t, color(pageBg, "#ffffff")), documentScope(brand, t, pageBg));
 }
 
 /** Rewrites the `.doc` selectors in the base stylesheet to the scope class. */
@@ -34,20 +34,22 @@ function scoped(css: string, scope: string): string {
  *   --heading  text color of titles on white paper (always darkened until readable)
  *   --accent   small highlights: rules, numbers, tags
  */
-function baseCss(brand: BrandContext["brand"], t: TemplateConfig): string {
+function baseCss(brand: BrandContext["brand"], t: TemplateConfig, bg: string): string {
   const primary = color(brand.primary, "#1f3a5f");
   const secondary = color(brand.secondary, "#e8eef6");
   const accent = color(brand.accent, "#c8553d");
   const header = color(brand.header, primary);
-  const heading = ensureReadableOnWhite(color(brand.headingText, primary));
+  const theme = pageTheme(bg, secondary);
+  const heading = ensureReadableOn(color(brand.headingText, primary), bg);
+  const deep = mixColors("#000000", header, 0.82); // a near-black shade of the header color, for dark covers
   const headFont = (t.headings === "serif" ? brand.headingStack : brand.bodyStack).replace(/[<>{}]/g, "");
   const pad = t.density === "compact" ? 0.7 : 1;
 
   return `
 .doc{--primary:${primary};--secondary:${secondary};--accent:${accent};--header:${header};--on-header:${readableOn(header)};--heading:${heading};--on-accent:${readableOn(accent)};
-  --tint:${softTint(secondary)};
-  --ink:#1b1d22;--muted:#5b616d;--line:#dcdfe5;--hfont:${headFont};--bfont:${brand.bodyStack.replace(/[<>{}]/g, "")};
-  font-family:var(--bfont);color:var(--ink);font-size:${t.density === "compact" ? 12.5 : 14}px;line-height:1.6;background:#fff;
+  --tint:${theme.tint};--paper:${theme.paper};--card:${theme.card};--deep:${deep};
+  --ink:${theme.ink};--muted:${theme.muted};--line:${theme.line};--hfont:${headFont};--bfont:${brand.bodyStack.replace(/[<>{}]/g, "")};
+  font-family:var(--bfont);color:var(--ink);font-size:${t.density === "compact" ? 12.5 : 14}px;line-height:1.6;background:var(--paper);
   -webkit-print-color-adjust:exact;print-color-adjust:exact}
 .doc *{box-sizing:border-box}
 .doc h1,.doc h2,.doc h3,.doc h4{font-family:var(--hfont);color:var(--heading);margin:0;line-height:1.2;font-weight:${t.headings === "sans" ? 700 : 600}}
@@ -72,6 +74,35 @@ function baseCss(brand: BrandContext["brand"], t: TemplateConfig): string {
 .doc .cover.frame .rule{margin:22px auto}
 .doc .cover.frame h1{max-width:14em;font-size:42px}
 .doc .cover.frame .meta{text-align:center;width:100%}
+.doc .cover.noir{background:var(--deep);color:#fff;overflow:hidden}
+.doc .cover.noir:before{content:"";position:absolute;top:0;right:0;width:44%;height:30%;background:var(--accent);border-bottom-left-radius:220px}
+.doc .cover.noir:after{content:"";position:absolute;left:56px;bottom:170px;width:84px;height:6px;background:var(--accent)}
+.doc .cover.noir>*{position:relative;z-index:1}
+.doc .cover.noir h1{color:#fff;font-size:54px;max-width:11em;line-height:1.08}
+.doc .cover.noir .rule{display:none}
+.doc .cover.noir .brandname{color:#fff}
+.doc .cover.noir .sub{opacity:.8}
+.doc .cover.aurora{color:#fff;background:radial-gradient(120% 90% at 100% 0%,var(--accent) 0%,transparent 55%),radial-gradient(90% 70% at 0% 100%,var(--header) 0%,transparent 60%),var(--deep)}
+.doc .cover.aurora h1{color:#fff;font-size:50px}
+.doc .cover.aurora .brandname{color:#fff}
+.doc .cover.aurora .rule{background:#fff;opacity:.85}
+.doc .cover.sidebar{padding:0;flex-direction:row;justify-content:flex-start}
+.doc .cover.sidebar aside{width:34%;background:var(--header);color:var(--on-header);padding:56px 34px;display:flex;flex-direction:column;justify-content:space-between}
+.doc .cover.sidebar aside .brandname{color:var(--on-header)}
+.doc .cover.sidebar aside .meta{grid-template-columns:1fr;gap:18px}
+.doc .cover.sidebar .main{flex:1;display:flex;flex-direction:column;justify-content:center;padding:56px 48px;border-right:14px solid var(--accent)}
+.doc .cover.sidebar h1{font-size:44px}
+.doc .cover.sidebar .kicker{color:var(--accent);opacity:1}
+.doc .toc{break-after:page;page-break-after:always;margin-bottom:${34 * pad}px}
+.doc .toc h2{font-size:26px;margin-bottom:18px}
+.doc .toc ol{list-style:none;margin:0;padding:0}
+.doc .toc li{display:flex;gap:16px;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line);font-size:15px}
+.doc .toc .n{font-family:var(--hfont);color:var(--accent);font-weight:700;min-width:2em;font-variant-numeric:tabular-nums}
+.doc .frbar{display:none}
+.doc.sec-card .frbar{display:block;background:#111;color:#fff;font-family:var(--bfont);font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:9px 14px;margin:6px 0 12px;border-radius:3px}
+.doc.sec-card section.sec{border:1px solid var(--line);border-left:6px solid var(--accent);border-radius:4px;padding:${20 * pad}px 22px;background:var(--card)}
+.doc.sec-card section.sec>h2{font-size:26px;border-bottom:1px solid var(--line);padding-bottom:10px}
+.doc.pps section.sec{margin-bottom:${34 * pad}px}
 .doc .cover .logo{max-height:52px;max-width:220px;object-fit:contain}
 .doc .cover .brandname{font-family:var(--hfont);font-size:20px;font-weight:600}
 .doc .cover.band .brandname,.doc .cover.block .top .brandname{color:var(--on-header)}
@@ -163,7 +194,7 @@ function baseCss(brand: BrandContext["brand"], t: TemplateConfig): string {
 
 /* Audits */
 .doc .scores{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px;margin:12px 0 18px}
-.doc .score{text-align:center;border:1px solid var(--line);border-radius:4px;padding:14px 8px;break-inside:avoid;background:#fff}
+.doc .score{text-align:center;border:1px solid var(--line);border-radius:4px;padding:14px 8px;break-inside:avoid;background:var(--card)}
 .doc .score .label{font-size:12px;color:var(--muted);margin-top:6px}
 .doc .finding{border:1px solid var(--line);border-left-width:5px;border-radius:3px;padding:12px 14px;margin-bottom:12px;break-inside:avoid}
 .doc .finding h4{font-size:15px;margin-bottom:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;color:var(--ink)}
@@ -173,7 +204,26 @@ function baseCss(brand: BrandContext["brand"], t: TemplateConfig): string {
 .doc .sev{white-space:nowrap;font-family:var(--bfont);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:3px;font-weight:700;color:#fff}
 .doc .sev.critical,.doc .sev.poor{background:#b3261e}.doc .sev.high{background:#d9631b}.doc .sev.medium,.doc .sev.needs{background:#b08800}.doc .sev.low{background:#4a6fa5}.doc .sev.passed,.doc .sev.good{background:#2f7d55}.doc .sev.na,.doc .sev.unchecked{background:#8a909b}
 .doc .finding.critical{border-left-color:#b3261e}.doc .finding.high{border-left-color:#d9631b}.doc .finding.medium{border-left-color:#b08800}.doc .finding.low{border-left-color:#4a6fa5}.doc .finding.passed{border-left-color:#2f7d55}
-.doc .checklist td.status{white-space:nowrap;width:1%}
+.doc .chartrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:6px 0 18px}
+.doc .chartcard{border:1px solid var(--line);border-radius:4px;padding:12px 14px;background:var(--card);break-inside:avoid;min-width:0}
+.doc .chartcard h4{font-family:var(--bfont);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 10px}
+.doc .chart.pie{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.doc .legend{list-style:none;margin:0;padding:0;font-size:12px;flex:1;min-width:110px}
+.doc .legend li{display:flex;align-items:center;gap:7px;padding:2px 0}
+.doc .legend i{width:10px;height:10px;border-radius:2px;flex:none}
+.doc .legend b{margin-left:auto;padding-left:8px;font-variant-numeric:tabular-nums}
+.doc .chart.bars .brow{display:grid;grid-template-columns:minmax(70px,34%) 1fr 38px;gap:8px;align-items:center;font-size:12px;padding:3px 0}
+.doc .chart.bars .bl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.doc .chart.bars .bt{height:9px;background:var(--line);border-radius:5px;overflow:hidden}
+.doc .chart.bars .bt i{display:block;height:100%;border-radius:5px}
+.doc .chart.bars .bv{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.doc .chart.radar{display:flex;justify-content:center}
+.doc .gallery{display:grid;gap:12px;margin:10px 0}
+  .doc .gallery.cols-1{grid-template-columns:1fr}.doc .gallery.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.doc .gallery.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .doc .gallery figure{margin:0;break-inside:avoid}.doc .gallery img{width:100%;height:auto;border:1px solid var(--line);border-radius:3px;display:block}
+  .doc .gallery figcaption{font-size:11.5px;color:var(--muted);margin-top:4px}
+  .doc .shot{display:block;max-width:100%;max-height:260px;margin-top:8px;border:1px solid var(--line);border-radius:3px;break-inside:avoid}
+  .doc .checklist td.status{white-space:nowrap;width:1%}
 .doc .checklist td.item{font-weight:600;width:34%}
 .doc .checklist .note{color:var(--ink)}
 .doc .checklist .rec{color:var(--muted);font-size:12px;margin-top:3px}
@@ -195,6 +245,6 @@ function baseCss(brand: BrandContext["brand"], t: TemplateConfig): string {
   .doc .lh.studio .doctype{font-size:30px}.doc .totalbanner{margin-left:24px;margin-right:24px}.doc .footbar{padding:14px 24px}
   .doc .finding dl{grid-template-columns:1fr}.doc table{display:block;overflow-x:auto}
 }
-@media print{.doc .cover{min-height:257mm}.doc .cover.block{min-height:297mm}.doc .cover.frame{margin:10mm;min-height:277mm}.doc .page{padding:0}.doc .lh,.doc .parties{padding-left:0;padding-right:0}.doc .lh.banner{padding:8mm 10mm;margin:0}.doc .totalbanner{margin-left:0;margin-right:0}.doc .footbar{padding:5mm 10mm;margin:0}}
+@media print{.doc.pps section.sec{break-before:page;page-break-before:always;margin-bottom:0}.doc.pps .toc+section.sec{break-before:auto}.doc .cover.sidebar aside{min-height:297mm}.doc .cover{min-height:257mm}.doc .cover.block{min-height:297mm}.doc .cover.frame{margin:10mm;min-height:277mm}.doc .page{padding:0}.doc .lh,.doc .parties{padding-left:0;padding-right:0}.doc .lh.banner{padding:8mm 10mm;margin:0}.doc .totalbanner{margin-left:0;margin-right:0}.doc .footbar{padding:5mm 10mm;margin:0}}
 `;
 }

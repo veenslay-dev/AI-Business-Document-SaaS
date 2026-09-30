@@ -129,3 +129,34 @@ export function mixWithWhite(hex: string, share: number): string {
 export function softTint(secondary: string): string {
   return mixWithWhite(secondary, relativeLuminance(secondary) > 0.6 ? 0.55 : 0.1);
 }
+
+/** Blends `a` with `b`. `share` is how much of `a` is kept (0 to 1). */
+export function mixColors(a: string, b: string, share: number): string {
+  const x = channels(a), y = channels(b);
+  return toHex([x[0] * share + y[0] * (1 - share), x[1] * share + y[1] * (1 - share), x[2] * share + y[2] * (1 - share)]);
+}
+
+/**
+ * Makes `hex` readable on `bg`: darkens it on light backgrounds and lightens it on dark ones,
+ * keeping the hue, until the WCAG contrast ratio reaches `minRatio`.
+ */
+export function ensureReadableOn(hex: string, bg: string, minRatio = 4.5): string {
+  if (contrastRatio(hex, bg) >= minRatio) return hex.toLowerCase();
+  const towards = relativeLuminance(bg) < 0.4 ? "#ffffff" : "#000000";
+  for (let step = 1; step <= 20; step++) {
+    const c = mixColors(towards, hex, step * 0.05);
+    if (contrastRatio(c, bg) >= minRatio) return c;
+  }
+  return towards;
+}
+
+export type PageTheme = { paper: string; card: string; ink: string; muted: string; line: string; tint: string; dark: boolean };
+
+/** Text, card and line colors that stay readable on whatever page background the user picks. */
+export function pageTheme(bg: string, secondary: string): PageTheme {
+  const dark = relativeLuminance(bg) < 0.4;
+  if (dark) {
+    return { paper: bg, card: mixColors("#ffffff", bg, 0.08), ink: "#f3f4f6", muted: "#b8bfcc", line: mixColors("#ffffff", bg, 0.2), tint: mixColors("#ffffff", bg, 0.07), dark };
+  }
+  return { paper: bg, card: "#ffffff", ink: "#1b1d22", muted: "#5b616d", line: "#dcdfe5", tint: softTint(secondary), dark };
+}

@@ -3,13 +3,13 @@
 import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { withinDocumentLimit } from "@/lib/billing/plans";
-import { buildProposalContent, buildQuotationContent, formatQuotationNumber, type ClientInfo } from "@/lib/documents/builders";
+import { buildInvoiceContent, buildProposalContent, buildQuotationContent, formatQuotationNumber, type ClientInfo } from "@/lib/documents/builders";
 import { parseContent } from "@/lib/documents/content";
 import { documentTotals } from "@/lib/documents/totals";
 import { applyOutline, DEFAULT_TEMPLATE_KEY, getSystemTemplate, type DocType, type SectionOutline } from "@/lib/documents/templates";
 import { fetchDocument, loadLiveBrand } from "@/lib/db/render";
 import { documentHref } from "@/lib/db/documents";
-import { proposalFormSchema, quotationFormSchema, saveDocumentSchema, type ProposalFormInput, type QuotationFormInput, type SaveDocumentInput } from "@/lib/validation/documents";
+import { invoiceFormSchema, proposalFormSchema, quotationFormSchema, saveDocumentSchema, type InvoiceFormInput, type ProposalFormInput, type QuotationFormInput, type SaveDocumentInput } from "@/lib/validation/documents";
 import { uuid } from "@/lib/validation/crm";
 import { siteUrl } from "@/lib/utils";
 import { actionContext } from "./context";
@@ -122,6 +122,42 @@ export async function createQuotationAction(input: QuotationFormInput): Promise<
   return { ok: true, data: { id: data.id, href: documentHref("quotation", data.id) } };
 }
 
+export async function createInvoiceAction(input: InvoiceFormInput): Promise<ActionResult<{ id: string; href: string }>> {
+  const ctx = await actionContext("document:create");
+  if (!ctx.ok) return ctx.error;
+  const parsed = invoiceFormSchema.safeParse(input);
+  if (!parsed.success) return fromZod(parsed.error);
+  const v = parsed.data;
+
+  if (!(await underPlanLimit(ctx))) return fail("You've reached this month's document limit on your plan.");
+  const client = await loadClientInfo(ctx, v.clientId);
+  if (!client) return fail("Choose one of your clients.");
+  const brand = await loadLiveBrand(ctx.supabase, ctx.workspaceId);
+  if (!brand) return fail("We couldn't load your company profile. Refresh and try again.");
+
+  const year = Number(v.issueDate.slice(0, 4)) || new Date().getUTCFullYear();
+  const { count } = await ctx.supabase.from("documents").select("id", { count: "exact", head: true })
+    .eq("workspace_id", ctx.workspaceId).eq("type", "invoice").gte("created_at", `${year}-01-01`);
+  const number = formatQuotationNumber(year, (count ?? 0) + 1, "INV");
+
+  const tpl = await resolveTemplate(ctx, "invoice", v.templateKey, v.templateId);
+  const content = buildInvoiceContent({
+    brand, client: client.info, number, issueDate: v.issueDate, dueDate: v.dueDate, currency: v.currency,
+    taxLabel: v.taxLabel, taxRate: v.taxRate, notes: v.notes, paymentDetails: v.paymentDetails,
+    title: v.title || `Invoice for ${client.name}`,
+    items: [{ kind: "item", id: `i${Date.now().toString(36)}`, name: "", description: "", quantity: 1, unit: "", unitPrice: 0, discountType: "percent", discount: 0, taxRate: null }],
+  });
+  const totals = documentTotals(content);
+  const { data, error } = await ctx.supabase.from("documents").insert({
+    workspace_id: ctx.workspaceId, client_id: v.clientId, type: "invoice", title: content.cover.title, status: "draft",
+    content_json: content, template_id: tpl.template_id, template_key: tpl.template_key,
+    total_amount: totals.amount, currency: totals.currency, created_by: ctx.user.id,
+  }).select("id").single();
+  if (error || !data) return fail(GENERIC_ERROR);
+  revalidatePath("/invoices"); revalidatePath("/dashboard");
+  return { ok: true, data: { id: data.id, href: documentHref("invoice", data.id) } };
+}
+
 const LOCKED = ["accepted", "rejected"];
 
 export async function saveDocumentAction(input: SaveDocumentInput): Promise<ActionResult<{ updatedAt: string }>> {
@@ -146,6 +182,21 @@ export async function saveDocumentAction(input: SaveDocumentInput): Promise<Acti
   if (error || !data) return fail(GENERIC_ERROR);
   revalidatePath("/", "layout");
   return { ok: true, data: { updatedAt: data.updated_at } };
+}
+
+/** Replaces the frozen brand of a shared document with the current brand kit. The client will see the new look. */
+export async function refreshBrandingAction(id: string): Promise<ActionResult> {
+  const ctx = await actionContext("document:create");
+  if (!ctx.ok) return ctx.error;
+  const doc = await fetchDocument(ctx.supabase, ctx.workspaceId, id);
+  if (!doc) return fail("This document no longer exists.");
+  if (LOCKED.includes(doc.status)) return fail(`This document was ${doc.status} by the client, so its look is kept as they saw it.`);
+  const brand = await loadLiveBrand(ctx.supabase, ctx.workspaceId);
+  if (!brand) return fail("We couldn't load your brand kit. Refresh and try again.");
+  const { error } = await ctx.supabase.from("documents").update({ brand_snapshot: brand }).eq("id", id).eq("workspace_id", ctx.workspaceId);
+  if (error) return fail(GENERIC_ERROR);
+  revalidatePath("/", "layout");
+  return { ok: true, message: "Branding refreshed from your brand kit." };
 }
 
 /**

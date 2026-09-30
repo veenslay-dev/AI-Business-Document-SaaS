@@ -191,3 +191,44 @@ export function blockFromGenerated(command: AssistCommand, result: string): Bloc
   }
   return { id: newId(), type: "paragraph", content: t };
 }
+
+export function GalleryEditor({ block, onChange, ctx }: Props<Extract<Block, { type: "gallery" }>>) {
+  const file = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  async function upload(files: FileList) {
+    setBusy(true);
+    let items = [...block.items];
+    for (const f of Array.from(files).slice(0, Math.max(0, 24 - items.length))) {
+      try {
+        const fd = new FormData(); fd.set("kind", "doc_image"); fd.set("file", f);
+        const res = await uploadBrandAssetAction(fd);
+        if (res.ok && res.data) { items = [...items, { id: newId(), url: res.data.url, caption: "" }]; onChange({ ...block, items }); }
+        else if (!res.ok) { toast.error(res.error); break; }
+      } catch { toast.error("The upload failed. Check your connection and try again."); break; }
+    }
+    setBusy(false);
+  }
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <input ref={file} type="file" multiple accept="image/png,image/jpeg,image/webp" className="sr-only" aria-label="Upload screenshots" onChange={(e) => { if (e.target.files?.length) void upload(e.target.files); e.target.value = ""; }} />
+        <button type="button" disabled={busy || ctx.disabled || block.items.length >= 24} onClick={() => file.current?.click()} className="inline-flex items-center gap-1 rounded-md border border-line-strong bg-surface px-3 py-1.5 text-sm hover:bg-paper disabled:opacity-50"><ImagePlus className="size-4" aria-hidden />{busy ? "Uploading" : "Add screenshots"}</button>
+        <label className="flex items-center gap-2 text-xs text-ink-soft">Per row
+          <select className={`${inputCls} w-16`} value={block.columns} disabled={ctx.disabled} onChange={(e) => onChange({ ...block, columns: Number(e.target.value) as 1 | 2 | 3 })}><option value={1}>1</option><option value={2}>2</option><option value={3}>3</option></select></label>
+        <span className="text-xs text-ink-faint">Nothing is shown in the document until you add a screenshot.</span>
+      </div>
+      <ul className="grid gap-2 sm:grid-cols-2">
+        {block.items.map((it, i) => (
+          <li key={it.id} className="flex gap-2 rounded-md border border-line p-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={it.url} alt="" className="h-16 w-24 shrink-0 rounded border border-line object-cover" />
+            <div className="min-w-0 flex-1 space-y-1">
+              <input className={inputCls} value={it.caption} placeholder="Caption (optional)" aria-label={`Caption for screenshot ${i + 1}`} disabled={ctx.disabled} onChange={(e) => onChange({ ...block, items: block.items.map((x) => x.id === it.id ? { ...x, caption: e.target.value } : x) })} />
+              <button type="button" disabled={ctx.disabled} className="text-xs text-signal hover:underline disabled:opacity-40" onClick={() => onChange({ ...block, items: block.items.filter((x) => x.id !== it.id) })}>Remove</button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}

@@ -22,10 +22,19 @@ export const COMPANY_COLS =
 export const BRAND_COLS =
   "primary_color, secondary_color, accent_color, heading_font, body_font, logo_url, dark_logo_url, favicon_url, default_footer, header_color, heading_color";
 
+export const BRAND_COLS_LEGACY = BRAND_COLS.replace(", header_color, heading_color", "");
+
+/** Reads the brand kit. Falls back to the older column set when migration 0003 has not been applied yet. */
+export async function selectBrandKit(client: SupabaseClient, workspaceId: string) {
+  const full = await client.from("brand_kits").select(BRAND_COLS).eq("workspace_id", workspaceId).maybeSingle();
+  if (!full.error) return full;
+  return client.from("brand_kits").select(BRAND_COLS_LEGACY).eq("workspace_id", workspaceId).maybeSingle();
+}
+
 export async function loadLiveBrand(client: SupabaseClient, workspaceId: string): Promise<BrandContext | null> {
   const [c, b] = await Promise.all([
     client.from("company_profiles").select(COMPANY_COLS).eq("workspace_id", workspaceId).maybeSingle(),
-    client.from("brand_kits").select(BRAND_COLS).eq("workspace_id", workspaceId).maybeSingle(),
+    selectBrandKit(client, workspaceId),
   ]);
   if (!c.data || !b.data) return null;
   return buildBrandContext(c.data as CompanyProfileRow, b.data as BrandKitRow);

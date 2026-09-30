@@ -4,7 +4,7 @@ import { analyze } from "@/lib/audit/analyze";
 import { buildAuditContent } from "@/lib/audit/build";
 import type { SiteSignals } from "@/lib/audit/types";
 import { buildSocialAuditContent } from "@/lib/social/build";
-import { buildProposalContent, buildQuotationContent } from "./builders";
+import { buildProposalContent, buildInvoiceContent, buildQuotationContent } from "./builders";
 import type { DocumentContent } from "./content";
 
 /**
@@ -83,6 +83,19 @@ export function sampleQuotation(client = SAMPLE_CLIENTS[1]): DocumentContent {
       { kind: "section", id: "g2", title: "Build" },
       { kind: "item", id: "i2", name: "Development and CMS setup", description: "Responsive build with an editable CMS", quantity: 1, unit: "", unitPrice: 90000, discountType: "percent", discount: 10, taxRate: null },
       { kind: "item", id: "i3", name: "Local SEO setup", description: "Google Business Profile, schema and citations", quantity: 1, unit: "", unitPrice: 25000, discountType: "percent", discount: 0, taxRate: null },
+    ],
+  });
+}
+
+/** A plain invoice with no tax and no discount, so the tax and discount columns stay hidden. */
+export function sampleInvoice(client = SAMPLE_CLIENTS[1], withTax = false): DocumentContent {
+  return buildInvoiceContent({
+    brand: ACME_BRAND, client: { company: client.company, contact: client.contact, email: client.email, phone: client.phone, address: client.address },
+    number: "INV-2026-0001", issueDate: "2026-04-02", dueDate: "2026-04-17", currency: "INR", taxLabel: "GST", taxRate: withTax ? 18 : 0,
+    title: "Invoice for March SEO retainer", paymentDetails: "Bank: Example Bank\nAccount: 0000 1111 2222\nIFSC: EXMP0000123\nUPI: acme@examplebank",
+    items: [
+      { kind: "item", id: "i1", name: "SEO retainer, March", description: "On-page fixes, content and reporting", quantity: 1, unit: "", unitPrice: 45000, discountType: "percent", discount: 0, taxRate: null },
+      { kind: "item", id: "i2", name: "Local citations", description: "20 directory listings", quantity: 1, unit: "", unitPrice: 8000, discountType: "percent", discount: 0, taxRate: null },
     ],
   });
 }

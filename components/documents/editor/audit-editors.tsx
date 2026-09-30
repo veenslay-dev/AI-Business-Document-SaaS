@@ -1,5 +1,6 @@
 "use client";
 
+import { ScreenshotField } from "./screenshot-field";
 import { Plus, Trash2 } from "lucide-react";
 import { IconButton, Labeled, inputCls } from "./ui";
 import { newId, type Block } from "@/lib/documents/content";
@@ -24,6 +25,7 @@ export function AuditFindingsEditor({ block, onChange, disabled }: { block: F; o
             <Labeled label="Why it matters"><textarea className={`${inputCls} min-h-16`} value={f.explanation} disabled={disabled} onChange={(e) => set((b) => { b.findings[i].explanation = e.target.value; })} /></Labeled>
             <Labeled label="Recommended action"><textarea className={`${inputCls} min-h-16`} value={f.recommendation} disabled={disabled} onChange={(e) => set((b) => { b.findings[i].recommendation = e.target.value; })} /></Labeled>
             <Labeled label="Affected pages"><input className={inputCls} value={f.affectedUrl} disabled={disabled} onChange={(e) => set((b) => { b.findings[i].affectedUrl = e.target.value; })} /></Labeled>
+            <Labeled label="Screenshot"><ScreenshotField value={f.screenshot} disabled={disabled} onChange={(u) => set((b) => { b.findings[i].screenshot = u; })} /></Labeled>
             <IconButton label="Remove finding" danger disabled={disabled} onClick={() => set((b) => { b.findings.splice(i, 1); })}><Trash2 className="size-3.5" /></IconButton>
           </div>
         </details>

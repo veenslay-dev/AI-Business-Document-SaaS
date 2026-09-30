@@ -40,6 +40,21 @@ export const quotationFormSchema = z.object({
 });
 export type QuotationFormInput = z.input<typeof quotationFormSchema>;
 
+export const invoiceFormSchema = z.object({
+  clientId: z.string().uuid("Select a client"),
+  title: z.string().trim().max(200).default(""),
+  issueDate: z.string().min(8, "Choose an issue date"),
+  dueDate: z.string().default(""),
+  currency: z.enum(CURRENCIES).default("INR"),
+  taxLabel: z.string().trim().min(1).max(30).default("GST"),
+  taxRate: z.coerce.number().min(0).max(100).default(18),
+  paymentDetails: z.string().trim().max(3000).default(""),
+  notes: z.string().trim().max(4000).default(""),
+  templateKey: z.string().max(60).default("invoice-executive"),
+  templateId: z.string().uuid().nullable().default(null),
+});
+export type InvoiceFormInput = z.input<typeof invoiceFormSchema>;
+
 export const saveDocumentSchema = z.object({
   id: z.string().uuid(),
   title: z.string().trim().min(1, "Give the document a title").max(200),

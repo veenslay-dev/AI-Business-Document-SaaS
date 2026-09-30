@@ -5,6 +5,8 @@ import { documentCss, documentScope } from "@/lib/documents/css";
 import { googleFontsUrl } from "@/lib/documents/fonts";
 import type { DocType, TemplateConfig } from "@/lib/documents/templates";
 import { STATUS_LABEL, checklistScore, computeScorecard } from "@/lib/social/score";
+import { BarList, PieChart, Radar, SEVERITY_COLORS, STATUS_COLORS } from "./charts";
+import { computeAuditStats } from "@/lib/documents/audit-stats";
 import { SEVERITY_ORDER, formatDate, isSectionEmpty, pricingTotal, safeImageUrl } from "@/lib/documents/util";
 
 export type Acceptance = { name: string; designation?: string; date: string; signatureDataUrl?: string | null };
@@ -18,7 +20,8 @@ export function DocumentRenderer({
   content, brand, template, meta,
 }: { content: DocumentContent; brand: BrandContext; template: TemplateConfig; meta: RenderMeta }) {
   const fonts = googleFontsUrl([brand.brand.headingFont, brand.brand.bodyFont]);
-  const cls = `doc ${documentScope(brand.brand, template)} sec-${template.sectionStyle} tbl-${template.tableStyle} tot-${template.totals}`;
+  const pageBg = content.style?.background ?? null;
+  const cls = `doc ${documentScope(brand.brand, template, pageBg)} sec-${template.sectionStyle} tbl-${template.tableStyle} tot-${template.totals}${template.pagePerSection ? " pps" : ""}`;
   const hasCover = template.cover !== "none";
   // Section numbers skip sections whose title is hidden.
   const visible = content.sections.filter((s) => !isSectionEmpty(s));
@@ -28,11 +31,17 @@ export function DocumentRenderer({
   return (
     <div className={cls}>
       {fonts && <link rel="stylesheet" href={fonts} />}
-      <style dangerouslySetInnerHTML={{ __html: documentCss(brand.brand, template) }} />
+      <style dangerouslySetInnerHTML={{ __html: documentCss(brand.brand, template, pageBg) }} />
       {hasCover ? <Cover content={content} brand={brand} template={template} /> : <Letterhead content={content} brand={brand} meta={meta} template={template} />}
-      {!hasCover && <Parties content={content} brand={brand} />}
-      {!hasCover && template.totals === "banner" && <TotalBanner content={content} />}
+      {!hasCover && <Parties content={content} brand={brand} invoice={meta.type === "invoice"} />}
+      {!hasCover && template.totals === "banner" && <TotalBanner content={content} invoice={meta.type === "invoice"} />}
       <div className="page">
+        {template.toc && visible.length > 1 && (
+          <nav className="toc" aria-label="Contents">
+            <h2>Contents</h2>
+            <ol>{visible.filter((s) => !s.hideTitle).map((s) => <li key={s.id}><span className="n">{String(numbers.get(s.id) ?? 0).padStart(2, "0")}</span><span>{s.title}</span></li>)}</ol>
+          </nav>
+        )}
         {visible.map((s) => {
           return <SectionView key={s.id} section={s} index={numbers.get(s.id) ?? 0} numbered={template.sectionStyle === "numbered" || template.sectionStyle === "bar"} content={content} brand={brand} meta={meta} />;
         })}
@@ -55,7 +64,7 @@ function Logo({ brand, onDark }: { brand: BrandContext; onDark: boolean }) {
 
 function Cover({ content, brand, template }: { content: DocumentContent; brand: BrandContext; template: TemplateConfig }) {
   const c = content.cover;
-  const onDark = template.cover === "band" || template.cover === "block";
+  const onDark = template.cover === "band" || template.cover === "block" || template.cover === "noir" || template.cover === "aurora";
   const meta = (
     <dl className="meta">
       {c.preparedFor && <div><dt>Prepared for</dt><dd>{c.preparedFor}</dd></div>}
@@ -80,6 +89,14 @@ function Cover({ content, brand, template }: { content: DocumentContent; brand: 
       </header>
     );
   }
+  if (template.cover === "sidebar") {
+    return (
+      <header className="cover sidebar">
+        <aside><Logo brand={brand} onDark />{meta}</aside>
+        <div className="main">{titleBlock}</div>
+      </header>
+    );
+  }
   return (
     <header className={`cover ${template.cover}`}>
       <Logo brand={brand} onDark={onDark} />
@@ -95,12 +112,12 @@ function FooterBar({ brand }: { brand: BrandContext }) {
   return <div className="footbar">{items.map((i) => <span key={i}>{i}</span>)}</div>;
 }
 
-function TotalBanner({ content }: { content: DocumentContent }) {
+function TotalBanner({ content, invoice }: { content: DocumentContent; invoice?: boolean }) {
   for (const s of content.sections) {
     for (const b of s.blocks) {
       if (b.type === "quotation") {
         const t = calculateQuotation(b.data);
-        return <div className="totalbanner"><span>Total investment<small>{b.data.taxInclusive ? "Including" : "Plus"} {b.data.taxLabel}</small></span><span>{formatMinor(t.grandTotal, b.data.currency)}</span></div>;
+        return <div className="totalbanner"><span>{invoice ? "Amount due" : "Total investment"}<small>{b.data.taxInclusive ? "Including" : "Plus"} {b.data.taxLabel}</small></span><span>{formatMinor(t.grandTotal, b.data.currency)}</span></div>;
       }
     }
   }
@@ -111,8 +128,10 @@ function Letterhead({ content, brand, meta, template }: { content: DocumentConte
   const c = content.cover;
   const co = brand.company;
   const lines = [co.address, co.email, co.phone, co.website, co.gst ? `GST: ${co.gst}` : "", co.pan ? `PAN: ${co.pan}` : ""].filter(Boolean).join("\n");
-  const refLine = [c.reference, c.date && formatDate(c.date)].filter(Boolean).join("  ·  ");
-  const kind = c.kicker || (meta.type === "quotation" ? "Quotation" : "");
+  const q = content.sections.flatMap((s) => s.blocks).find((b) => b.type === "quotation");
+  const dueDate = q && q.type === "quotation" && q.data.validUntil ? `${q.data.dueLabel || (meta.type === "invoice" ? "Due" : "Valid until")} ${formatDate(q.data.validUntil)}` : "";
+  const refLine = [c.reference, c.date && formatDate(c.date), dueDate].filter(Boolean).join("  ·  ");
+  const kind = c.kicker || (meta.type === "quotation" ? "Quotation" : meta.type === "invoice" ? "Invoice" : "");
   if (template.headerStyle === "banner") {
     return (
       <header className="lh banner">
@@ -138,13 +157,13 @@ function Letterhead({ content, brand, meta, template }: { content: DocumentConte
   );
 }
 
-function Parties({ content, brand }: { content: DocumentContent; brand: BrandContext }) {
+function Parties({ content, brand, invoice }: { content: DocumentContent; brand: BrandContext; invoice?: boolean }) {
   const cl = content.client;
   if (!cl.company && !cl.contact) return null;
   return (
     <div className="parties">
-      <div><h4>Prepared for</h4><p>{[cl.company, cl.contact, cl.email, cl.phone, cl.address].filter(Boolean).map((l, i) => <span key={i}>{l}<br /></span>)}</p></div>
-      <div><h4>Prepared by</h4><p><strong>{brand.company.name}</strong><br />{brand.company.signatory.name && <>{brand.company.signatory.name}<br /></>}{brand.company.email}</p></div>
+      <div><h4>{invoice ? "Bill to" : "Prepared for"}</h4><p>{[cl.company, cl.contact, cl.email, cl.phone, cl.address].filter(Boolean).map((l, i) => <span key={i}>{l}<br /></span>)}</p></div>
+      <div><h4>{invoice ? "From" : "Prepared by"}</h4><p><strong>{brand.company.name}</strong><br />{brand.company.signatory.name && <>{brand.company.signatory.name}<br /></>}{brand.company.email}</p></div>
     </div>
   );
 }
@@ -181,6 +200,18 @@ function BlockView({ block: b, brand, meta, content }: { block: Block; brand: Br
       // eslint-disable-next-line @next/next/no-img-element
       return <figure><img src={url} alt={b.alt} />{b.caption && <figcaption>{b.caption}</figcaption>}</figure>;
     }
+    case "gallery": {
+      const shots = b.items.map((i) => ({ ...i, url: safeImageUrl(i.url) })).filter((i) => i.url);
+      if (shots.length === 0) return null;
+      return (
+        <div className={`gallery cols-${b.columns}`}>
+          {shots.map((i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <figure key={i.id}><img src={i.url ?? ""} alt={i.caption || "Screenshot"} />{i.caption && <figcaption>{i.caption}</figcaption>}</figure>
+          ))}
+        </div>
+      );
+    }
     case "timeline":
       return (
         <div className="timeline">
@@ -196,12 +227,14 @@ function BlockView({ block: b, brand, meta, content }: { block: Block; brand: Br
     case "quotation": return <QuotationView b={b} />;
     case "signature": return <SignatureView label={b.label} brand={brand} acceptance={meta.acceptance ?? null} />;
     case "page_break": return <div style={{ breakAfter: "page", pageBreakAfter: "always" }} aria-hidden />;
-    case "audit_summary": return <AuditSummary b={b} />;
+    case "audit_summary": return <AuditSummary b={b} content={content} />;
     case "audit_findings": return <AuditFindings b={b} />;
     case "checklist": return <ChecklistView b={b} />;
     case "scorecard": return <ScorecardView b={b} content={content} />;
   }
 }
+
+const PALETTE = ["var(--accent)", "var(--header)", "#4a6fa5", "#b08800", "#2f7d55", "#8a5fbf", "#d9631b", "#8a909b"];
 
 function Pricing({ b }: { b: Extract<Block, { type: "pricing" }> }) {
   const total = pricingTotal(b);
@@ -219,6 +252,10 @@ function Pricing({ b }: { b: Extract<Block, { type: "pricing" }> }) {
             </div>
           ))}
         </div>
+      )}
+      {b.rows.length > 1 && total > 0 && (
+        <div className="chartrow"><div className="chartcard"><h4>Where the budget goes</h4>
+          <PieChart size={140} slices={b.rows.filter((r) => r.amount > 0).map((r, i) => ({ label: r.name || `Item ${i + 1}`, value: r.amount, color: PALETTE[i % PALETTE.length] }))} /></div></div>
       )}
       {b.rows.length > 0 && (
         <table>
@@ -240,26 +277,40 @@ function QuotationView({ b }: { b: Extract<Block, { type: "quotation" }> }) {
   const d = b.data;
   const t = calculateQuotation(d);
   const cur = d.currency;
-  const numbering = new Map(d.items.filter((i) => i.kind === "item").map((i, idx) => [i.id, idx + 1] as const));
+  const items = d.items.filter((i) => i.kind === "item");
+  const numbering = new Map(items.map((i, idx) => [i.id, idx + 1] as const));
+  // Columns nobody filled in are left out completely.
+  const showDiscount = items.some((i) => (t.lines[i.id]?.discount ?? 0) > 0);
+  const showTax = items.some((i) => (t.lines[i.id]?.taxRate ?? 0) > 0);
+  const showQty = items.some((i) => Number(i.quantity) !== 1 || Boolean(i.unit));
+  const cols = 3 + (showQty ? 1 : 0) + (showDiscount ? 1 : 0) + (showTax ? 1 : 0);
+  const spanAll = cols + 1;
   return (
     <>
       <table>
         <thead>
-          <tr><th>#</th><th>Item</th><th className="num-cell">Qty</th><th className="num-cell">Rate</th><th className="num-cell">Discount</th><th className="num-cell">{d.taxLabel}</th><th className="num-cell">Amount</th></tr>
+          <tr>
+            <th>#</th><th>Item</th>
+            {showQty && <th className="num-cell">Qty</th>}
+            <th className="num-cell">Rate</th>
+            {showDiscount && <th className="num-cell">Discount</th>}
+            {showTax && <th className="num-cell">{d.taxLabel}</th>}
+            <th className="num-cell">Amount</th>
+          </tr>
         </thead>
         <tbody>
-          {d.items.length === 0 && <tr><td colSpan={7} className="empty">No items yet.</td></tr>}
+          {d.items.length === 0 && <tr><td colSpan={spanAll} className="empty">No items yet.</td></tr>}
           {d.items.map((it) => {
-            if (it.kind === "section") return <tr className="group" key={it.id}><td colSpan={7}>{it.title}</td></tr>;
+            if (it.kind === "section") return <tr className="group" key={it.id}><td colSpan={spanAll}>{it.title}</td></tr>;
             const r = t.lines[it.id];
             return (
               <tr key={it.id}>
                 <td>{numbering.get(it.id)}</td>
                 <td>{it.name}{it.description && <div className="desc">{it.description}</div>}</td>
-                <td className="num-cell">{it.quantity}{it.unit ? ` ${it.unit}` : ""}</td>
+                {showQty && <td className="num-cell">{it.quantity}{it.unit ? ` ${it.unit}` : ""}</td>}
                 <td className="num-cell">{formatMoney(it.unitPrice, cur)}</td>
-                <td className="num-cell">{r.discount > 0 ? formatMinor(r.discount, cur) : "-"}</td>
-                <td className="num-cell">{r.taxRate}%</td>
+                {showDiscount && <td className="num-cell">{r.discount > 0 ? formatMinor(r.discount, cur) : "-"}</td>}
+                {showTax && <td className="num-cell">{r.taxRate > 0 ? `${r.taxRate}%` : "-"}</td>}
                 <td className="num-cell">{formatMinor(r.total, cur)}</td>
               </tr>
             );
@@ -267,9 +318,9 @@ function QuotationView({ b }: { b: Extract<Block, { type: "quotation" }> }) {
         </tbody>
       </table>
       <div className="totals">
-        <div><span>Subtotal</span><span>{formatMinor(t.subtotal, cur)}</span></div>
+        {(t.discount > 0 || t.taxBuckets.some((x) => x.rate > 0)) && <div><span>Subtotal</span><span>{formatMinor(t.subtotal, cur)}</span></div>}
         {t.discount > 0 && <div><span>Discount</span><span>- {formatMinor(t.discount, cur)}</span></div>}
-        {t.taxBuckets.map((x) => <div key={x.rate}><span>{x.label} {x.rate}%{d.taxInclusive ? " (incl.)" : ""}</span><span>{formatMinor(x.tax, cur)}</span></div>)}
+        {t.taxBuckets.filter((x) => x.rate > 0).map((x) => <div key={x.rate}><span>{x.label} {x.rate}%{d.taxInclusive ? " (incl.)" : ""}</span><span>{formatMinor(x.tax, cur)}</span></div>)}
         <div className="grand"><span>Total</span><span>{formatMinor(t.grandTotal, cur)}</span></div>
       </div>
     </>
@@ -305,15 +356,16 @@ function Donut({ score, size = 76 }: { score: number; size?: number }) {
   const tone = score >= 80 ? "#2f7d55" : score >= 60 ? "#b08800" : "#b3261e";
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`${Math.round(score)} percent`}>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e6e8ec" strokeWidth="7" />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--line)" strokeWidth="7" />
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={tone} strokeWidth="7" strokeLinecap="round"
         strokeDasharray={`${(c * score) / 100} ${c}`} transform={`rotate(-90 ${size / 2} ${size / 2})`} />
-      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" fontSize={score >= 100 ? size / 5 : size / 4} fontWeight="700" fill="#1b1d22">{Math.round(score)}%</text>
+      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" fontSize={score >= 100 ? size / 5 : size / 4} fontWeight="700" fill="var(--ink)">{Math.round(score)}%</text>
     </svg>
   );
 }
 
-function AuditSummary({ b }: { b: Extract<Block, { type: "audit_summary" }> }) {
+function AuditSummary({ b, content }: { b: Extract<Block, { type: "audit_summary" }>; content: DocumentContent }) {
+  const st = computeAuditStats(content);
   return (
     <>
       {b.intro && <p>{b.intro}</p>}
@@ -321,6 +373,33 @@ function AuditSummary({ b }: { b: Extract<Block, { type: "audit_summary" }> }) {
         <div className="score"><Donut score={b.overall} size={92} /><div className="label"><strong>Overall SEO health</strong></div></div>
         {b.scores.map((s) => <div className="score" key={s.category}><Donut score={s.score} /><div className="label">{s.category}</div></div>)}
       </div>
+      {st.total > 0 && (
+        <div className="chartrow">
+          <div className="chartcard">
+            <h4>Findings by priority</h4>
+            <PieChart size={150} centre={{ top: String(st.total), bottom: "checks" }} slices={(["critical", "high", "medium", "low", "passed"] as const).map((k) => ({ label: k[0].toUpperCase() + k.slice(1), value: st.bySeverity[k], color: SEVERITY_COLORS[k] }))} />
+          </div>
+          {b.scores.length > 0 && (
+            <div className="chartcard">
+              <h4>Score by area</h4>
+              <BarList rows={b.scores.map((s) => ({ label: s.category, value: s.score }))} />
+            </div>
+          )}
+        </div>
+      )}
+      {st.categories.length > 0 && (
+        <>
+          <h3>Issues at a glance</h3>
+          <table>
+            <thead><tr><th>Area</th><th className="num-cell">Issues</th><th className="num-cell">Passed</th><th>Most serious</th></tr></thead>
+            <tbody>
+              {st.categories.map((c) => (
+                <tr key={c.category}><td>{c.category}</td><td className="num-cell">{c.issues}</td><td className="num-cell">{c.passed}</td><td>{c.worst ? <span className={`sev ${c.worst}`}>{c.worst}</span> : <span className="sev passed">clear</span>}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
     </>
   );
 }
@@ -330,6 +409,7 @@ function AuditFindings({ b }: { b: Extract<Block, { type: "audit_findings" }> })
   if (sorted.length === 0) return <p className="empty">Nothing to report in this category.</p>;
   return (
     <>
+      <div className="frbar">Findings &amp; Recommendations</div>
       {sorted.map((f) => (
         <div key={f.id} className={`finding ${f.severity}`}>
           <h4><span className={`sev ${f.severity}`}>{f.severity}</span>{f.issue}</h4>
@@ -339,10 +419,17 @@ function AuditFindings({ b }: { b: Extract<Block, { type: "audit_findings" }> })
             <dt>Priority</dt><dd style={{ textTransform: "capitalize" }}>{f.severity === "passed" ? "None, this check passed" : f.severity}</dd>
             {f.affectedUrl && <><dt>Affected pages</dt><dd>{f.affectedUrl}</dd></>}
           </dl>
+          <Shot url={f.screenshot} />
         </div>
       ))}
     </>
   );
+}
+
+function Shot({ url }: { url?: string }) {
+  const safe = safeImageUrl(url);
+  // eslint-disable-next-line @next/next/no-img-element
+  return safe ? <img className="shot" src={safe} alt="Screenshot" /> : null;
 }
 
 const STATUS_CLASS = { good: "good", needs_work: "needs", poor: "poor", na: "na", unchecked: "unchecked" } as const;
@@ -352,6 +439,7 @@ function ChecklistView({ b }: { b: Extract<Block, { type: "checklist" }> }) {
   const r = checklistScore(rows);
   return (
     <>
+      <div className="frbar">Findings &amp; Recommendations</div>
       {r.score !== null && (
         <div className="sectionscore"><strong>{r.score}%</strong><span className="bar"><i style={{ width: `${r.score}%` }} /></span><span>{r.checked} of {r.total} checked</span></div>
       )}
@@ -363,7 +451,7 @@ function ChecklistView({ b }: { b: Extract<Block, { type: "checklist" }> }) {
             <tr key={i.id}>
               <td className="item">{i.item}</td>
               <td className="status"><span className={`sev ${STATUS_CLASS[i.status]}`}>{STATUS_LABEL[i.status]}</span>{i.priority && i.status !== "good" && i.status !== "na" && <span className="pri">{i.priority} priority</span>}</td>
-              <td>{i.note && <div className="note" style={{ whiteSpace: "pre-line" }}>{i.note}</div>}{i.recommendation && <div className="rec"><strong>Recommendation:</strong> {i.recommendation}</div>}</td>
+              <td>{i.note && <div className="note" style={{ whiteSpace: "pre-line" }}>{i.note}</div>}{i.recommendation && <div className="rec"><strong>Recommendation:</strong> {i.recommendation}</div>}<Shot url={i.screenshot} /></td>
             </tr>
           ))}
         </tbody>
@@ -385,6 +473,20 @@ function ScorecardView({ b, content }: { b: Extract<Block, { type: "scorecard" }
           <div className="scores">
             <div className="score"><Donut score={sc.overall} size={92} /><div className="label"><strong>Overall</strong></div></div>
             {scored.map((s) => <div className="score" key={s.title}><Donut score={s.score ?? 0} /><div className="label">{s.title}</div></div>)}
+          </div>
+          <div className="chartrow">
+            <div className="chartcard">
+              <h4>Checkpoint status</h4>
+              <PieChart size={150} centre={{ top: `${sc.overall}%`, bottom: "overall" }} slices={[
+                { label: "Good", value: sc.counts.good, color: STATUS_COLORS.good }, { label: "Needs work", value: sc.counts.needs_work, color: STATUS_COLORS.needs_work },
+                { label: "Poor", value: sc.counts.poor, color: STATUS_COLORS.poor }, { label: "Not checked", value: sc.counts.unchecked, color: STATUS_COLORS.unchecked },
+              ]} />
+            </div>
+            <div className="chartcard">
+              <h4>Score by section</h4>
+              <BarList rows={scored.map((s) => ({ label: s.title, value: s.score ?? 0 }))} />
+            </div>
+            {scored.length >= 3 && <div className="chartcard"><h4>Balance</h4><Radar axes={scored.slice(0, 8).map((s) => ({ label: s.title, value: s.score ?? 0 }))} size={250} /></div>}
           </div>
           <p className="desc">{sc.counts.good + sc.counts.needs_work + sc.counts.poor} checkpoints reviewed: {sc.counts.good} good, {sc.counts.needs_work} need work, {sc.counts.poor} poor.{sc.counts.unchecked > 0 ? ` ${sc.counts.unchecked} not checked yet.` : ""}</p>
           {sc.priorities.length > 0 && (

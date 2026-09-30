@@ -2,6 +2,7 @@ import type { BrandContext } from "@/lib/documents/branding";
 import { newId, type DocumentContent, type Section } from "@/lib/documents/content";
 import type { ClientInfo } from "@/lib/documents/builders";
 import { overallScore, scoreCategories } from "./analyze";
+import { seoChecklistBlock } from "./checklist";
 import { CATEGORIES, type AuditFinding } from "./types";
 
 /** Builds the audit report document from findings. Same JSON shape as every other document. */
@@ -14,7 +15,7 @@ export function buildAuditContent(args: {
   const open = findings.filter((f) => f.severity !== "passed");
   const counts = (["critical", "high", "medium", "low"] as const).map((s) => ({ s, n: open.filter((f) => f.severity === s).length })).filter((c) => c.n);
 
-  const intro = args.summary || `We reviewed ${args.url} for technical, on-page, performance, structured data and content issues. ${open.length === 0 ? "No problems were found." : `We found ${open.length} thing${open.length === 1 ? "" : "s"} to fix${counts.length ? ` (${counts.map((c) => `${c.n} ${c.s}`).join(", ")})` : ""}.`}`;
+  const intro = args.summary || `We reviewed ${args.url} for technical, on-page, performance, analytics, social sharing, structured data and content issues. ${open.length === 0 ? "No problems were found." : `We found ${open.length} thing${open.length === 1 ? "" : "s"} to fix${counts.length ? ` (${counts.map((c) => `${c.n} ${c.s}`).join(", ")})` : ""}.`}`;
 
   const sections: Section[] = [
     { id: newId("s"), title: "SEO health summary", hideTitle: false, pageBreakBefore: false, blocks: [{ id: newId(), type: "audit_summary", scores: scores.map((s) => ({ category: s.category, score: s.score })), overall, intro }] },
@@ -29,6 +30,7 @@ export function buildAuditContent(args: {
         }],
       }];
     }),
+    { id: newId("s"), title: "SEO audit checklist", hideTitle: false, pageBreakBefore: false, blocks: [seoChecklistBlock(findings)] },
     { id: newId("s"), title: "Next steps", hideTitle: false, pageBreakBefore: false, blocks: [
       { id: newId(), type: "paragraph", content: "Start with the critical and high priority items, since they hold back everything else. We're happy to walk through the report and fix these for you." },
       { id: newId(), type: "paragraph", content: [brand.company.signatory.name, brand.company.email, brand.company.phone].filter(Boolean).join("  ·  ") },

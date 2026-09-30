@@ -158,6 +158,35 @@ export function buildQuotationContent(args: {
   };
 }
 
+/** An invoice is a bill: line items, totals, how to pay and by when. Empty sections are hidden when rendered. */
+export function buildInvoiceContent(args: {
+  brand: BrandContext; client: ClientInfo; number: string; issueDate: string; dueDate: string; currency: Currency;
+  taxLabel: string; taxRate: number; items?: QuotationItem[]; notes?: string; title?: string; paymentDetails?: string;
+}): DocumentContent {
+  const co = args.brand.company;
+  const sections: Section[] = [
+    section("Invoice", [{
+      id: newId(), type: "quotation",
+      data: {
+        number: args.number, issueDate: args.issueDate, validUntil: args.dueDate, dueLabel: "Due date", currency: args.currency,
+        taxLabel: args.taxLabel, taxRate: args.taxRate, taxInclusive: false, discountType: "percent", discount: 0,
+        items: args.items ?? [],
+      },
+    }]),
+    section("Payment details", [para(args.paymentDetails ?? "")]),
+    section("Notes", [para(args.notes ?? "")]),
+    section("Terms and conditions", [para(co.terms ?? "")]),
+    section("Authorization", [{ id: newId(), type: "signature", label: "Authorized signatory" }]),
+  ];
+  sections[0].hideTitle = true;
+  return {
+    version: 1,
+    cover: { kicker: "Invoice", title: args.title || "Invoice", subtitle: "", preparedFor: args.client.company, preparedBy: co.name, date: args.issueDate, reference: args.number },
+    client: args.client,
+    sections,
+  };
+}
+
 /** First quotation block in a document, if any. Used to keep documents.total_amount in sync. */
 export function findQuotation(content: DocumentContent) {
   for (const s of content.sections) for (const b of s.blocks) if (b.type === "quotation") return b.data;

@@ -15,7 +15,7 @@ import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Templates" };
-const GROUPS: { type: DocType; label: string }[] = [{ type: "proposal", label: "Proposals" }, { type: "quotation", label: "Quotations" }, { type: "seo_audit", label: "SEO audits" }, { type: "social_audit", label: "Social media audits" }];
+const GROUPS: { type: DocType; label: string }[] = [{ type: "proposal", label: "Proposals" }, { type: "quotation", label: "Quotations" }, { type: "invoice", label: "Invoices" }, { type: "seo_audit", label: "SEO audits" }, { type: "social_audit", label: "Social media audits" }];
 
 export default async function TemplatesPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const { membership } = await requireWorkspace();

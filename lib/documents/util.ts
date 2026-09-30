@@ -45,6 +45,7 @@ export function isSectionEmpty(section: Section): boolean {
       case "page_break": return false;
       case "audit_findings": return b.findings.length === 0;
       case "checklist": return b.items.length === 0;
+      case "gallery": return b.items.every((i) => safeImageUrl(i.url) === null);
       default: return false; // signature, quotation, scorecard and audit summary blocks always render
     }
   });

@@ -1,5 +1,6 @@
 "use client";
 
+import { ScreenshotField } from "./screenshot-field";
 import { Plus } from "lucide-react";
 import { Labeled, MoveControls, inputCls, move } from "./ui";
 import { newId, type Block } from "@/lib/documents/content";
@@ -50,6 +51,7 @@ export function ChecklistEditor({ block, onChange, disabled }: { block: C; onCha
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             <textarea className={`${inputCls} min-h-14`} rows={2} value={it.note} placeholder="What you found" aria-label={`Observation for checkpoint ${i + 1}`} disabled={disabled} onChange={(e) => set((b) => { b.items[i].note = e.target.value; })} />
             <textarea className={`${inputCls} min-h-14`} rows={2} value={it.recommendation} placeholder="Recommended action" aria-label={`Recommendation for checkpoint ${i + 1}`} disabled={disabled} onChange={(e) => set((b) => { b.items[i].recommendation = e.target.value; })} />
+            <ScreenshotField value={it.screenshot} disabled={disabled} onChange={(u) => set((b) => { b.items[i].screenshot = u; })} />
           </div>
         </div>
       ))}

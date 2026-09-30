@@ -54,6 +54,7 @@ export default async function DashboardPage() {
           <div className="flex flex-wrap gap-2">
             <Button asChild><Link href="/proposals/new"><FileText className="size-4" aria-hidden />New proposal</Link></Button>
             <Button asChild variant="secondary"><Link href="/quotations/new"><Receipt className="size-4" aria-hidden />New quotation</Link></Button>
+            <Button asChild variant="secondary"><Link href="/invoices/new"><Receipt className="size-4" aria-hidden />New invoice</Link></Button>
             <Button asChild variant="secondary"><Link href="/seo-audits/new"><SearchCheck className="size-4" aria-hidden />New SEO audit</Link></Button>
             <Button asChild variant="secondary"><Link href="/social-audits/new"><Megaphone className="size-4" aria-hidden />New social audit</Link></Button>
             <Button asChild variant="secondary"><Link href="/clients/new"><UserPlus className="size-4" aria-hidden />Add client</Link></Button>

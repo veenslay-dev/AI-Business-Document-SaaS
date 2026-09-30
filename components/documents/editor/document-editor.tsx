@@ -12,15 +12,17 @@ import { AiMenu } from "./ai-menu";
 import { AuditFindingsEditor } from "./audit-editors";
 import { ChecklistEditor } from "./checklist-editor";
 import {
-  HeadingEditor, ImageEditor, ListEditor, PricingEditor, SimpleBlockEditor, TableEditor, TextBlockEditor, TimelineEditor, blockFromGenerated, type BlockCtx,
+  HeadingEditor, GalleryEditor, ImageEditor, ListEditor, PricingEditor, SimpleBlockEditor, TableEditor, TextBlockEditor, TimelineEditor, blockFromGenerated, type BlockCtx,
 } from "./block-editors";
 import { PdfButton } from "./pdf-button";
 import { PreviewFrame } from "./preview-frame";
 import { QuotationEditor } from "./quotation-editor";
 import { SaveTemplateButton } from "./save-template";
+import { PageColorButton } from "./page-color";
 import { ShareDialog } from "./share-dialog";
 import { IconButton, Labeled, MoveControls, inputCls, move } from "./ui";
-import { saveDocumentAction } from "@/lib/actions/documents";
+import { useRouter } from "next/navigation";
+import { refreshBrandingAction, saveDocumentAction } from "@/lib/actions/documents";
 import type { BrandContext } from "@/lib/documents/branding";
 import { GENERAL_SECTIONS, PLATFORM_SECTIONS } from "@/lib/social/library";
 import { checklistSection, customChecklistSection, customFindingsSection } from "@/lib/social/build";
@@ -41,7 +43,7 @@ export type EditorProps = {
   acceptance: { name: string; designation?: string; date: string; signatureDataUrl?: string | null } | null;
 };
 
-const COMMON: BlockType[] = ["paragraph", "heading", "list", "callout", "table", "image", "pricing", "timeline", "signature", "page_break"];
+const COMMON: BlockType[] = ["paragraph", "heading", "list", "callout", "table", "image", "gallery", "pricing", "timeline", "signature", "page_break"];
 
 export function DocumentEditor(props: EditorProps) {
   const { doc, brand, templates, locked, hasAi } = props;
@@ -54,6 +56,14 @@ export function DocumentEditor(props: EditorProps) {
   const [saveState, setSaveState] = useState<"saved" | "dirty" | "saving" | "error">("saved");
   const dirty = useRef(false);
   const seq = useRef(0);
+  const router = useRouter();
+
+  // Brand kit changes made in another tab show up when the editor gets focus again, unless there are unsaved edits.
+  useEffect(() => {
+    const onFocus = () => { if (document.visibilityState === "visible" && !dirty.current) router.refresh(); };
+    document.addEventListener("visibilitychange", onFocus); window.addEventListener("focus", onFocus);
+    return () => { document.removeEventListener("visibilitychange", onFocus); window.removeEventListener("focus", onFocus); };
+  }, [router]);
 
   const template = templates.find((t) => t.value === templateValue) ?? templates[0];
   const blockCtx: BlockCtx = useMemo(() => ({ documentTitle: title, packages: props.packages, disabled: locked }), [title, props.packages, locked]);
@@ -89,7 +99,7 @@ export function DocumentEditor(props: EditorProps) {
     return () => window.removeEventListener("beforeunload", warn);
   }, []);
 
-  const allowed: BlockType[] = [...COMMON, ...(doc.type === "quotation" ? (["quotation"] as BlockType[]) : []), ...(doc.type === "seo_audit" || doc.type === "social_audit" ? (["audit_findings", "checklist"] as BlockType[]) : []), ...(doc.type === "social_audit" ? (["scorecard"] as BlockType[]) : [])];
+  const allowed: BlockType[] = [...COMMON, ...(doc.type === "quotation" || doc.type === "invoice" ? (["quotation"] as BlockType[]) : []), ...(doc.type === "seo_audit" || doc.type === "social_audit" ? (["audit_findings", "checklist"] as BlockType[]) : []), ...(doc.type === "social_audit" ? (["scorecard"] as BlockType[]) : [])];
 
   const setBlock = (si: number, bi: number, b: Block) => mutate((d) => { d.sections[si].blocks[bi] = b; });
   const statusLabel = { saved: "All changes saved", dirty: "Unsaved changes", saving: "Saving", error: "Not saved" }[saveState];
@@ -103,7 +113,7 @@ export function DocumentEditor(props: EditorProps) {
       )}
 
       <section className="rounded-lg border border-line bg-surface p-4 shadow-soft">
-        <h2 className="mb-3 text-sm font-semibold">{doc.type === "quotation" ? "Header" : "Cover"}</h2>
+        <h2 className="mb-3 text-sm font-semibold">{doc.type === "quotation" || doc.type === "invoice" ? "Header" : "Cover"}</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <Labeled label="Title" className="sm:col-span-2"><input className={inputCls} value={content.cover.title} disabled={locked} onChange={(e) => mutate((d) => { d.cover.title = e.target.value; })} /></Labeled>
           <Labeled label="Subtitle" className="sm:col-span-2"><input className={inputCls} value={content.cover.subtitle} disabled={locked} onChange={(e) => mutate((d) => { d.cover.subtitle = e.target.value; })} /></Labeled>
@@ -189,6 +199,8 @@ export function DocumentEditor(props: EditorProps) {
           <span className="hidden items-center gap-1 text-xs text-ink-faint sm:flex" aria-live="polite">{saveState === "saving" && <Loader2 className="size-3 animate-spin" aria-hidden />}{statusLabel}</span>
           <select aria-label="Template" value={templateValue} disabled={locked} onChange={(e) => { setTemplateValue(e.target.value); dirty.current = true; setSaveState("dirty"); }}
             className="h-8 rounded-md border border-line-strong bg-surface px-2 text-sm">{templates.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}</select>
+          {doc.frozen && !locked && <Button size="sm" variant="secondary" onClick={async () => { try { const r = await refreshBrandingAction(doc.id); if (r.ok) { toast.success(r.message ?? "Branding refreshed."); router.refresh(); } else toast.error(r.error); } catch { toast.error("We couldn't reach the server."); } }}>Refresh branding</Button>}
+          <PageColorButton value={content.style?.background ?? null} disabled={locked} onChange={(hex) => mutate((d) => { d.style = hex ? { ...d.style, background: hex } : undefined; })} />
           {!locked && <Button size="sm" variant="secondary" onClick={() => save()} loading={saveState === "saving"}><Save className="size-4" aria-hidden />Save</Button>}
           <PdfButton url={`/api/documents/${doc.id}/pdf`} />
           {!locked && <SaveTemplateButton documentId={doc.id} beforeSave={() => save(true)} />}
@@ -230,6 +242,7 @@ function BlockEditor({ block, ctx, onChange }: { block: Block; ctx: BlockCtx; on
     case "list": return <ListEditor block={block} ctx={ctx} onChange={onChange} />;
     case "table": return <TableEditor block={block} ctx={ctx} onChange={onChange} />;
     case "image": return <ImageEditor block={block} ctx={ctx} onChange={onChange} />;
+    case "gallery": return <GalleryEditor block={block} ctx={ctx} onChange={onChange} />;
     case "pricing": return <PricingEditor block={block} ctx={ctx} onChange={onChange} />;
     case "timeline": return <TimelineEditor block={block} ctx={ctx} onChange={onChange} />;
     case "quotation": return <QuotationEditor block={block} disabled={ctx.disabled} onChange={onChange} />;

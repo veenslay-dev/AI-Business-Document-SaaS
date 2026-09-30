@@ -89,9 +89,20 @@ export async function saveBrandKitAction(input: BrandKitInput): Promise<ActionRe
       default_footer: v.defaultFooter,
     })
     .eq("workspace_id", membership.workspaceId);
-  if (error) return fail(GENERIC_ERROR);
+  let legacy = false;
+  if (error) {
+    // Migration 0003 (header and heading colors) may not have been applied. Save the rest so colors and fonts still work.
+    const retry = await supabase.from("brand_kits").update({
+      primary_color: v.primaryColor.toLowerCase(), secondary_color: v.secondaryColor.toLowerCase(),
+      accent_color: v.accentColor.toLowerCase(), heading_font: v.headingFont, body_font: v.bodyFont, default_footer: v.defaultFooter,
+    }).eq("workspace_id", membership.workspaceId);
+    if (retry.error) return fail(GENERIC_ERROR);
+    legacy = true;
+  }
   revalidatePath("/", "layout");
-  return { ok: true, message: "Brand kit saved. New documents will use it." };
+  return { ok: true, message: legacy
+    ? "Brand kit saved, but the separate header and heading colors need database migration 0003 to be applied first. Your primary color, fonts and footer were saved."
+    : "Brand kit saved. Draft documents update right away. Documents you have already shared keep the look the client saw, use \"Refresh branding\" in the editor to update them." };
 }
 
 const EXT: Record<string, string> = {

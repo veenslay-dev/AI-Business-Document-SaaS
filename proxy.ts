@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // Routes that require a signed-in user. Everything else is public.
 const PROTECTED = [
-  "/dashboard", "/clients", "/projects", "/proposals", "/quotations",
+  "/dashboard", "/clients", "/projects", "/proposals", "/quotations", "/invoices",
   "/seo-audits", "/social-audits", "/templates", "/brand-kit", "/team", "/settings", "/onboarding", "/search",
 ];
 const AUTH_PAGES = ["/login", "/signup", "/forgot-password"];
