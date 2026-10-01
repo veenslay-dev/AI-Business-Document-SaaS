@@ -8,7 +8,8 @@ const nextConfig: NextConfig = {
   // Chromium for PDF export ships binary files that must not be bundled, and must be copied into the PDF functions.
   serverExternalPackages: ["@sparticuz/chromium", "puppeteer-core"],
   outputFileTracingIncludes: {
-    "/api/*/*/pdf": ["./node_modules/@sparticuz/chromium/bin/**"],
+    // react-dom/server is loaded at runtime by the PDF code (see lib/pdf/static-markup.ts), so tracing can't see it.
+    "/api/*/*/pdf": ["./node_modules/@sparticuz/chromium/bin/**", "./node_modules/react-dom/**", "./node_modules/react/**", "./node_modules/scheduler/**"],
   },
   images: {
     remotePatterns: supabaseHost
