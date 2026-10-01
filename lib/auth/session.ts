@@ -21,6 +21,8 @@ export const getUser = cache(async () => {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) return null;
+  // A paused account is treated as signed out straight away, without waiting for its token to expire.
+  if (data.user.banned_until && new Date(data.user.banned_until).getTime() > Date.now()) return null;
   return data.user;
 });
 

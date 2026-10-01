@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { MemberManager } from "@/components/admin/user-controls";
 import { SubscriptionForm } from "@/components/admin/subscription-form";
 import { Badge } from "@/components/ui/badge";
 import { costRates, estimateCostUsd } from "@/lib/billing/ai-cost";
@@ -30,7 +31,7 @@ export default async function AdminWorkspacePage({ params }: { params: Promise<{
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-2xl border border-line bg-surface p-6 shadow-soft">
           <h3 className="font-bold">People ({people.length})</h3>
-          <ul className="mt-3 divide-y divide-line text-sm">{people.map((m) => <li key={m.userId} className="flex items-center justify-between py-2"><span>{m.email}</span><Badge>{m.role}</Badge></li>)}</ul>
+          <div className="mt-3"><MemberManager workspaceId={ws.id} people={people} /></div>
         </section>
         <section className="rounded-2xl border border-line bg-surface p-6 shadow-soft">
           <h3 className="font-bold">Messages from this workspace</h3>

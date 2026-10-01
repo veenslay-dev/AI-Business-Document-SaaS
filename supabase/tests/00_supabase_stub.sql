@@ -14,6 +14,7 @@ create table if not exists auth.users (
 );
 alter table auth.users add column if not exists encrypted_password text;
 alter table auth.users add column if not exists created_at timestamptz not null default now();
+alter table auth.users add column if not exists banned_until timestamptz;
 -- Works with both GUC styles: the old request.jwt.claim.sub and PostgREST's request.jwt.claims JSON.
 create or replace function auth.uid() returns uuid language sql stable as $$
   select coalesce(

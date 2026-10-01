@@ -8,7 +8,7 @@ import { getUser } from "./session";
  * The platform admin is the first account ever created. ADMIN_EMAIL can name a second admin
  * (its address must be confirmed). Checked on the server on every request, never in the browser.
  */
-const firstUserId = cache(async (): Promise<string | null> => {
+export const firstUserId = cache(async (): Promise<string | null> => {
   try {
     const { data, error } = await createAdminClient().rpc("platform_first_user_id");
     return error ? null : ((data as string | null) ?? null);

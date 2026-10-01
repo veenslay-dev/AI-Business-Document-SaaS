@@ -289,3 +289,24 @@ begin
   select count(*) into n from public.admin_workspaces();
   if n < 2 then raise exception 'FAIL: admin_workspaces returned % rows', n; end if;
 end $$;
+
+-- 13. The admin workspace creator is not callable by signed-in users, and works for the service role.
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+do $$
+begin
+  begin
+    perform public.admin_create_workspace('00000000-0000-0000-0000-00000000000a', 'X', 'x-slug');
+    raise exception 'FAIL: admin_create_workspace callable by a user';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+reset role;
+do $$
+declare ws uuid; n int;
+begin
+  ws := public.admin_create_workspace('00000000-0000-0000-0000-00000000000a', 'Admin made', 'admin-made-slug');
+  select count(*) into n from public.subscriptions where workspace_id = ws and plan = 'free';
+  if n <> 1 then raise exception 'FAIL: admin created workspace has no free subscription'; end if;
+  select count(*) into n from public.workspace_members where workspace_id = ws and role = 'owner';
+  if n <> 1 then raise exception 'FAIL: admin created workspace has no owner'; end if;
+end $$;

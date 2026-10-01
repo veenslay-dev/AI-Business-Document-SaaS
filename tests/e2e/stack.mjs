@@ -38,7 +38,7 @@ export async function start() {
   const rest = spawn(POSTGREST, [], { env: { ...process.env, PGRST_DB_URI: authenticatorUrl, PGRST_DB_SCHEMAS: "public", PGRST_DB_ANON_ROLE: "anon", PGRST_JWT_SECRET: SECRET, PGRST_SERVER_PORT: String(REST_PORT), PGRST_LOG_LEVEL: "warn" }, stdio: ["ignore", "inherit", "inherit"] });
 
   const files = new Map();
-  const userJson = (u) => ({ id: u.id, aud: "authenticated", role: "authenticated", email: u.email, email_confirmed_at: new Date().toISOString(), phone: "", confirmed_at: new Date().toISOString(), app_metadata: { provider: "email" }, user_metadata: u.raw_user_meta_data ?? {}, identities: [{ id: u.id, user_id: u.id, identity_data: { email: u.email }, provider: "email" }], created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+  const userJson = (u) => ({ id: u.id, aud: "authenticated", role: "authenticated", email: u.email, email_confirmed_at: new Date().toISOString(), phone: "", confirmed_at: new Date().toISOString(), app_metadata: { provider: "email" }, user_metadata: u.raw_user_meta_data ?? {}, identities: [{ id: u.id, user_id: u.id, identity_data: { email: u.email }, provider: "email" }], created_at: new Date().toISOString(), updated_at: new Date().toISOString(), banned_until: u.banned_until ?? null });
   const session = (u) => { const now = Math.floor(Date.now() / 1000); return { access_token: sign({ aud: "authenticated", sub: u.id, role: "authenticated", email: u.email, exp: now + 3600, iat: now, session_id: randomUUID() }), token_type: "bearer", expires_in: 3600, expires_at: now + 3600, refresh_token: `rt_${u.id}`, user: userJson(u) }; };
   const byEmail = async (e) => (await db.query("select * from auth.users where lower(email)=lower($1)", [e])).rows[0];
   const byId = async (i) => (await db.query("select * from auth.users where id=$1", [i])).rows[0];
@@ -94,6 +94,7 @@ export async function start() {
         const b = JSON.parse((await readBody(req)).toString() || "{}");
         if (url.searchParams.get("grant_type") === "refresh_token") { const u = await byId(String(b.refresh_token).replace("rt_", "")); return u ? send(res, 200, session(u)) : send(res, 400, { error: "invalid_grant" }); }
         const u = await byEmail(b.email);
+        if (u?.banned_until && new Date(u.banned_until) > new Date()) return send(res, 400, { error: "invalid_grant", error_description: "User is banned" });
         if (!u || !u.encrypted_password || !checkPw(b.password, u.encrypted_password)) return send(res, 400, { error: "invalid_grant", error_description: "Invalid login credentials" });
         return send(res, 200, session(u));
       }
@@ -109,7 +110,10 @@ export async function start() {
         const c = bearer(req); if (c?.role !== "service_role") return send(res, 403, { message: "not admin" });
         if (req.method === "POST") { const b = JSON.parse((await readBody(req)).toString()); const id = randomUUID(); await db.query("insert into auth.users (id,email,raw_user_meta_data,encrypted_password) values ($1,$2,$3,$4)", [id, b.email, b.user_metadata ?? {}, hashPw(b.password ?? randomUUID())]); return send(res, 200, userJson(await byId(id))); }
         if (req.method === "GET" && !p.split("/")[5]) { const rows = (await db.query("select * from auth.users order by created_at asc")).rows; return send(res, 200, { users: rows.map(userJson), total: rows.length, nextPage: null, lastPage: 1 }); }
-        const id = p.split("/")[5]; const u = id ? await byId(id) : null;
+        const uid = p.split("/")[5];
+        if (uid && req.method === "PUT") { const b = JSON.parse((await readBody(req)).toString() || "{}"); if (b.ban_duration) await db.query("update auth.users set banned_until = $2 where id=$1", [uid, b.ban_duration === "none" ? null : new Date(Date.now() + 3.15e12).toISOString()]); if (b.password) await db.query("update auth.users set encrypted_password=$2 where id=$1", [uid, hashPw(b.password)]); const uu = await byId(uid); return uu ? send(res, 200, userJson(uu)) : send(res, 404, { message: "not found" }); }
+        if (uid && req.method === "DELETE") { await db.query("delete from auth.users where id=$1", [uid]); return send(res, 200, {}); }
+        const id = uid; const u = id ? await byId(id) : null;
         return u ? send(res, 200, userJson(u)) : send(res, 404, { message: "not found" });
       }
       send(res, 404, { message: `stub: ${req.method} ${p} not implemented` });

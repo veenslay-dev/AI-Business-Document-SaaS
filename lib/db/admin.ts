@@ -1,5 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { firstUserId } from "@/lib/auth/admin";
 import { PLANS, PLAN_ORDER, type PlanId } from "@/lib/billing/plans";
 import { estimateCostUsd } from "@/lib/billing/ai-cost";
 
@@ -44,14 +45,49 @@ export async function getAdminOverview(): Promise<AdminOverview> {
   };
 }
 
-export type AdminUser = { id: string; email: string; created_at: string; last_sign_in_at: string | null; confirmed: boolean; fullName: string };
-export async function listAdminUsers(page: number, perPage = 25): Promise<{ users: AdminUser[]; total: number }> {
-  const { data, error } = await createAdminClient().auth.admin.listUsers({ page, perPage });
+export type AdminUserWorkspace = { id: string; name: string; role: string; plan: string; status: string; limits: Record<string, unknown> | null; documents_month: number; ai_month: number };
+export type AdminUser = {
+  id: string; email: string; created_at: string; last_sign_in_at: string | null; confirmed: boolean; fullName: string; paused: boolean; isAdmin: boolean;
+  workspaces: AdminUserWorkspace[];
+};
+
+async function withWorkspaces(users: { id: string; email?: string; created_at: string; last_sign_in_at?: string | null; email_confirmed_at?: string | null; banned_until?: string | null; user_metadata?: unknown }[]): Promise<AdminUser[]> {
+  const admin = createAdminClient();
+  const ids = users.map((u) => u.id);
+  const [{ data: members }, rows, first] = await Promise.all([
+    ids.length ? admin.from("workspace_members").select("user_id, workspace_id, role").in("user_id", ids) : Promise.resolve({ data: [] as { user_id: string; workspace_id: string; role: string }[] }),
+    listAdminWorkspaces(), firstUserId(),
+  ]);
+  const ws = new Map(rows.map((r) => [r.id, r]));
+  return users.map((u) => ({
+    id: u.id, email: u.email ?? "", created_at: u.created_at, last_sign_in_at: u.last_sign_in_at ?? null, confirmed: !!u.email_confirmed_at,
+    fullName: String((u.user_metadata as Record<string, unknown> | null)?.full_name ?? ""),
+    paused: !!u.banned_until && new Date(u.banned_until).getTime() > Date.now(), isAdmin: first === u.id,
+    workspaces: (members ?? []).filter((m) => m.user_id === u.id).flatMap((m) => {
+      const w = ws.get(m.workspace_id); if (!w) return [];
+      return [{ id: w.id, name: w.name, role: m.role, plan: w.plan, status: w.status, limits: w.limits, documents_month: w.documents_month, ai_month: w.ai_month }];
+    }),
+  }));
+}
+
+export async function listAdminUsers(page: number, perPage = 25, q = ""): Promise<{ users: AdminUser[]; total: number }> {
+  const admin = createAdminClient();
+  if (q.trim()) {
+    // Search runs over the first 1000 accounts, which is plenty for now.
+    const { data } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    const needle = q.trim().toLowerCase();
+    const hits = (data?.users ?? []).filter((u) => (u.email ?? "").toLowerCase().includes(needle) || String((u.user_metadata as Record<string, unknown> | null)?.full_name ?? "").toLowerCase().includes(needle));
+    return { users: await withWorkspaces(hits.slice((page - 1) * perPage, page * perPage)), total: hits.length };
+  }
+  const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
   if (error) return { users: [], total: 0 };
-  return {
-    total: (data as { total?: number }).total ?? data.users.length,
-    users: data.users.map((u) => ({ id: u.id, email: u.email ?? "", created_at: u.created_at, last_sign_in_at: u.last_sign_in_at ?? null, confirmed: !!u.email_confirmed_at, fullName: String((u.user_metadata as Record<string, unknown> | null)?.full_name ?? "") })),
-  };
+  return { total: (data as { total?: number }).total || data.users.length, users: await withWorkspaces(data.users) };
+}
+
+export async function getAdminUser(id: string): Promise<AdminUser | null> {
+  const { data } = await createAdminClient().auth.admin.getUserById(id);
+  if (!data.user) return null;
+  return (await withWorkspaces([data.user]))[0] ?? null;
 }
 
 export type AdminMessage = {

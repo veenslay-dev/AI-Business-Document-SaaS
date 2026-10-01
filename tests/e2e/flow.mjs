@@ -449,6 +449,64 @@ await step("admin: raising the limits lets the owner create documents again, pre
   yes(opts.length >= 3 && !opts.some((x) => x.includes("(Pro)")), "no locked templates on Pro: " + opts.join("|"));
 });
 
+await step("admin: add a user, assign a plan and custom limits, pause, restore and delete", async () => {
+  const newEmail = `made-${suffix}@client.test`;
+  await page.goto(`${APP}/admin/users/new`);
+  await page.fill("#u-name", "Made By Admin"); await page.fill("#u-email", newEmail); await page.fill("#u-company", "Made Co");
+  await page.selectOption("#u-plan", "professional"); await page.fill("#u-pass", "start-pass-12345");
+  await page.click("button:has-text('Create account')"); await page.waitForSelector("text=Account created", { timeout: 15000 });
+  yes((await page.locator("main").innerText()).includes("start-pass-12345"), "password shown once");
+
+  // the new user can sign in straight away
+  const u = await browser.newContext(); const up = await u.newPage();
+  await up.goto(`${APP}/login`); await up.fill("#email", newEmail); await up.fill("#password", "start-pass-12345"); await up.click("button[type=submit]");
+  await up.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 30000 });
+  await up.goto(`${APP}/settings/subscription`); await up.waitForSelector("h2:has-text('Pro plan')", { timeout: 15000 });
+
+  // the users list shows them with their plan, and the plan can be changed in one click
+  await page.goto(`${APP}/admin/users?q=${encodeURIComponent("made-")}`);
+  const row = page.locator("tr", { hasText: newEmail }); await row.waitFor({ timeout: 10000 });
+  await row.locator("select[aria-label=Plan]").selectOption("agency");
+  await page.waitForTimeout(1500);
+  await up.goto(`${APP}/settings/subscription`); await up.waitForSelector("h2:has-text('Agency plan')", { timeout: 15000 });
+
+  // custom limits for this one user
+  await row.locator("a", { hasText: "Manage" }).click(); await page.waitForSelector("text=Limits for this workspace");
+  await page.selectOption("#a-plan", "custom"); await page.fill("#a-ai", "7"); await page.fill("#a-docs", "25");
+  await page.click("button:has-text('Save plan')"); await page.waitForSelector("text=Plan updated", { timeout: 10000 });
+  await up.goto(`${APP}/settings/subscription`); await up.waitForSelector("text=0 of 7 actions", { timeout: 15000 }); await up.waitForSelector("text=0 of 25 documents");
+
+  // add and remove people in their workspace
+  await page.fill("input[placeholder='their@email.com']", `nina-${suffix}@normal.test`); await page.click("button:has-text('Add')");
+  await page.waitForSelector(`text=nina-${suffix}@normal.test`, { timeout: 10000 });
+  page.once("dialog", (d) => d.accept());
+  await page.locator("li", { hasText: `nina-${suffix}@normal.test` }).locator("button:has-text('Remove')").click();
+  await page.waitForSelector(`text=nina-${suffix}@normal.test`, { state: "detached", timeout: 10000 });
+
+  // pause: signed in session ends, sign in is refused; restore brings it back
+  await page.click("button:has-text('Pause account')"); await page.waitForSelector("button:has-text('Restore account')", { timeout: 10000 });
+  await up.goto(`${APP}/dashboard`); yes(up.url().includes("/login"), "paused user is signed out: " + up.url());
+  await up.fill("#email", newEmail); await up.fill("#password", "start-pass-12345"); await up.click("button[type=submit]");
+  await up.waitForTimeout(2500); yes(up.url().includes("/login"), "paused user can't sign in");
+  await page.click("button:has-text('Restore account')"); await page.waitForSelector("button:has-text('Pause account')", { timeout: 10000 });
+  await up.fill("#password", "start-pass-12345"); await up.click("button[type=submit]");
+  await up.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 30000 });
+
+  // reset the password
+  await page.click("button:has-text('Set new password')"); await page.fill("#pw", "brand-new-pass-99"); await page.click("button:has-text('Save password')");
+  await page.waitForSelector("text=Password changed", { timeout: 10000 });
+
+  // delete, with the email typed to confirm
+  await page.click("button:has-text('Delete account')");
+  const del = page.locator("button:has-text('Delete permanently')"); yes(await del.isDisabled(), "delete disabled until the email is typed");
+  await page.fill("#del", newEmail); await del.click(); await page.waitForURL("**/admin/users", { timeout: 15000 });
+  await page.goto(`${APP}/admin/users?q=${encodeURIComponent("made-")}`); await page.waitForSelector("text=No accounts found", { timeout: 10000 });
+  await u.close();
+  // the admin account itself can't be deleted from here
+  await page.goto(`${APP}/admin/users?q=${encodeURIComponent("owner-")}`); await page.locator("a", { hasText: "Manage" }).first().click();
+  await page.waitForSelector("text=platform admin account", { timeout: 10000 });
+});
+
 yes(consoleErrors.length === 0 || true);
 if (consoleErrors.length) console.log("Uncaught page errors:", consoleErrors.slice(0, 5));
 await browser.close();
