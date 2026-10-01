@@ -35,7 +35,7 @@ function Entry({ initial, onDone, onCancel }: { initial: KbItem; onDone: () => v
     });
   }
   return (
-    <div className="rounded-lg border border-line bg-surface p-4 shadow-soft">
+    <div className="rounded-2xl border border-line bg-surface p-4 shadow-soft">
       <div className="grid gap-3 sm:grid-cols-[1fr_200px]">
         <Labeled label="Title"><input className={inputCls} value={v.title} onChange={(e) => setV({ ...v, title: e.target.value })} aria-invalid={!!errs.title} />{errs.title && <span className="text-xs text-signal">{errs.title}</span>}</Labeled>
         <Labeled label="Type"><select className={inputCls} value={v.type} onChange={(e) => setV({ ...v, type: e.target.value as KbItem["type"] })}>{KB_TYPES.map((t) => <option key={t} value={t}>{KB_LABELS[t]}</option>)}</select></Labeled>
@@ -62,7 +62,7 @@ export function KnowledgeManager({ items }: { items: KbItem[] }) {
       {adding ? <Entry initial={{ id: null, title: "", type: "case_study", content: "" }} onDone={done} onCancel={() => setAdding(false)} />
         : <Button variant="secondary" onClick={() => setAdding(true)}><Plus className="size-4" aria-hidden />Add entry</Button>}
       {items.map((it) => editing === it.id ? <Entry key={it.id} initial={it} onDone={done} onCancel={() => setEditing(null)} /> : (
-        <button key={it.id} type="button" onClick={() => setEditing(it.id)} className="block w-full rounded-lg border border-line bg-surface p-4 text-left shadow-soft hover:bg-paper">
+        <button key={it.id} type="button" onClick={() => setEditing(it.id)} className="block w-full rounded-2xl border border-line bg-surface p-4 text-left shadow-soft hover:bg-paper">
           <span className="flex items-center gap-2"><span className="font-medium">{it.title}</span><span className="rounded bg-black/5 px-1.5 py-0.5 text-xs text-ink-soft">{KB_LABELS[it.type]}</span></span>
           <span className="mt-1 line-clamp-2 block text-sm text-ink-soft">{it.content}</span>
         </button>

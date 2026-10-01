@@ -26,7 +26,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
           Projects belong to a client. {clients.length ? "Create one to keep related work together." : "Add your first client to get started."}
         </EmptyState>
       ) : (
-        <ul className="divide-y divide-line rounded-lg border border-line bg-surface shadow-soft">
+        <ul className="divide-y divide-line rounded-2xl border border-line bg-surface shadow-soft">
           {rows.map((p) => (
             <li key={p.id}>
               <Link href={`/projects/${p.id}`} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 hover:bg-paper/50">

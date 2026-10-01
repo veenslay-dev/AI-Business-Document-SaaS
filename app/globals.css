@@ -1,25 +1,29 @@
 @import "tailwindcss";
 
 @theme {
-  --color-paper: #f7f6f3;
+  --color-paper: #fbf8f8;
   --color-surface: #ffffff;
-  --color-ink: #17191f;
-  --color-ink-soft: #4a4f5a;
-  --color-ink-faint: #7b808c;
-  --color-line: #e3e1da;
-  --color-line-strong: #cfccc3;
-  --color-brand: #1c2a44;
-  --color-brand-hover: #263a5e;
-  --color-signal: #b9472c;
-  --color-signal-soft: #f6e6e0;
-  --color-ok: #2f6b4f;
-  --color-ok-soft: #e1eee7;
-  --color-warn: #8a6410;
-  --color-warn-soft: #f6ecd2;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-serif: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --shadow-soft: 0 1px 2px rgb(23 25 31 / 0.05), 0 1px 1px rgb(23 25 31 / 0.03);
-  --shadow-pop: 0 8px 24px -8px rgb(23 25 31 / 0.18), 0 2px 6px rgb(23 25 31 / 0.06);
+  --color-ink: #0f1b33;
+  --color-ink-soft: #4b5565;
+  --color-ink-faint: #7a8394;
+  --color-line: #efe9e9;
+  --color-line-strong: #ddd4d4;
+  --color-brand: #dc1c26;
+  --color-brand-hover: #bd141e;
+  --color-brand-soft: #fdecec;
+  --color-brand-deep: #5a0b10;
+  --color-signal: #b42318;
+  --color-signal-soft: #fdeceb;
+  --color-ok: #15803d;
+  --color-ok-soft: #e4f6ea;
+  --color-warn: #a16207;
+  --color-warn-soft: #fdf3d9;
+  --color-info: #1d4ed8;
+  --color-info-soft: #e5edff;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --shadow-soft: 0 1px 2px rgb(15 27 51 / 0.04), 0 2px 8px rgb(15 27 51 / 0.04);
+  --shadow-pop: 0 12px 32px -10px rgb(15 27 51 / 0.2), 0 2px 6px rgb(15 27 51 / 0.06);
 }
 
 html { -webkit-text-size-adjust: 100%; }
@@ -31,4 +35,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 :focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
-::selection { background: #d9e2f3; }
+::selection { background: #fbd5d7; }
+h1, h2, h3 { font-weight: 700; letter-spacing: -0.015em; }
+body { background-image: radial-gradient(900px 340px at 100% -80px, #fdeaea 0%, transparent 70%); background-repeat: no-repeat; }

@@ -112,7 +112,7 @@ export function DocumentEditor(props: EditorProps) {
         </div>
       )}
 
-      <section className="rounded-lg border border-line bg-surface p-4 shadow-soft">
+      <section className="rounded-2xl border border-line bg-surface p-4 shadow-soft">
         <h2 className="mb-3 text-sm font-semibold">{doc.type === "quotation" || doc.type === "invoice" ? "Header" : "Cover"}</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <Labeled label="Title" className="sm:col-span-2"><input className={inputCls} value={content.cover.title} disabled={locked} onChange={(e) => mutate((d) => { d.cover.title = e.target.value; })} /></Labeled>
@@ -128,7 +128,7 @@ export function DocumentEditor(props: EditorProps) {
       {content.sections.map((s, si) => {
         const isOpen = open.has(s.id);
         return (
-          <section key={s.id} className="rounded-lg border border-line bg-surface shadow-soft">
+          <section key={s.id} className="rounded-2xl border border-line bg-surface shadow-soft">
             <div className="flex items-center gap-2 border-b border-line px-3 py-2">
               <button type="button" aria-expanded={isOpen} aria-label={isOpen ? "Collapse section" : "Expand section"} onClick={() => setOpen((o) => { const n = new Set(o); if (n.has(s.id)) n.delete(s.id); else n.add(s.id); return n; })}
                 className="grid size-7 place-items-center rounded hover:bg-black/5"><ChevronDown className={cn("size-4 transition-transform", !isOpen && "-rotate-90")} /></button>

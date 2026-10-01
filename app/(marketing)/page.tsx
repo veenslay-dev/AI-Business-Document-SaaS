@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { ArrowRight, BarChart3, Check, FileText, LayoutTemplate, Palette, PlayCircle, Share2, Sparkles } from "lucide-react";
 import { DocumentRenderer } from "@/components/documents/document-renderer";
 import { CroppedPreview } from "@/components/marketing/cropped-preview";
 import { ExampleTabs } from "@/components/marketing/example-tabs";
@@ -21,6 +21,8 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image" },
 };
 
+const FEATURE_ICONS = [Palette, LayoutTemplate, Sparkles, FileText, Share2, BarChart3];
+
 const cfg = (key: string, over: Partial<TemplateConfig> = {}): TemplateConfig => ({ ...getSystemTemplate(key)!.config, ...over });
 
 function only(content: DocumentContent, titles: string[]): DocumentContent {
@@ -30,7 +32,8 @@ function only(content: DocumentContent, titles: string[]): DocumentContent {
 export default function HomePage() {
   const proposal = sampleProposal();
   const investment = only(proposal, ["Timeline", "Investment"]);
-  const heroA = <DocumentRenderer content={proposal} brand={ACME_BRAND} template={cfg("proposal-bold")} meta={{ type: "proposal" }} />;
+  const RED_BRAND = { ...ACME_BRAND, brand: { ...ACME_BRAND.brand, primary: "#dc1c26", header: "#5a0b10", accent: "#dc1c26" } };
+  const heroA = <DocumentRenderer content={proposal} brand={RED_BRAND} template={cfg("proposal-bold")} meta={{ type: "proposal" }} />;
   const heroB = <DocumentRenderer content={proposal} brand={HARBOR_BRAND} template={cfg("proposal-elegant")} meta={{ type: "proposal" }} />;
   const letter = cfg("proposal-modern", { cover: "none" });
 
@@ -44,40 +47,41 @@ export default function HomePage() {
     <main>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
 
-      <section className="mx-auto grid max-w-6xl gap-12 px-5 pb-20 pt-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)] lg:pt-16">
+      <section className="mx-auto grid max-w-7xl gap-12 px-5 pb-24 pt-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,540px)] lg:pt-16">
         <div className="lg:pt-6">
-          <p className="mb-4 text-sm font-medium tracking-wide text-signal">Create once. Brand everything. Close more clients.</p>
-          <h1 className="font-serif text-4xl leading-[1.08] sm:text-5xl lg:text-[3.4rem]">Create proposals, quotations and audits that look like your company created them.</h1>
+          <p className="mb-5 inline-block rounded-full bg-brand-soft px-3.5 py-1.5 text-sm font-semibold text-brand">Create. Edit. Share. Professional documents.</p>
+          <h1 className="text-4xl font-extrabold leading-[1.08] sm:text-5xl lg:text-[3.4rem]">Create proposals, quotations and audits <span className="text-brand">that look like your company created them.</span></h1>
           <p className="mt-5 max-w-xl text-lg text-ink-soft">Build your company profile once. Generate branded client documents in minutes with AI.</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild size="lg"><Link href="/signup">Start Free</Link></Button>
-            <Button asChild size="lg" variant="secondary"><Link href="#how-it-works">See How It Works</Link></Button>
+            <Button asChild size="lg" className="rounded-full px-7"><Link href="/signup">Start Free<ArrowRight className="size-4" aria-hidden /></Link></Button>
+            <Button asChild size="lg" variant="secondary" className="rounded-full px-7"><Link href="#how-it-works"><PlayCircle className="size-4" aria-hidden />See How It Works</Link></Button>
           </div>
           <p className="mt-4 text-sm text-ink-faint">Free plan includes 3 documents a month and PDF export.</p>
         </div>
         <div className="relative hidden h-[520px] sm:block" aria-label="The same proposal in two different brands">
-          <CroppedPreview label="Proposal cover in a navy and terracotta brand" height={560} className="absolute left-0 top-0 w-[320px] rounded-sm">{heroA}</CroppedPreview>
+          <CroppedPreview label="Proposal cover in a deep red brand" height={560} className="absolute left-0 top-0 w-[320px] rounded-sm">{heroA}</CroppedPreview>
           <CroppedPreview label="The same proposal in a green and amber brand" height={560} className="absolute right-0 top-20 w-[300px] rounded-sm">{heroB}</CroppedPreview>
         </div>
       </section>
 
-      <section id="how-it-works" className="scroll-mt-8 border-y border-line bg-surface">
-        <div className="mx-auto max-w-6xl px-5 py-20">
-          <h2 className="font-serif text-3xl">How it works</h2>
+      <section id="how-it-works" className="scroll-mt-8 bg-brand-soft/50">
+        <div className="mx-auto max-w-7xl px-5 py-20">
+          <h2 className="text-center text-3xl font-extrabold">How it works</h2>
+          <p className="mt-2 text-center text-ink-soft">Get professional documents in just 3 simple steps.</p>
           <ol className="mt-10 grid gap-10 md:grid-cols-3">
             {[
               ["Set up your company once", "Add your details, logo, colors, fonts, services, standard terms and signature. It takes about ten minutes and you don't repeat it."],
               ["Pick a client, describe the job", "Choose the client, write a few lines about the project and let the AI draft a structured proposal, or start a quotation or SEO audit."],
               ["Edit, share and track", "Adjust any section with a live preview, download the PDF or send a private link, and see when the client opens, accepts or asks for changes."],
             ].map(([t, b], i) => (
-              <li key={t}><span className="font-serif text-4xl text-signal">{i + 1}</span><h3 className="mt-2 text-lg font-semibold">{t}</h3><p className="mt-2 text-ink-soft">{b}</p></li>
+              <li key={t} className="rounded-2xl bg-surface p-6 shadow-soft"><span className="grid size-10 place-items-center rounded-full bg-brand text-lg font-bold text-white">{i + 1}</span><h3 className="mt-4 text-lg font-bold">{t}</h3><p className="mt-2 text-ink-soft">{b}</p></li>
             ))}
           </ol>
         </div>
       </section>
 
-      <section id="examples" className="mx-auto max-w-6xl scroll-mt-8 px-5 py-20">
-        <h2 className="font-serif text-3xl">What your clients receive</h2>
+      <section id="examples" className="mx-auto max-w-7xl scroll-mt-8 px-5 py-20">
+        <h2 className="text-3xl font-extrabold">What your clients receive</h2>
         <p className="mb-8 mt-2 max-w-2xl text-ink-soft">These pages are rendered by the same engine that produces your documents, using sample data for a fictional agency.</p>
         <ExampleTabs panels={[
           { id: "proposal", label: "Proposal", caption: "Proposals follow a sensible 13 part structure, but sections can be added, removed and reordered. Pricing packages sit next to itemised fees, with the recommended one highlighted.",
@@ -91,14 +95,14 @@ export default function HomePage() {
         ]} />
       </section>
 
-      <section className="border-y border-line bg-surface">
-        <div className="mx-auto grid max-w-6xl gap-12 px-5 py-20 lg:grid-cols-2 lg:items-center">
+      <section className="bg-brand-soft/50">
+        <div className="mx-auto grid max-w-7xl gap-12 px-5 py-20 lg:grid-cols-2 lg:items-center">
           <div>
-            <h2 className="font-serif text-3xl">Your brand is set once and applied everywhere</h2>
+            <h2 className="text-3xl font-extrabold">Your brand is set once and applied everywhere</h2>
             <p className="mt-3 text-ink-soft">Logo, colors, fonts, footer, contact details, terms and signature come from your brand kit, so no document ever carries a stale phone number or the wrong logo.</p>
             <ul className="mt-6 space-y-3 text-ink-soft">
               {["Change a color or your phone number and every new document uses it.", "When you share a document, its branding is saved with it, so past documents keep their original look.", "The same content works in any template. Switch layouts without rewriting anything."].map((t) => (
-                <li key={t} className="flex gap-3"><Check className="mt-1 size-4 shrink-0 text-ok" aria-hidden /><span>{t}</span></li>))}
+                <li key={t} className="flex gap-3"><Check className="mt-1 size-4 shrink-0 text-brand" aria-hidden /><span>{t}</span></li>))}
             </ul>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -108,33 +112,34 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="features" className="mx-auto max-w-6xl scroll-mt-8 px-5 py-20">
-        <h2 className="font-serif text-3xl">What's inside</h2>
-        <dl className="mt-10 grid gap-x-12 gap-y-10 md:grid-cols-2">
-          {FEATURES.map((f) => (<div key={f.title} className="border-t border-line-strong pt-4"><dt className="font-semibold">{f.title}</dt><dd className="mt-1 text-ink-soft">{f.body}</dd></div>))}
+      <section id="features" className="mx-auto max-w-7xl scroll-mt-8 px-5 py-20">
+        <h2 className="text-3xl font-extrabold">What's inside</h2>
+        <p className="mt-2 text-ink-soft">Everything you need to create professional client documents.</p>
+        <dl className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {FEATURES.map((f, i) => { const Icon = FEATURE_ICONS[i % FEATURE_ICONS.length]; return (<div key={f.title} className="rounded-2xl border border-line bg-surface p-6 shadow-soft"><span aria-hidden className="mb-4 grid size-11 place-items-center rounded-xl bg-brand-soft text-brand"><Icon className="size-5" /></span><dt className="font-bold">{f.title}</dt><dd className="mt-1.5 text-sm text-ink-soft">{f.body}</dd></div>); })}
         </dl>
       </section>
 
-      <section className="border-y border-line bg-brand text-white">
-        <div className="mx-auto grid max-w-6xl gap-10 px-5 py-20 lg:grid-cols-2">
+      <section className="bg-gradient-to-br from-brand-deep via-[#7a0f16] to-brand text-white">
+        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-20 lg:grid-cols-2">
           <div>
-            <h2 className="font-serif text-3xl">AI that stays inside the facts you give it</h2>
+            <h2 className="text-3xl font-extrabold">AI that stays inside the facts you give it</h2>
             <p className="mt-3 text-white/75">The assistant reads your company profile, services and knowledge base, then writes in structured sections you can edit. It's told not to invent numbers, clients or awards. You always review before anything reaches a client.</p>
           </div>
           <ul className="grid grid-cols-1 gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
             {["Improve this section", "Make it more professional", "Make it shorter", "Make it more persuasive", "Simplify", "Add more detail", "Rewrite for US clients", "Rewrite for Indian clients", "Generate an FAQ", "Generate deliverables", "Generate a timeline", "Generate an executive summary"].map((c) => (
-              <li key={c} className="flex gap-2 border-b border-white/15 py-2"><Check className="mt-0.5 size-4 shrink-0 text-[#e8a893]" aria-hidden />{c}</li>))}
+              <li key={c} className="flex gap-2 border-b border-white/15 py-2"><Check className="mt-0.5 size-4 shrink-0 text-[#ff9aa0]" aria-hidden />{c}</li>))}
           </ul>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-5 py-20">
+      <section className="mx-auto max-w-7xl px-5 py-20">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:items-center">
           <div>
-            <h2 className="font-serif text-3xl">Know where every document stands</h2>
+            <h2 className="text-3xl font-extrabold">Know where every document stands</h2>
             <p className="mt-3 max-w-xl text-ink-soft">Each shared document has a private link. You see when it was opened and how long it stayed in view, when the PDF was downloaded, and whether the client accepted, declined or asked for changes. Tracking stores a hashed IP and the browser name, nothing more, and skips link-preview bots.</p>
           </div>
-          <div className="rounded-lg border border-line bg-surface p-4 shadow-soft" aria-label="Example activity">
+          <div className="rounded-2xl border border-line bg-surface p-4 shadow-soft" aria-label="Example activity">
             <p className="mb-3 text-xs font-medium uppercase tracking-wider text-ink-faint">Sample activity</p>
             <ul className="space-y-3 text-sm">
               <li><strong>SEO growth plan for Nova Furniture</strong> was opened by the client<span className="block text-xs text-ink-faint">Viewed 2 times</span></li>
@@ -145,21 +150,21 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="pricing" className="scroll-mt-8 border-y border-line bg-surface">
-        <div className="mx-auto max-w-6xl px-5 py-20">
-          <h2 className="font-serif text-3xl">Pricing</h2>
+      <section id="pricing" className="scroll-mt-8 bg-brand-soft/50">
+        <div className="mx-auto max-w-7xl px-5 py-20">
+          <h2 className="text-3xl font-extrabold">Pricing</h2>
           <p className="mb-10 mt-2 max-w-xl text-ink-soft">Start on the free plan. Paid plans open soon and prices will be posted here before they do.</p>
           <PlanGrid />
         </div>
       </section>
 
       <section id="faq" className="mx-auto max-w-3xl scroll-mt-8 px-5 py-20">
-        <h2 className="font-serif text-3xl">Questions</h2>
+        <h2 className="text-3xl font-extrabold">Questions</h2>
         <div className="mt-8 divide-y divide-line border-y border-line">
           {FAQ.map((f) => (
             <details key={f.q} className="group py-4"><summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium">{f.q}<span aria-hidden className="text-ink-faint transition-transform group-open:rotate-45">+</span></summary><p className="mt-2 text-ink-soft">{f.a}</p></details>))}
         </div>
-        <div className="mt-12 text-center"><Button asChild size="lg"><Link href="/signup">Start Free</Link></Button></div>
+        <div className="mt-12 text-center"><Button asChild size="lg" className="rounded-full px-8"><Link href="/signup">Start Free<ArrowRight className="size-4" aria-hidden /></Link></Button></div>
       </section>
     </main>
   );

@@ -31,7 +31,7 @@ function PackageCard({ initial, canEdit, onDone }: { initial: PackageView; canEd
   }
 
   return (
-    <div className="rounded-lg border border-line bg-surface p-4 shadow-soft">
+    <div className="rounded-2xl border border-line bg-surface p-4 shadow-soft">
       <fieldset disabled={!canEdit} className="space-y-3">
         <div className="flex gap-2">
           <Labeled label="Name" className="flex-1"><input className={inputCls} value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} aria-invalid={!!err.name} placeholder="Growth" />{err.name && <span className="text-xs text-signal">{err.name}</span>}</Labeled>

@@ -27,7 +27,7 @@ export function PageColorButton({ value, onChange, disabled }: { value: string |
         <span className="size-3.5 rounded-full border border-line-strong" style={{ background: value ?? "#ffffff" }} aria-hidden />
       </button>
       {open && (
-        <div role="dialog" aria-label="Document background color" className="absolute right-0 z-30 mt-1 w-60 rounded-lg border border-line bg-surface p-3 shadow-lg">
+        <div role="dialog" aria-label="Document background color" className="absolute right-0 z-30 mt-1 w-60 rounded-2xl border border-line bg-surface p-3 shadow-lg">
           <p className="mb-2 text-xs font-medium text-ink-soft">Background of the whole document</p>
           <div className="grid grid-cols-8 gap-1.5">
             {SWATCHES.map((c) => (

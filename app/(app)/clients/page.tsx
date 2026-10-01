@@ -47,7 +47,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
           {filtered ? "Try a different search or clear the filters." : "Add a client to start writing proposals and quotations for them."}
         </EmptyState>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-line bg-surface shadow-soft">
+        <div className="overflow-x-auto rounded-2xl border border-line bg-surface shadow-soft">
           <table className="w-full min-w-[560px] text-left text-sm">
             <thead className="border-b border-line bg-paper/60 text-xs uppercase tracking-wider text-ink-faint">
               <tr><th className="px-4 py-2.5 font-medium">Client</th><th className="hidden px-4 py-2.5 font-medium sm:table-cell">Contact</th><th className="hidden px-4 py-2.5 font-medium md:table-cell">Industry</th><th className="px-4 py-2.5 font-medium">Email</th></tr>

@@ -61,7 +61,7 @@ export default async function ClientDetailPage({ params, searchParams }: { param
 
       {tab === "overview" && (
         <div className="grid gap-6 lg:grid-cols-2">
-          <section className="rounded-lg border border-line bg-surface p-5 shadow-soft">
+          <section className="rounded-2xl border border-line bg-surface p-5 shadow-soft">
             <h2 className="mb-3 font-semibold">Details</h2>
             <dl className="grid grid-cols-[110px_1fr] gap-y-2 text-sm">
               {[["Industry", client.industry], ["GST", client.gst_number], ["Address", client.address], ["Notes", client.notes]].map(([k, v]) => (
@@ -69,7 +69,7 @@ export default async function ClientDetailPage({ params, searchParams }: { param
               ))}
             </dl>
           </section>
-          <section className="rounded-lg border border-line bg-surface p-5 shadow-soft">
+          <section className="rounded-2xl border border-line bg-surface p-5 shadow-soft">
             <h2 className="mb-3 font-semibold">Start a document</h2>
             <div className="flex flex-wrap gap-2">
               <Button asChild variant="secondary"><Link href={`/proposals/new?client=${id}`}>New proposal</Link></Button>
@@ -91,7 +91,7 @@ export default async function ClientDetailPage({ params, searchParams }: { param
         <>
           <div className="mb-4 flex justify-end"><Button asChild variant="secondary"><Link href={`/projects/new?client=${id}`}><Plus className="size-4" aria-hidden />Add project</Link></Button></div>
           {projects.rows.length === 0 ? <EmptyState icon={FolderKanban} title="No projects yet">Group related documents under a project for this client.</EmptyState> : (
-            <ul className="divide-y divide-line rounded-lg border border-line bg-surface shadow-soft">
+            <ul className="divide-y divide-line rounded-2xl border border-line bg-surface shadow-soft">
               {projects.rows.map((p) => (
                 <li key={p.id}><Link href={`/projects/${p.id}`} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-paper/50">
                   <span className="font-medium">{p.name}</span><ProjectStatusBadge status={p.status} /></Link></li>
@@ -103,7 +103,7 @@ export default async function ClientDetailPage({ params, searchParams }: { param
 
       {tab === "activity" && (activity.length === 0
         ? <EmptyState icon={FileText} title="No activity yet">You'll see when this client opens, accepts or comments on a document.</EmptyState>
-        : <ul className="divide-y divide-line rounded-lg border border-line bg-surface shadow-soft">
+        : <ul className="divide-y divide-line rounded-2xl border border-line bg-surface shadow-soft">
             {activity.map((a) => (
               <li key={a.id} className="px-4 py-3 text-sm">
                 <Link href={documentHref(a.type, a.documentId)} className="font-medium hover:underline">{a.title}</Link> {a.text}

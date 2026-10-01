@@ -53,13 +53,13 @@ export default async function TemplatesPage({ searchParams }: { searchParams: Pr
                 <h2 className="mb-3 font-semibold">{g.label}</h2>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {sys.map((t) => (
-                    <article key={t.key} className="rounded-lg border border-line bg-surface p-3 shadow-soft">
+                    <article key={t.key} className="rounded-2xl border border-line bg-surface p-3 shadow-soft">
                       <TemplateThumb config={t.config} {...colors} />
                       <h3 className="mt-3 font-medium">{t.name}</h3><p className="text-sm text-ink-soft">{t.description}</p>
                     </article>
                   ))}
                   {mine.map((t) => (
-                    <article key={t.id} className="rounded-lg border border-line bg-surface p-3 shadow-soft">
+                    <article key={t.id} className="rounded-2xl border border-line bg-surface p-3 shadow-soft">
                       <TemplateThumb config={normalizeConfig((t.template_config as { config?: unknown })?.config, fallbackConfig(g.type))} {...colors} />
                       <div className="mt-3 flex items-center gap-2"><h3 className="font-medium">{t.name}</h3>{t.is_default && <Badge tone="ok">Default</Badge>}<Badge>Yours</Badge></div>
                       <p className="mb-2 text-sm text-ink-soft">{((t.template_config as { outline?: unknown[] })?.outline ?? []).length} sections</p>

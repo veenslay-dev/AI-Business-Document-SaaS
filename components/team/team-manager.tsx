@@ -27,7 +27,7 @@ export function TeamManager({ members, invites, canManage }: { members: MemberVi
   return (
     <div className="max-w-3xl space-y-8">
       {canManage && (
-        <form className="rounded-lg border border-line bg-surface p-4 shadow-soft" onSubmit={(e) => { e.preventDefault(); setError(null); setLink(null); start(async () => {
+        <form className="rounded-2xl border border-line bg-surface p-4 shadow-soft" onSubmit={(e) => { e.preventDefault(); setError(null); setLink(null); start(async () => {
           try {
             const res = await inviteMemberAction({ email, role });
             if (res.ok && res.data) { setLink(res.data.link); setEmail(""); router.refresh(); } else if (!res.ok) setError(res.fieldErrors?.email ?? res.error);
@@ -47,7 +47,7 @@ export function TeamManager({ members, invites, canManage }: { members: MemberVi
 
       <section>
         <h2 className="mb-3 font-semibold">Members</h2>
-        <ul className="divide-y divide-line rounded-lg border border-line bg-surface shadow-soft">
+        <ul className="divide-y divide-line rounded-2xl border border-line bg-surface shadow-soft">
           {members.map((m) => (
             <li key={m.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
               <span className="grid size-8 place-items-center rounded-full bg-black/[0.07] text-xs font-semibold">{initials(m.name)}</span>
@@ -66,7 +66,7 @@ export function TeamManager({ members, invites, canManage }: { members: MemberVi
       {canManage && invites.length > 0 && (
         <section>
           <h2 className="mb-3 font-semibold">Pending invites</h2>
-          <ul className="divide-y divide-line rounded-lg border border-line bg-surface shadow-soft">
+          <ul className="divide-y divide-line rounded-2xl border border-line bg-surface shadow-soft">
             {invites.map((i) => (
               <li key={i.id} className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm">
                 <span className="min-w-0 flex-1 truncate">{i.email} <span className="text-ink-faint">({i.role})</span></span>

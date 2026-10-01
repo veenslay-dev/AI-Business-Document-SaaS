@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FileText } from "lucide-react";
 import { DocStatusBadge } from "@/components/ui/status";
 import { DocumentRowActions } from "./row-actions";
 import { documentHref, TYPE_LABEL, type DocumentRow } from "@/lib/db/documents";
@@ -7,9 +8,9 @@ import { timeAgo } from "@/lib/time";
 
 export function DocumentTable({ rows, canDelete, hideClient = false }: { rows: DocumentRow[]; canDelete: boolean; hideClient?: boolean }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-line bg-surface shadow-soft">
+    <div className="overflow-x-auto rounded-2xl border border-line bg-surface shadow-soft">
       <table className="w-full min-w-[640px] text-left text-sm">
-        <thead className="border-b border-line bg-paper/60 text-xs uppercase tracking-wider text-ink-faint">
+        <thead className="border-b border-line bg-paper text-[11px] uppercase tracking-wider text-ink-faint">
           <tr>
             <th className="px-4 py-2.5 font-medium">Document</th>
             {!hideClient && <th className="px-4 py-2.5 font-medium">Client</th>}
@@ -22,10 +23,15 @@ export function DocumentTable({ rows, canDelete, hideClient = false }: { rows: D
         </thead>
         <tbody className="divide-y divide-line">
           {rows.map((d) => (
-            <tr key={d.id} className="hover:bg-paper/50">
+            <tr key={d.id} className="hover:bg-brand-soft/30">
               <td className="max-w-64 px-4 py-3">
-                <Link href={documentHref(d.type, d.id)} className="block truncate font-medium hover:underline">{d.title}</Link>
-                {d.views > 0 && <span className="text-xs text-ink-faint">Viewed {d.views} time{d.views === 1 ? "" : "s"} · last {timeAgo(d.last_viewed_at)}</span>}
+                <div className="flex items-center gap-3">
+                  <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand"><FileText className="size-4" /></span>
+                  <div className="min-w-0">
+                    <Link href={documentHref(d.type, d.id)} className="block truncate font-semibold hover:text-brand">{d.title}</Link>
+                    {d.views > 0 && <span className="text-xs text-ink-faint">Viewed {d.views} time{d.views === 1 ? "" : "s"} · last {timeAgo(d.last_viewed_at)}</span>}
+                  </div>
+                </div>
               </td>
               {!hideClient && <td className="px-4 py-3 text-ink-soft">{d.client_id ? <Link href={`/clients/${d.client_id}`} className="hover:underline">{d.client_name}</Link> : "No client"}</td>}
               <td className="hidden px-4 py-3 text-ink-soft md:table-cell">{TYPE_LABEL[d.type]}</td>

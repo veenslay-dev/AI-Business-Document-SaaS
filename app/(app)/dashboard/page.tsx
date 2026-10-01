@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle2, Circle, FileText, Megaphone, Plus, Receipt, SearchCheck, UserPlus } from "lucide-react";
+import { BadgeCheck, CheckCircle2, ChevronDown, Circle, FileText, IndianRupee, Megaphone, Plus, Receipt, ReceiptText, SearchCheck, UserPlus } from "lucide-react";
+import { Dropdown, DropdownContent, DropdownItem, DropdownTrigger } from "@/components/ui/dropdown";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { DocumentTable } from "@/components/documents/document-table";
 import { Button } from "@/components/ui/button";
@@ -28,13 +29,13 @@ export default async function DashboardPage() {
   const c = data?.company; const b = data?.brand;
 
   const value = Object.entries(stats.quotation_value);
-  const cards: { label: string; value: React.ReactNode }[] = [
-    { label: "Total documents", value: stats.total },
-    { label: "Proposals", value: stats.proposals },
-    { label: "Quotations", value: stats.quotations },
-    { label: "SEO audits", value: stats.audits },
-    { label: "Accepted proposals", value: stats.accepted_proposals },
-    { label: "Quotation value", value: value.length === 0 ? formatMoney(0, "INR") : value.map(([cur, v]) => <span key={cur} className="block">{formatMoney(Number(v), cur)}</span>) },
+  const cards: { label: string; value: React.ReactNode; icon: typeof FileText }[] = [
+    { label: "Total documents", value: stats.total, icon: FileText },
+    { label: "Proposals", value: stats.proposals, icon: FileText },
+    { label: "Quotations", value: stats.quotations, icon: Receipt },
+    { label: "SEO audits", value: stats.audits, icon: SearchCheck },
+    { label: "Accepted proposals", value: stats.accepted_proposals, icon: BadgeCheck },
+    { label: "Quotation value", value: value.length === 0 ? formatMoney(0, "INR") : value.map(([cur, v]) => <span key={cur} className="block">{formatMoney(Number(v), cur)}</span>), icon: IndianRupee },
   ];
 
   const setup = [
@@ -49,29 +50,35 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <PageHeader title="Dashboard" description={membership.name}
-        actions={canCreate && (
-          <div className="flex flex-wrap gap-2">
-            <Button asChild><Link href="/proposals/new"><FileText className="size-4" aria-hidden />New proposal</Link></Button>
-            <Button asChild variant="secondary"><Link href="/quotations/new"><Receipt className="size-4" aria-hidden />New quotation</Link></Button>
-            <Button asChild variant="secondary"><Link href="/invoices/new"><Receipt className="size-4" aria-hidden />New invoice</Link></Button>
-            <Button asChild variant="secondary"><Link href="/seo-audits/new"><SearchCheck className="size-4" aria-hidden />New SEO audit</Link></Button>
-            <Button asChild variant="secondary"><Link href="/social-audits/new"><Megaphone className="size-4" aria-hidden />New social audit</Link></Button>
-            <Button asChild variant="secondary"><Link href="/clients/new"><UserPlus className="size-4" aria-hidden />Add client</Link></Button>
-          </div>)} />
+      <PageHeader title="Dashboard" description="Manage your documents, clients and projects all in one place." />
 
-      <section aria-label="Summary" className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-6">
-        {cards.map((s) => (
-          <div key={s.label} className="rounded-lg border border-line bg-surface p-4 shadow-soft">
-            <p className="text-xs text-ink-faint">{s.label}</p>
-            <p className="mt-1 font-serif text-2xl tabular-nums leading-tight">{s.value}</p>
+      <section aria-label="Summary" className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-3 2xl:grid-cols-6">
+        {cards.map(({ label, value: v, icon: Icon }) => (
+          <div key={label} className="rounded-2xl border border-line bg-surface p-5 shadow-soft">
+            <div className="flex items-center gap-3">
+              <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand"><Icon className="size-[18px]" /></span>
+              <p className="text-sm font-medium text-ink-soft">{label}</p>
+            </div>
+            <p className="mt-4 text-3xl font-extrabold tabular-nums leading-tight tracking-tight">{v}</p>
           </div>
         ))}
       </section>
 
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <section>
-          <div className="mb-3 flex items-center justify-between"><h2 className="font-semibold">Recent documents</h2></div>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div><h2 className="text-xl font-bold">Recent documents</h2><p className="text-sm text-ink-soft">View and manage your latest documents.</p></div>
+            {canCreate && (
+              <Dropdown>
+                <DropdownTrigger className="inline-flex h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white shadow-soft hover:bg-brand-hover"><Plus className="size-4" aria-hidden />New document<ChevronDown className="size-4" aria-hidden /></DropdownTrigger>
+                <DropdownContent align="end">
+                  {([["/proposals/new", "Proposal", FileText], ["/quotations/new", "Quotation", Receipt], ["/invoices/new", "Invoice", ReceiptText], ["/seo-audits/new", "SEO audit", SearchCheck], ["/social-audits/new", "Social media audit", Megaphone], ["/clients/new", "Client", UserPlus]] as const).map(([href, label, Icon]) => (
+                    <DropdownItem key={href} asChild><Link href={href}><Icon className="size-4" aria-hidden />{label}</Link></DropdownItem>
+                  ))}
+                </DropdownContent>
+              </Dropdown>
+            )}
+          </div>
           {recent.rows.length === 0 ? (
             <EmptyState icon={FileText} title="No documents yet" action={canCreate && <Button asChild><Link href="/proposals/new"><Plus className="size-4" aria-hidden />Create your first proposal</Link></Button>}>
               Pick a client, describe the project, and the AI drafts a proposal in your branding.
@@ -80,12 +87,20 @@ export default async function DashboardPage() {
         </section>
 
         {remaining.length > 0 && (
-          <aside className="h-fit rounded-lg border border-line bg-surface shadow-soft">
-            <div className="border-b border-line px-4 py-3"><h2 className="text-sm font-semibold">Finish your profile</h2><p className="text-xs text-ink-soft">{remaining.length} of {setup.length} left</p></div>
+          <aside className="h-fit overflow-hidden rounded-2xl border border-line bg-surface shadow-soft">
+            <div className="bg-gradient-to-br from-brand-soft to-white p-5">
+              <div className="flex items-center gap-4">
+                <span aria-hidden className="grid size-12 shrink-0 place-items-center rounded-full bg-brand text-white shadow-soft"><CheckCircle2 className="size-6" /></span>
+                <div><h2 className="text-lg font-bold leading-tight">Finish your profile</h2><p className="text-sm text-ink-soft">{remaining.length} of {setup.length} left</p></div>
+              </div>
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-black/5" role="progressbar" aria-valuemin={0} aria-valuemax={setup.length} aria-valuenow={setup.length - remaining.length} aria-label="Profile completion">
+                <div className="h-full rounded-full bg-brand" style={{ width: `${((setup.length - remaining.length) / setup.length) * 100}%` }} />
+              </div>
+            </div>
             <ul className="divide-y divide-line">{setup.map((s) => (
-              <li key={s.label}><Link href={s.href} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-paper">
-                {s.done ? <CheckCircle2 className="size-4 text-ok" aria-hidden /> : <Circle className="size-4 text-ink-faint" aria-hidden />}
-                <span className={s.done ? "text-ink-faint line-through" : ""}>{s.label}</span></Link></li>))}</ul>
+              <li key={s.label}><Link href={s.href} className="flex items-center gap-3 px-5 py-3 text-sm hover:bg-brand-soft/30">
+                {s.done ? <CheckCircle2 className="size-[18px] text-brand" aria-hidden /> : <Circle className="size-[18px] text-ink-faint" aria-hidden />}
+                <span className={s.done ? "text-ink-faint line-through" : "font-medium"}>{s.label}</span></Link></li>))}</ul>
           </aside>
         )}
       </div>

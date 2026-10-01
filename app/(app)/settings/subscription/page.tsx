@@ -11,7 +11,7 @@ export default async function SubscriptionPage() {
   const { data } = await supabase.from("subscriptions").select("plan, status").eq("workspace_id", membership.workspaceId).maybeSingle();
   const plan = data?.plan ?? "free";
   return (
-    <section className="max-w-lg rounded-lg border border-line bg-surface p-5 shadow-soft">
+    <section className="max-w-lg rounded-2xl border border-line bg-surface p-5 shadow-soft">
       <div className="flex items-center gap-2">
         <h2 className="text-lg font-semibold capitalize">{plan} plan</h2>
         <Badge tone="ok">{data?.status ?? "active"}</Badge>

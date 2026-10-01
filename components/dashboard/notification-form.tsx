@@ -21,7 +21,7 @@ export function NotificationForm({ initial }: { initial: Prefs }) {
       if (res.ok) toast.success(res.message ?? "Saved."); else toast.error(res.error);
     }); }}>
       {ROWS.map((r) => (
-        <label key={r.key} className="flex items-start gap-3 rounded-lg border border-line bg-surface p-3 shadow-soft">
+        <label key={r.key} className="flex items-start gap-3 rounded-2xl border border-line bg-surface p-3 shadow-soft">
           <input type="checkbox" className="mt-1" checked={p[r.key]} onChange={(e) => setP({ ...p, [r.key]: e.target.checked })} />
           <span><span className="block text-sm font-medium">{r.label}</span><span className="text-xs text-ink-soft">{r.hint}</span></span>
         </label>

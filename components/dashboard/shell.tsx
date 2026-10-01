@@ -3,14 +3,24 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Check, ChevronsUpDown, LogOut, Menu, Search, X } from "lucide-react";
+import { Check, ChevronDown, ChevronsUpDown, ArrowRight, LogOut, Menu, Search, TrendingUp, X } from "lucide-react";
 import { NotificationsMenu, type NotificationItem } from "./notifications";
-import { Wordmark } from "@/components/ui/logo";
+import { PRODUCT_NAME, Wordmark } from "@/components/ui/logo";
 import { Dropdown, DropdownContent, DropdownItem, DropdownLabel, DropdownSeparator, DropdownTrigger } from "@/components/ui/dropdown";
 import { NAV } from "./nav";
 import { signOutAction } from "@/lib/actions/auth";
 import { switchWorkspaceAction } from "@/lib/actions/workspace";
 import { cn, initials } from "@/lib/utils";
+
+function UpgradeCard() {
+  return (
+    <div className="mx-3 mt-3 rounded-xl bg-gradient-to-br from-brand-soft to-white p-4 ring-1 ring-brand/10">
+      <span aria-hidden className="mb-3 grid size-9 place-items-center rounded-lg bg-white text-brand shadow-soft"><TrendingUp className="size-[18px]" /></span>
+      <p className="text-sm font-semibold leading-snug">Grow your business with <span className="text-brand">{PRODUCT_NAME}</span></p>
+      <Link href="/settings/subscription" className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-semibold text-white hover:bg-brand-hover">Upgrade Plan <ArrowRight className="size-4" aria-hidden /></Link>
+    </div>
+  );
+}
 
 type WorkspaceOption = { id: string; name: string; logoUrl: string | null; role: string };
 
@@ -32,11 +42,11 @@ export function AppShell({
           <Link
             key={href} href={href} onClick={() => setOpen(false)} aria-current={current ? "page" : undefined}
             className={cn(
-              "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors",
-              current ? "bg-black/[0.06] font-medium text-ink" : "text-ink-soft hover:bg-black/[0.04] hover:text-ink",
+              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] transition-colors",
+              current ? "bg-brand-soft font-semibold text-brand" : "text-ink-soft hover:bg-black/[0.035] hover:text-ink",
             )}
           >
-            <Icon className="size-4" aria-hidden />{label}
+            <Icon className="size-[18px]" aria-hidden />{label}
           </Link>
         );
       })}
@@ -44,11 +54,12 @@ export function AppShell({
   );
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[232px_minmax(0,1fr)]">
+    <div className="min-h-dvh lg:grid lg:grid-cols-[256px_minmax(0,1fr)]">
       <aside className="hidden border-r border-line bg-surface lg:block">
         <div className="sticky top-0 flex h-dvh flex-col py-4">
           <Link href="/dashboard" className="mb-6 px-5"><Wordmark /></Link>
-          {nav}
+          <div className="min-h-0 flex-1 overflow-y-auto">{nav}</div>
+          <UpgradeCard />
         </div>
       </aside>
 
@@ -66,12 +77,12 @@ export function AppShell({
       )}
 
       <div className="min-w-0">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-line bg-paper/90 px-4 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-line bg-surface/90 px-4 backdrop-blur sm:px-6">
           <button className="lg:hidden" aria-label="Open menu" onClick={() => setOpen(true)}><Menu className="size-5" /></button>
 
           <Dropdown>
             <DropdownTrigger className="flex max-w-[16rem] items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-black/5">
-              <span className="grid size-6 shrink-0 place-items-center rounded bg-brand text-[10px] font-semibold text-white">{initials(active?.name)}</span>
+              <span className="grid size-6 shrink-0 place-items-center rounded-md bg-brand text-[10px] font-bold text-white">{initials(active?.name)}</span>
               <span className="truncate font-medium">{active?.name}</span>
               <ChevronsUpDown className="size-3.5 shrink-0 text-ink-faint" aria-hidden />
             </DropdownTrigger>
@@ -86,19 +97,21 @@ export function AppShell({
             </DropdownContent>
           </Dropdown>
 
-          <form action="/search" role="search" className="ml-2 hidden max-w-sm flex-1 sm:block">
+          <form action="/search" role="search" className="ml-2 hidden max-w-xl flex-1 sm:block">
             <label htmlFor="global-search" className="sr-only">Search</label>
             <div className="relative">
-              <Search className="pointer-events-none absolute left-2.5 top-2 size-4 text-ink-faint" aria-hidden />
-              <input id="global-search" name="q" placeholder="Search clients and documents" className="h-8 w-full rounded-md border border-line bg-surface pl-8 pr-3 text-sm placeholder:text-ink-faint focus-visible:border-brand focus-visible:outline-none" />
+              <Search className="pointer-events-none absolute left-3.5 top-2.5 size-4 text-ink-faint" aria-hidden />
+              <input id="global-search" name="q" placeholder="Search clients and documents" className="h-10 w-full rounded-full border border-transparent bg-paper pl-10 pr-4 text-sm placeholder:text-ink-faint focus-visible:border-brand focus-visible:bg-surface focus-visible:outline-none" />
             </div>
           </form>
           <div className="ml-auto flex items-center gap-1">
             <Link href="/search" aria-label="Search" className="grid size-8 place-items-center rounded-md hover:bg-black/5 sm:hidden"><Search className="size-[18px]" /></Link>
             <NotificationsMenu items={notifications} unread={unread} />
             <Dropdown>
-              <DropdownTrigger aria-label="Account menu" className="grid size-8 place-items-center rounded-full bg-black/[0.07] text-xs font-semibold hover:bg-black/10">
-                {initials(userName)}
+              <DropdownTrigger aria-label="Account menu" className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 hover:bg-black/5 sm:pr-3">
+                <span className="grid size-8 place-items-center rounded-full bg-brand-soft text-xs font-bold text-brand">{initials(userName)}</span>
+                <span className="hidden max-w-32 truncate text-sm font-semibold sm:block">{userName}</span>
+                <ChevronDown className="hidden size-4 text-ink-faint sm:block" aria-hidden />
               </DropdownTrigger>
               <DropdownContent align="end">
                 <div className="px-2.5 py-2">
@@ -112,7 +125,7 @@ export function AppShell({
             </Dropdown>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">{children}</main>
+        <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-8">{children}</main>
       </div>
     </div>
   );

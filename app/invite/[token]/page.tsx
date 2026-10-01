@@ -20,7 +20,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
 
   return (
     <main className="grid min-h-dvh place-items-center bg-paper p-6">
-      <div className="w-full max-w-md rounded-lg border border-line bg-surface p-8 text-center shadow-soft">
+      <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-8 text-center shadow-soft">
         <Wordmark className="mb-6" />
         {!invite || invite.accepted_at ? (
           <><h1 className="font-serif text-2xl">This invite isn't valid</h1><p className="mt-2 text-sm text-ink-soft">It may have been used or revoked. Ask the workspace owner for a new one.</p></>

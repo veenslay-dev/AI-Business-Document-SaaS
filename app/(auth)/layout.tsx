@@ -8,7 +8,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <Link href="/" aria-label="Home"><Wordmark /></Link>
         <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-12">{children}</main>
       </div>
-      <aside className="hidden bg-brand p-12 text-white lg:flex lg:flex-col lg:justify-end">
+      <aside className="hidden bg-gradient-to-br from-brand to-brand-deep p-12 text-white lg:flex lg:flex-col lg:justify-end">
         <p className="font-serif text-3xl leading-snug">
           Create once.<br />Brand everything.<br />Close more clients.
         </p>
