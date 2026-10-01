@@ -20,6 +20,6 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
     return new NextResponse(new Uint8Array(pdf), { headers: { "content-type": "application/pdf", "content-disposition": `attachment; filename="${pdfFileName(found.doc.title)}"`, "cache-control": "private, no-store" } });
   } catch (e) {
     const busy = e instanceof PdfError && e.code === "busy";
-    return NextResponse.json({ error: busy ? "PDF generation is busy. Try again in a few seconds." : PDF_USER_MESSAGE }, { status: busy ? 429 : 500 });
+    return NextResponse.json({ error: busy ? "PDF generation is busy. Try again in a few seconds." : PDF_USER_MESSAGE + (process.env.PDF_DEBUG === "1" && e instanceof PdfError && e.detail ? ` [${e.detail.slice(0, 300)}]` : "") }, { status: busy ? 429 : 500 });
   }
 }

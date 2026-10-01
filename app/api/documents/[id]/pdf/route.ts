@@ -30,6 +30,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     });
   } catch (e) {
     const busy = e instanceof PdfError && e.code === "busy";
-    return NextResponse.json({ error: busy ? "PDF generation is busy. Try again in a few seconds." : PDF_USER_MESSAGE }, { status: busy ? 429 : 500 });
+    return NextResponse.json({ error: busy ? "PDF generation is busy. Try again in a few seconds." : PDF_USER_MESSAGE + (process.env.PDF_DEBUG === "1" && e instanceof PdfError && e.detail ? ` [${e.detail.slice(0, 300)}]` : "") }, { status: busy ? 429 : 500 });
   }
 }

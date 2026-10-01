@@ -3,7 +3,7 @@ import { PDFDocument } from "pdf-lib";
 import puppeteer, { type Browser } from "puppeteer-core";
 
 export class PdfError extends Error {
-  constructor(public code: "busy" | "failed" | "no_browser") { super(code); this.name = "PdfError"; }
+  constructor(public code: "busy" | "failed" | "no_browser", public detail = "") { super(code); this.name = "PdfError"; }
 }
 
 export const PDF_USER_MESSAGE = "We couldn't generate the PDF right now. Try again in a moment.";
@@ -19,8 +19,9 @@ async function launch(): Promise<Browser> {
     const { default: chromium } = await import("@sparticuz/chromium");
     return await puppeteer.launch({ executablePath: await chromium.executablePath(), headless: true, args: chromium.args });
   } catch (e) {
-    console.error("[pdf] could not start Chromium", e instanceof Error ? e.message : "unknown");
-    throw new PdfError("no_browser");
+    const detail = e instanceof Error ? e.message : "unknown";
+    console.error("[pdf] could not start Chromium", detail);
+    throw new PdfError("no_browser", detail);
   }
 }
 
@@ -54,8 +55,9 @@ export async function htmlToPdf(html: string, opts: { header: string; footer: st
     return Buffer.from(await merged.save());
   } catch (e) {
     if (e instanceof PdfError) throw e;
-    console.error("[pdf] generation failed", e instanceof Error ? e.message : "unknown");
-    throw new PdfError("failed");
+    const detail = e instanceof Error ? e.message : "unknown";
+    console.error("[pdf] generation failed", detail);
+    throw new PdfError("failed", detail);
   } finally {
     active -= 1;
     await browser?.close().catch(() => undefined);
