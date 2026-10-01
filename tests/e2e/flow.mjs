@@ -286,7 +286,7 @@ await step("social media audit: create, work through checklists, scorecard updat
   const sec2 = page.locator("section").filter({ has: page.locator("input[value='Profiles and branding']") });
   await sec2.getByRole("button", { name: "Expand section" }).click();
   eq(await sec2.getByRole("group", { name: "Status for checkpoint 2" }).getByRole("button", { name: "Poor" }).getAttribute("aria-pressed"), "true", "status persisted after reload");
-  await page.goto(`${APP}/social-audits`); yes(await page.locator("a", { hasText: "Social Media Audit" }).first().isVisible(), "listed");
+  await page.goto(`${APP}/social-audits`); await page.locator("a", { hasText: "Social Media Audit" }).first().waitFor({ timeout: 8000 });
   const pdf = await ctx.request.get(`${APP}/api/documents/${auditId}/pdf`); eq(pdf.status(), 200, "social audit pdf");
   await page.screenshot({ path: `${OUT}/09-social-audits.png` });
 });
@@ -461,6 +461,11 @@ await step("admin: add a user, assign a plan and custom limits, pause, restore a
   const u = await browser.newContext(); const up = await u.newPage();
   await up.goto(`${APP}/login`); await up.fill("#email", newEmail); await up.fill("#password", "start-pass-12345"); await up.click("button[type=submit]");
   await up.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 30000 });
+  // an account made by the admin still goes through onboarding on first sign in
+  await up.waitForSelector("h1:has-text('Tell us about your company')", { timeout: 30000 });
+  await up.click("button[type=submit]"); await up.waitForSelector("h1:has-text('Set your brand')");
+  await up.click("button[type=submit]"); await up.waitForSelector("h1:has-text('Business details')");
+  await up.click("button:has-text('Skip for now')"); await up.waitForSelector("h1:has-text('Your workspace is ready.')");
   await up.goto(`${APP}/settings/subscription`); await up.waitForSelector("h2:has-text('Pro plan')", { timeout: 15000 });
 
   // the users list shows them with their plan, and the plan can be changed in one click
