@@ -13,6 +13,7 @@ create table if not exists auth.users (
   raw_user_meta_data jsonb default '{}'::jsonb
 );
 alter table auth.users add column if not exists encrypted_password text;
+alter table auth.users add column if not exists created_at timestamptz not null default now();
 -- Works with both GUC styles: the old request.jwt.claim.sub and PostgREST's request.jwt.claims JSON.
 create or replace function auth.uid() returns uuid language sql stable as $$
   select coalesce(

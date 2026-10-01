@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { allows, withinDocumentLimit } from "@/lib/billing/plans";
+import { DOCUMENT_LIMIT_MESSAGE, documentAllowance, monthStartIso } from "@/lib/billing/plans";
+import { premiumTemplateError } from "./plan-guard";
 import { documentHref } from "@/lib/db/documents";
 import { loadLiveBrand } from "@/lib/db/render";
 import { DEFAULT_TEMPLATE_KEY, getSystemTemplate } from "@/lib/documents/templates";
@@ -28,11 +29,11 @@ export async function createSocialAuditAction(input: SocialAuditInput): Promise<
   if (!parsed.success) return fromZod(parsed.error);
   const v = parsed.data;
 
-  const { data: sub } = await ctx.supabase.from("subscriptions").select("plan").eq("workspace_id", ctx.workspaceId).maybeSingle();
-  if (!allows(sub?.plan, "audits")) return fail("Audits are included in the Agency plan.");
-  const monthStart = new Date(); monthStart.setUTCDate(1); monthStart.setUTCHours(0, 0, 0, 0);
-  const { count } = await ctx.supabase.from("documents").select("id", { count: "exact", head: true }).eq("workspace_id", ctx.workspaceId).gte("created_at", monthStart.toISOString());
-  if (!withinDocumentLimit(sub?.plan, count ?? 0)) return fail("You've reached this month's document limit on your plan.");
+  const { data: sub } = await ctx.supabase.from("subscriptions").select("plan, limits, status").eq("workspace_id", ctx.workspaceId).maybeSingle();
+  const { count } = await ctx.supabase.from("documents").select("id", { count: "exact", head: true }).eq("workspace_id", ctx.workspaceId).gte("created_at", monthStartIso());
+  if (!documentAllowance(sub, count ?? 0).ok) return fail(DOCUMENT_LIMIT_MESSAGE);
+  const denied = await premiumTemplateError(ctx.supabase, ctx.workspaceId, v.templateKey);
+  if (denied) return fail(denied);
 
   const { data: client } = await ctx.supabase.from("clients").select("company_name, contact_name, email, phone, address").eq("id", v.clientId).eq("workspace_id", ctx.workspaceId).maybeSingle();
   if (!client) return fail("Choose one of your clients.");

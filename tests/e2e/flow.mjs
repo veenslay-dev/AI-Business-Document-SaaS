@@ -84,9 +84,9 @@ await step("add a client, then find it by search", async () => {
   clientId = page.url().split("/").pop();
   yes(await page.locator("h1", { hasText: "Nova Furniture" }).isVisible(), "detail header");
   await page.goto(`${APP}/clients?q=nova`);
-  yes(await page.locator("a", { hasText: "Nova Furniture" }).first().isVisible(), "search finds client");
+  await page.locator("a", { hasText: "Nova Furniture" }).first().waitFor({ timeout: 8000 });
   await page.goto(`${APP}/clients?q=zzzz`);
-  yes(await page.locator("text=No clients match").isVisible(), "empty search state");
+  await page.waitForSelector("text=No clients match", { timeout: 8000 });
 });
 
 await step("proposal builder: AI draft, edit, preview, create", async () => {
@@ -205,14 +205,14 @@ await step("client accepts with signature; status and dashboard update", async (
   await page.goto(`${APP}/dashboard`);
   const t = (await page.locator("section[aria-label=Summary]").innerText()).replace(/\n/g, " ");
   yes(/Accepted proposals\s*1/.test(t), `dashboard accepted count: ${t}`);
-  yes(await page.locator("table").getByText("Accepted").first().isVisible(), "status badge Accepted in the table");
+  await page.locator("table").getByText("Accepted").first().waitFor({ timeout: 8000 });
   yes(await page.locator("text=Viewed").first().isVisible(), "view tracking shown");
   await page.screenshot({ path: `${OUT}/06-dashboard.png` });
 });
 
 await step("accepted document is locked from editing", async () => {
   await page.goto(`${APP}/proposals/${docId}`);
-  yes(await page.locator("text=so it is locked").isVisible(), "locked notice");
+  await page.waitForSelector("text=so it is locked", { timeout: 10000 });
 });
 
 await step("quotation: builder, line items, tax and discount maths", async () => {
@@ -314,7 +314,13 @@ await step("workspace isolation: another company cannot open, print or share thi
   await other.close();
 });
 
-await step("team: invite a member, they sign up from the link, join, and get member-level access", async () => {
+await step("team: the free plan has one seat, so the owner upgrades first, then invites a member who joins", async () => {
+  await page.goto(`${APP}/team`);
+  const memberEmail0 = `blocked-${suffix}@acme.test`;
+  await page.fill("input[type=email][aria-label='Email address']", memberEmail0); await page.click("button:has-text('Send invite')");
+  await page.waitForSelector("text=team limit is reached", { timeout: 10000 });
+  await page.goto(`${APP}/admin/workspaces`); await page.locator("a:has-text('Acme Digital')").first().click(); await page.waitForSelector("text=Limits for this workspace");
+  await page.selectOption("#a-plan", "professional"); await page.click("button:has-text('Save plan')"); await page.waitForSelector("text=Plan updated", { timeout: 10000 });
   await page.goto(`${APP}/team`);
   const memberEmail = `member-${suffix}@acme.test`;
   await page.fill("input[type=email][aria-label='Email address']", memberEmail);
@@ -334,11 +340,11 @@ await step("team: invite a member, they sign up from the link, join, and get mem
   await p.waitForURL("**/dashboard", { timeout: 30000 });
   await p.waitForSelector("text=Recent documents");
   yes(await p.locator("text=Acme Digital").first().isVisible(), "member is in the owner's workspace (no second workspace was created)");
-  await p.goto(`${APP}/clients`); yes(await p.locator("a:has-text('Nova Furniture')").first().isVisible(), "member sees shared clients");
-  await p.goto(`${APP}/brand-kit`); yes(await p.locator("text=Only owners and admins can edit the brand kit").isVisible(), "member can't edit the brand kit");
-  await p.goto(`${APP}/team`); eq(await p.locator("text=Invite someone").count(), 0, "member can't invite");
+  await p.goto(`${APP}/clients`); await p.locator("a:has-text('Nova Furniture')").first().waitFor({ timeout: 8000 });
+  await p.goto(`${APP}/brand-kit`); await p.waitForSelector("text=Only owners and admins can edit the brand kit", { timeout: 8000 });
+  await p.goto(`${APP}/team`); await p.waitForSelector("h1:has-text('Team')", { timeout: 8000 }); eq(await p.locator("text=Invite someone").count(), 0, "member can't invite");
   // the same invite can't be used twice
-  await p.goto(link); yes(await p.locator("text=This invite isn't valid").isVisible(), "used invite is invalid");
+  await p.goto(link); await p.waitForSelector("text=This invite isn't valid", { timeout: 8000 });
   await m.close();
 });
 
@@ -361,6 +367,86 @@ await step("mobile: editor offers Edit and Preview tabs without horizontal scrol
   yes(over.sw <= over.W, "no horizontal overflow: " + JSON.stringify(over));
   await p.screenshot({ path: `${OUT}/08-mobile-preview.png` });
   await m.close();
+});
+
+await step("public pages: pricing shows the plans, about and contact render", async () => {
+  const anon = await anonContext(); const p = await anon.newPage();
+  await p.goto(`${APP}/pricing`);
+  const t = await p.locator("main").innerText();
+  yes(t.includes("10 documents per month") && t.includes("3 AI actions per month"), "free plan numbers");
+  yes(t.includes("₹999") && t.includes("₹2,999") && t.includes("Custom"), "paid plan prices and custom plan");
+  await p.getByRole("button", { name: "$ USD" }).click(); yes((await p.locator("main").innerText()).includes("$12"), "USD price");
+  await p.getByRole("button", { name: "₹ INR" }).click();
+  await p.getByRole("button", { name: /Yearly/ }).click(); yes((await p.locator("main").innerText()).includes("₹833"), "yearly price per month");
+  eq((await anon.request.get(`${APP}/about`)).status(), 200, "about page");
+  await p.goto(`${APP}/contact?topic=custom`); yes(await p.locator("h1:has-text('Ask for a custom plan')").isVisible(), "custom topic heading");
+  await anon.close();
+});
+
+await step("contact form stores a message, validates input and ignores bots", async () => {
+  const anon = await anonContext(); const p = await anon.newPage();
+  await p.goto(`${APP}/contact?topic=upgrade&plan=agency`);
+  await p.fill("#c-name", "Priya Buyer"); await p.fill("#c-email", `priya-${suffix}@buyer.test`); await p.fill("#c-message", "x");
+  await p.click("button[type=submit]"); await p.waitForSelector("text=Tell us a little more", { timeout: 8000 });
+  await p.fill("#c-message", "We are a 6 person agency and want the Agency plan with yearly billing.");
+  await p.click("button[type=submit]"); await p.waitForSelector("text=Message sent", { timeout: 15000 });
+  await anon.close();
+});
+
+await step("admin: only the first account can open /admin", async () => {
+  const anon = await browser.newContext(); const a = await anon.newPage();
+  await a.goto(`${APP}/admin`); yes(a.url().includes("/login"), "signed out goes to login");
+  await anon.close();
+  const other = await browser.newContext(); const p = await other.newPage();
+  await p.goto(`${APP}/signup`);
+  await p.fill("#fullName", "Nina Normal"); await p.fill("#companyName", "Normal Co"); await p.fill("#email", `nina-${suffix}@normal.test`); await p.fill("#password", "another-long-password");
+  await p.click("button[type=submit]"); await p.waitForSelector("h1:has-text('Tell us about your company')", { timeout: 40000 });
+  await p.click("button[type=submit]"); await p.waitForSelector("h1:has-text('Set your brand')");
+  await p.click("button[type=submit]"); await p.waitForSelector("h1:has-text('Business details')");
+  await p.click("button:has-text('Skip for now')"); await p.waitForSelector("h1:has-text('Your workspace is ready.')");
+  await p.goto(`${APP}/admin`); yes(await p.locator("text=We can't find that page").isVisible(), "non-admin sees not found");
+  yes((await p.locator("nav[aria-label=Main] a:has-text('Admin')").count()) === 0, "no admin link for normal users");
+  await p.goto(`${APP}/settings/subscription`); await p.waitForSelector("text=Usage this month", { timeout: 10000 });
+  const t = await p.locator("main").innerText();
+  yes(t.includes("Free plan") && /0 of 10 documents/.test(t) && /0 of 3 actions/.test(t), "free plan usage shown: " + t.replace(/\n/g, " ").slice(0, 300));
+  yes(await p.locator("a:has-text('Upgrade plan')").first().isVisible(), "upgrade button");
+  await other.close();
+});
+
+await step("admin: overview, inbox, and changing a workspace plan takes effect", async () => {
+  await page.goto(`${APP}/dashboard`);
+  yes(await page.locator("nav[aria-label=Main] a:has-text('Admin')").isVisible(), "admin link for the first account");
+  await page.goto(`${APP}/admin`);
+  await page.waitForSelector("text=Everything across all workspaces");
+  const o = (await page.locator("main").innerText()).replace(/\n/g, " ");
+  yes(/Users\s*\d+/.test(o) && o.includes("Money in and out"), "overview content: " + o.slice(0, 200));
+  await page.goto(`${APP}/admin/messages`);
+  await page.waitForSelector("text=Priya Buyer", { timeout: 10000 });
+  await page.waitForSelector("text=Agency plan with yearly billing", { timeout: 10000 });
+  await page.click("button:has-text('Mark handled')"); await page.waitForSelector("text=Nothing here", { timeout: 10000 });
+  await page.goto(`${APP}/admin/users`); await page.waitForSelector(`text=owner-${suffix}@acme.test`, { timeout: 10000 });
+  await page.goto(`${APP}/admin/workspaces`);
+  await page.locator("a:has-text('Acme Digital')").first().click(); await page.waitForSelector("text=Limits for this workspace");
+  await page.selectOption("#a-plan", "professional"); await page.fill("#a-docs", "0"); await page.fill("#a-ai", "0");
+  await page.click("button:has-text('Save plan')"); await page.waitForSelector("text=Plan updated", { timeout: 10000 });
+  await page.goto(`${APP}/settings/subscription`);
+  await page.waitForSelector("h2:has-text('Pro plan')", { timeout: 10000 });
+  await page.goto(`${APP}/invoices/new?client=${clientId}`);
+  await page.click("button[type=submit]");
+  await page.waitForSelector("text=month's document limit", { timeout: 15000 });
+  await page.goto(`${APP}/proposals/new?client=${clientId}`);
+});
+
+await step("admin: raising the limits lets the owner create documents again, premium templates unlock on Pro", async () => {
+  await page.goto(`${APP}/admin/workspaces`);
+  await page.locator("a:has-text('Acme Digital')").first().click(); await page.waitForSelector("text=Limits for this workspace");
+  await page.fill("#a-docs", ""); await page.fill("#a-ai", "");
+  await page.click("button:has-text('Save plan')"); await page.waitForSelector("text=Plan updated", { timeout: 10000 });
+  await page.goto(`${APP}/invoices/new?client=${clientId}`);
+  await page.click("button[type=submit]");
+  await page.waitForURL(/\/invoices\/[0-9a-f-]{36}$/, { timeout: 20000 });
+  const opts = await page.locator("select[aria-label=Template] option").allInnerTexts();
+  yes(opts.length >= 3 && !opts.some((x) => x.includes("(Pro)")), "no locked templates on Pro: " + opts.join("|"));
 });
 
 yes(consoleErrors.length === 0 || true);

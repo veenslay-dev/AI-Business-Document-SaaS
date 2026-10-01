@@ -56,7 +56,7 @@ export default function HomePage() {
             <Button asChild size="lg" className="rounded-full px-7"><Link href="/signup">Start Free<ArrowRight className="size-4" aria-hidden /></Link></Button>
             <Button asChild size="lg" variant="secondary" className="rounded-full px-7"><Link href="#how-it-works"><PlayCircle className="size-4" aria-hidden />See How It Works</Link></Button>
           </div>
-          <p className="mt-4 text-sm text-ink-faint">Free plan includes 3 documents a month and PDF export.</p>
+          <p className="mt-4 text-sm text-ink-faint">Free plan includes 10 documents and 3 AI actions a month, with PDF export.</p>
         </div>
         <div className="relative hidden h-[520px] sm:block" aria-label="The same proposal in two different brands">
           <CroppedPreview label="Proposal cover in a deep red brand" height={560} className="absolute left-0 top-0 w-[320px] rounded-sm">{heroA}</CroppedPreview>
@@ -153,7 +153,7 @@ export default function HomePage() {
       <section id="pricing" className="scroll-mt-8 bg-brand-soft/50">
         <div className="mx-auto max-w-7xl px-5 py-20">
           <h2 className="text-3xl font-extrabold">Pricing</h2>
-          <p className="mb-10 mt-2 max-w-xl text-ink-soft">Start on the free plan. Paid plans open soon and prices will be posted here before they do.</p>
+          <p className="mb-8 mt-2 max-w-xl text-ink-soft">Start free with 10 documents and 3 AI actions a month. Upgrade when you need more.</p>
           <PlanGrid />
         </div>
       </section>

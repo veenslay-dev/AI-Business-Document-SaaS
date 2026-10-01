@@ -1,7 +1,8 @@
 import "server-only";
 import { getActiveMembership, getUser } from "@/lib/auth/session";
 import { getWorkspaceBranding } from "@/lib/db/workspace";
-import { allows } from "@/lib/billing/plans";
+import { aiAllowance, effectivePlan, monthStartIso } from "@/lib/billing/plans";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { BrandContext } from "@/lib/documents/branding";
 import { selectKnowledge, type KnowledgeItem } from "./context";
@@ -28,10 +29,20 @@ export async function withAi<T>(operation: string, fn: (ctx: AiContext) => Promi
   const membership = await getActiveMembership();
   if (!user || !membership) return { ok: false, error: "Your session has expired. Please sign in again." };
 
+  let finish: (refund: boolean) => Promise<void> = async () => undefined;
   try {
     const supabase = await createClient();
-    const { data: sub } = await supabase.from("subscriptions").select("plan").eq("workspace_id", membership.workspaceId).maybeSingle();
-    if (!allows(sub?.plan, "ai")) throw new AiError("plan_limit", "plan");
+    const { data: sub } = await supabase.from("subscriptions").select("plan, limits, status").eq("workspace_id", membership.workspaceId).maybeSingle();
+    // Only real AI calls count towards the plan. Website scans are logged in the same table for rate limiting.
+    const { count: usedThisMonth } = await supabase.from("ai_usage").select("id", { count: "exact", head: true })
+      .eq("workspace_id", membership.workspaceId).neq("operation", "audit_scan").gte("created_at", monthStartIso());
+    const allowance = aiAllowance(sub, usedThisMonth ?? 0);
+    if (!allowance.ok) {
+      const plan = effectivePlan(sub);
+      return { ok: false, error: allowance.reason === "suspended"
+        ? "This workspace is paused. Contact support to restore access."
+        : `You've used all ${allowance.limit} AI actions included in your ${plan.name} plan this month. Upgrade in Settings, then Subscription, for more.` };
+    }
 
     const limit = await checkAiLimit(supabase, membership.workspaceId, user.id);
     if (!limit.ok) throw new AiError("rate_limited", limit.reason);
@@ -41,7 +52,16 @@ export async function withAi<T>(operation: string, fn: (ctx: AiContext) => Promi
 
     const provider = getProvider();
     // Record before calling so concurrent requests can't slip past the limit.
-    await supabase.from("ai_usage").insert({ workspace_id: membership.workspaceId, user_id: user.id, operation, provider: provider.name });
+    const { data: usageRow } = await supabase.from("ai_usage").insert({ workspace_id: membership.workspaceId, user_id: user.id, operation, provider: provider.name }).select("id").single();
+    finish = async (refund: boolean) => {
+      if (!usageRow?.id) return;
+      try {
+        const admin = createAdminClient();
+        // A failed call doesn't cost the customer an AI action.
+        if (refund) await admin.from("ai_usage").delete().eq("id", usageRow.id);
+        else await admin.from("ai_usage").update({ input_tokens: provider.usage.input, output_tokens: provider.usage.output, model: provider.usage.model }).eq("id", usageRow.id);
+      } catch { /* cost tracking must never break the user's request */ }
+    };
 
     let kb: KnowledgeItem[] | null = null;
     const data = await fn({
@@ -55,8 +75,10 @@ export async function withAi<T>(operation: string, fn: (ctx: AiContext) => Promi
         return selectKnowledge(kb, query);
       },
     });
+    await finish(false);
     return { ok: true, data };
   } catch (e) {
+    await finish(true);
     if (e instanceof AiError) return { ok: false, error: AI_USER_MESSAGES[e.code] };
     console.error("[ai] unexpected failure", e instanceof Error ? e.message : "unknown");
     return { ok: false, error: AI_USER_MESSAGES.provider_error };

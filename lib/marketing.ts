@@ -1,13 +1,20 @@
-/** Copy for the public site. Prices for paid plans are intentionally not invented here; set `price` when they're decided. */
-export type PlanCard = { id: "free" | "professional" | "agency"; name: string; price: string; note: string; blurb: string; features: string[]; cta: string; highlight?: boolean };
+/** Copy for plan cards. Numbers come from lib/billing/plans.ts so the site, the app and enforcement can't disagree. */
+import { PLANS, type PlanId } from "@/lib/billing/plans";
+
+export type PlanCard = { id: PlanId; name: string; blurb: string; features: string[]; highlight?: boolean };
+
+const docs = (id: PlanId) => (PLANS[id].monthlyDocuments === null ? "Unlimited documents (fair use)" : `${PLANS[id].monthlyDocuments} documents per month`);
+const members = (id: PlanId) => (PLANS[id].teamMembers === 1 ? "1 team member" : `Up to ${PLANS[id].teamMembers} team members`);
 
 export const PLAN_CARDS: PlanCard[] = [
-  { id: "free", name: "Free", price: "0", note: "No card needed", blurb: "Try the whole flow with a real client.", cta: "Start Free",
-    features: ["3 documents per month", "1 workspace", "Basic templates", "PDF export"] },
-  { id: "professional", name: "Professional", price: "Coming soon", note: "Price announced at launch", blurb: "For a freelancer or small studio that sends documents every week.", cta: "Start Free", highlight: true,
-    features: ["Unlimited documents", "AI generation", "Custom branding", "Shareable documents", "Proposal tracking", "More templates"] },
-  { id: "agency", name: "Agency", price: "Coming soon", note: "Price announced at launch", blurb: "For teams that need everyone writing in the same brand.", cta: "Start Free",
-    features: ["Multiple team members", "White-label documents", "Advanced templates", "Client management", "Audit generation", "Advanced tracking"] },
+  { id: "free", name: PLANS.free.name, blurb: "Try the whole flow with a real client.",
+    features: [docs("free"), `${PLANS.free.aiPerMonth} AI actions per month`, members("free"), "Proposals, quotations, invoices and audits", "PDF export and share links with view tracking", "Brand kit and standard templates"] },
+  { id: "professional", name: PLANS.professional.name, highlight: true, blurb: "For a freelancer or small studio that sends documents every week.",
+    features: [docs("professional"), `${PLANS.professional.aiPerMonth} AI actions per month`, members("professional"), "Everything in Free", "Premium report templates (Noir, Aurora, Sidebar)", "Email support"] },
+  { id: "agency", name: PLANS.agency.name, blurb: "For an agency that writes proposals and audits every day.",
+    features: [docs("agency"), `${PLANS.agency.aiPerMonth} AI actions per month`, "Up to 10 team members", "Everything in Pro", "Premium report templates", "Priority support"] },
+  { id: "custom", name: PLANS.custom.name, blurb: "Bigger teams, higher AI volume or special requirements.",
+    features: ["AI, document and team limits set for you", "Onboarding help", "Dedicated support", "Invoice and contract billing"] },
 ];
 
 export const FAQ: { q: string; a: string }[] = [
@@ -17,7 +24,9 @@ export const FAQ: { q: string; a: string }[] = [
   { q: "Can clients sign?", a: "Clients can accept a proposal or quotation online by entering their name and email, agreeing to the terms and drawing or typing a signature. We record who accepted and when. Whether that is enough for your contracts depends on your jurisdiction, so check with a lawyer for anything high stakes." },
   { q: "What does the SEO audit check?", a: "HTTPS, indexability, robots.txt, sitemap, canonical tags, redirects, a sample of internal links, titles, descriptions, headings, image alt text, content length, structured data, server speed and, when available, Google PageSpeed results. It reads the home page and a handful of inner pages, so it is a fast health check rather than a full crawl." },
   { q: "Who can see my data?", a: "Only members of your workspace. Data lives in a Postgres database with row level security, so one company's records are never returned to another. Shared documents are reachable only through their private link." },
-  { q: "Can I take payments through it?", a: "Not yet. Paid plans and invoicing are planned. Today the product covers proposals, quotations and audits." },
+  { q: "What counts as an AI action?", a: "Each time the assistant drafts a proposal, rewrites a section, writes a line description or explains audit findings in plain language, that is one action. If the AI service fails and you get no result, the action is not counted." },
+  { q: "How do I upgrade?", a: "Open Settings, then Subscription, and choose a plan. We'll confirm the payment details with you and switch the plan on for your workspace. Online card payments are planned." },
+  { q: "Can I take payments from my clients through it?", a: "Not yet. You can create invoices with your payment details on them, but clients pay you directly." },
 ];
 
 export const FEATURES = [

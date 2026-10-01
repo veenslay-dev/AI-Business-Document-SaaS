@@ -108,6 +108,7 @@ export async function start() {
       if (p.startsWith("/auth/v1/admin/users")) {
         const c = bearer(req); if (c?.role !== "service_role") return send(res, 403, { message: "not admin" });
         if (req.method === "POST") { const b = JSON.parse((await readBody(req)).toString()); const id = randomUUID(); await db.query("insert into auth.users (id,email,raw_user_meta_data,encrypted_password) values ($1,$2,$3,$4)", [id, b.email, b.user_metadata ?? {}, hashPw(b.password ?? randomUUID())]); return send(res, 200, userJson(await byId(id))); }
+        if (req.method === "GET" && !p.split("/")[5]) { const rows = (await db.query("select * from auth.users order by created_at asc")).rows; return send(res, 200, { users: rows.map(userJson), total: rows.length, nextPage: null, lastPage: 1 }); }
         const id = p.split("/")[5]; const u = id ? await byId(id) : null;
         return u ? send(res, 200, userJson(u)) : send(res, 404, { message: "not found" });
       }

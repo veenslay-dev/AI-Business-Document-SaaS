@@ -8,7 +8,8 @@ import { analyze } from "@/lib/audit/analyze";
 import { buildAuditContent } from "@/lib/audit/build";
 import { collectSite } from "@/lib/audit/collect";
 import { parsePublicUrl, UnsafeUrlError } from "@/lib/audit/ssrf";
-import { allows, withinDocumentLimit } from "@/lib/billing/plans";
+import { DOCUMENT_LIMIT_MESSAGE, documentAllowance, monthStartIso } from "@/lib/billing/plans";
+import { premiumTemplateError } from "./plan-guard";
 import { DEFAULT_TEMPLATE_KEY, getSystemTemplate } from "@/lib/documents/templates";
 import { documentHref } from "@/lib/db/documents";
 import { loadLiveBrand } from "@/lib/db/render";
@@ -33,11 +34,11 @@ export async function createAuditAction(input: z.input<typeof schema>): Promise<
   let url: URL;
   try { url = parsePublicUrl(v.url); } catch (e) { return fail(e instanceof UnsafeUrlError ? e.message : "Enter a valid website address."); }
 
-  const { data: sub } = await ctx.supabase.from("subscriptions").select("plan").eq("workspace_id", ctx.workspaceId).maybeSingle();
-  if (!allows(sub?.plan, "audits")) return fail("SEO audits are included in the Agency plan.");
-  const monthStart = new Date(); monthStart.setUTCDate(1); monthStart.setUTCHours(0, 0, 0, 0);
-  const { count: monthDocs } = await ctx.supabase.from("documents").select("id", { count: "exact", head: true }).eq("workspace_id", ctx.workspaceId).gte("created_at", monthStart.toISOString());
-  if (!withinDocumentLimit(sub?.plan, monthDocs ?? 0)) return fail("You've reached this month's document limit on your plan.");
+  const { data: sub } = await ctx.supabase.from("subscriptions").select("plan, limits, status").eq("workspace_id", ctx.workspaceId).maybeSingle();
+  const { count: monthDocs } = await ctx.supabase.from("documents").select("id", { count: "exact", head: true }).eq("workspace_id", ctx.workspaceId).gte("created_at", monthStartIso());
+  if (!documentAllowance(sub, monthDocs ?? 0).ok) return fail(DOCUMENT_LIMIT_MESSAGE);
+  const denied = await premiumTemplateError(ctx.supabase, ctx.workspaceId, v.templateKey);
+  if (denied) return fail(denied);
 
   const hourAgo = new Date(Date.now() - 3600_000).toISOString();
   const { count } = await ctx.supabase.from("ai_usage").select("id", { count: "exact", head: true }).eq("workspace_id", ctx.workspaceId).eq("operation", "audit_scan").gte("created_at", hourAgo);

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/dashboard/shell";
 import { getMemberships, requireWorkspace } from "@/lib/auth/session";
+import { isPlatformAdmin } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
 import { listActivity } from "@/lib/db/activity";
 import { documentHref } from "@/lib/db/documents";
@@ -25,6 +26,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       workspaces={memberships.map((m) => ({ id: m.workspaceId, name: m.name, logoUrl: m.logoUrl, role: m.role }))}
       userName={profile?.full_name ?? user.email ?? "You"}
       userEmail={user.email ?? ""}
+      isAdmin={await isPlatformAdmin()}
       unread={activity.filter((a) => new Date(a.at).getTime() > seen).length}
       notifications={activity.map((a) => ({ id: a.id, at: a.at, href: documentHref(a.type, a.documentId), title: a.title, text: a.text, detail: a.detail }))}
     >

@@ -30,7 +30,7 @@ import { BLOCK_LABELS, emptyBlock, emptySection, type Block, type BlockType, typ
 import type { DocType, TemplateConfig } from "@/lib/documents/templates";
 import { cn } from "@/lib/utils";
 
-export type EditorTemplate = { value: string; label: string; config: TemplateConfig };
+export type EditorTemplate = { value: string; label: string; config: TemplateConfig; locked?: boolean };
 export type EditorProps = {
   doc: { id: string; type: DocType; title: string; status: string; templateValue: string; publicUrl: string; frozen: boolean; hasAcceptance: boolean };
   initialContent: DocumentContent;
@@ -198,7 +198,7 @@ export function DocumentEditor(props: EditorProps) {
           <DocStatusBadge status={status} />
           <span className="hidden items-center gap-1 text-xs text-ink-faint sm:flex" aria-live="polite">{saveState === "saving" && <Loader2 className="size-3 animate-spin" aria-hidden />}{statusLabel}</span>
           <select aria-label="Template" value={templateValue} disabled={locked} onChange={(e) => { setTemplateValue(e.target.value); dirty.current = true; setSaveState("dirty"); }}
-            className="h-8 rounded-md border border-line-strong bg-surface px-2 text-sm">{templates.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}</select>
+            className="h-8 rounded-md border border-line-strong bg-surface px-2 text-sm">{templates.map((t) => <option key={t.value} value={t.value} disabled={t.locked && t.value !== templateValue}>{t.label}</option>)}</select>
           {doc.frozen && !locked && <Button size="sm" variant="secondary" onClick={async () => { try { const r = await refreshBrandingAction(doc.id); if (r.ok) { toast.success(r.message ?? "Branding refreshed."); router.refresh(); } else toast.error(r.error); } catch { toast.error("We couldn't reach the server."); } }}>Refresh branding</Button>}
           <PageColorButton value={content.style?.background ?? null} disabled={locked} onChange={(hex) => mutate((d) => { d.style = hex ? { ...d.style, background: hex } : undefined; })} />
           {!locked && <Button size="sm" variant="secondary" onClick={() => save()} loading={saveState === "saving"}><Save className="size-4" aria-hidden />Save</Button>}

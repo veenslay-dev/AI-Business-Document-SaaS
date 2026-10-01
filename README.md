@@ -22,12 +22,14 @@ Stack: Next.js 16 (App Router), TypeScript, Tailwind CSS 4, Supabase (Postgres, 
 | Templates | Built-in layouts (including premium noir, aurora and sidebar reports with contents pages), saved workspace templates, default template per type, 19 heading and 18 body fonts, whole-document page color |
 | Sharing | Private link, expiry, revoke and regenerate, view tracking, PDF download, accept, reject, request changes |
 | AI | Provider independent layer (OpenAI or Anthropic), knowledge base, rate limits, safe error messages |
-| Marketing | Landing page rendered from the real document engine, pricing, sitemap, robots, Open Graph image, JSON-LD |
+| Plans and limits | Free (10 documents, 3 AI actions a month), Pro, Agency and Custom. Documents, AI actions, team size and premium templates are enforced per workspace. Failed AI calls are not counted. Token counts are stored so real AI cost is visible |
+| Admin panel | `/admin` for the first account: totals, revenue and AI cost estimates, every workspace, plan and limit changes, users, and the contact inbox |
+| Marketing | Landing page, pricing (INR and USD, monthly and yearly), About, Contact, rendered from the real document engine, pricing, sitemap, robots, Open Graph image, JSON-LD |
 
 ## Run it locally
 
 1. Create a Supabase project (or run `supabase start`).
-2. Apply the migrations in `supabase/migrations/` in order: `0001`, `0002`, `0003`, then `0004` (invoices) (SQL editor, or `supabase db push`).
+2. Apply the migrations in `supabase/migrations/` in order: `0001`, `0002`, `0003`, `0004` (invoices), then `0005` (plans, contact inbox, admin) (SQL editor, or `supabase db push`).
 3. Copy `.env.example` to `.env.local` and fill it in (see below).
 4. In Supabase, Authentication, URL configuration: add `http://localhost:3000/auth/callback` as a redirect URL. For quick local testing you can turn off "Confirm email".
 5. `npm install`
@@ -51,7 +53,10 @@ PDF generation needs Chromium. On serverless hosts it uses `@sparticuz/chromium`
 | `IP_HASH_SALT` | recommended | Salt for hashing viewer IPs. Use a long random string |
 | `PDF_CHROMIUM_PATH` | when self-hosting | Chromium binary for PDF export |
 | `PAGESPEED_API_KEY` | no | Google PageSpeed key for audits |
-| `BILLING_ENFORCEMENT` | no | `on` enforces plan limits. Leave off until billing is connected |
+| `BILLING_ENFORCEMENT` | no | Plan limits are enforced by default. Set to `off` to disable them (local demos) |
+| `ADMIN_EMAIL` | no | A second platform admin (confirmed email). The first account ever created is always the admin |
+| `AI_COST_INPUT_PER_M_USD`, `AI_COST_OUTPUT_PER_M_USD`, `USD_TO_INR` | no | Rates for the admin panel's AI cost estimate. Defaults suit a small OpenAI model |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | no | Shown on the contact page |
 
 Never put the service role key or an AI key in a `NEXT_PUBLIC_` variable.
 
@@ -92,7 +97,7 @@ PDF_CHROMIUM_PATH=/path/to/chromium node tests/e2e/flow.mjs
 - **AI.** `lib/ai/functions.ts` holds provider independent operations (`generateProposal`, `generateQuotationDescription`, `analyzeAudit`, `improveDocumentContent`, `generateFollowUp`). Providers live in `lib/ai/providers.ts`. Every reply is validated with Zod, with one repair retry. All calls go through `lib/ai/service.ts`, which checks the session, plan and rate limit and turns failures into safe messages. Keys never reach the browser.
 - **PDF.** `lib/pdf/`. Headless Chromium prints the same HTML, with a full-bleed cover, running header, footer and page numbers. Next.js refuses a static import of `react-dom/server` in app-router code, so `lib/pdf/static-markup.ts` loads it at runtime.
 - **Audits.** `lib/audit/`. All requests go through `safeFetch`, which validates the resolved IP at connect time, re-validates every redirect, and refuses private, loopback, link-local and metadata addresses.
-- **Billing and email.** `lib/billing/` and `lib/email/` are provider boundaries with no provider connected. Plan limits are defined in `lib/billing/plans.ts` and only enforced when `BILLING_ENFORCEMENT=on`.
+- **Billing and email.** `lib/billing/` and `lib/email/` are provider boundaries with no payment provider connected. Plans, prices and limits are defined once in `lib/billing/plans.ts` and are enforced on the server. Until online payments exist, upgrades are requested through the contact form and the admin switches the plan on in `/admin`.
 
 ## Layout
 

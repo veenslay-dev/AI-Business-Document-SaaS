@@ -260,3 +260,32 @@ begin
   if n <> 0 then raise exception 'FAIL: Bob sees Alice invoice'; end if;
 end $$;
 reset role;
+
+-- 12. Contact messages and admin helpers are not reachable by signed-in users.
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
+do $$
+begin
+  begin
+    perform 1 from public.contact_messages;
+    raise exception 'FAIL: contact_messages readable by a user';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.platform_first_user_id();
+    raise exception 'FAIL: platform_first_user_id callable by a user';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform * from public.admin_workspaces();
+    raise exception 'FAIL: admin_workspaces callable by a user';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+reset role;
+do $$
+declare n int;
+begin
+  perform public.platform_first_user_id();
+  select count(*) into n from public.admin_workspaces();
+  if n < 2 then raise exception 'FAIL: admin_workspaces returned % rows', n; end if;
+end $$;

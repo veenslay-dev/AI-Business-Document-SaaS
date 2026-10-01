@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ACTIVE_WORKSPACE_COOKIE, getUser } from "@/lib/auth/session";
-import { planOf, enforcementOn } from "@/lib/billing/plans";
+import { effectivePlan, enforcementOn } from "@/lib/billing/plans";
 import { getEmailProvider } from "@/lib/email";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { inviteSchema, type InviteInput } from "@/lib/validation/config";
@@ -20,8 +20,8 @@ export async function inviteMemberAction(input: InviteInput): Promise<ActionResu
   if (!parsed.success) return fromZod(parsed.error);
 
   if (enforcementOn()) {
-    const { data: sub } = await ctx.supabase.from("subscriptions").select("plan").eq("workspace_id", ctx.workspaceId).maybeSingle();
-    const limit = planOf(sub?.plan).teamMembers;
+    const { data: sub } = await ctx.supabase.from("subscriptions").select("plan, limits, status").eq("workspace_id", ctx.workspaceId).maybeSingle();
+    const limit = effectivePlan(sub).teamMembers;
     const [{ count: members }, { count: invites }] = await Promise.all([
       ctx.supabase.from("workspace_members").select("id", { count: "exact", head: true }).eq("workspace_id", ctx.workspaceId),
       ctx.supabase.from("workspace_invites").select("id", { count: "exact", head: true }).eq("workspace_id", ctx.workspaceId).is("accepted_at", null),
@@ -34,7 +34,7 @@ export async function inviteMemberAction(input: InviteInput): Promise<ActionResu
   if (error || !data) return fail(error?.code === "23505" ? "That person already has a pending invite." : GENERIC_ERROR);
 
   const link = `${siteUrl()}/invite/${data.token}`;
-  await getEmailProvider().send({ to: parsed.data.email, subject: `You're invited to join ${ctx.membership.name}`, text: `Join ${ctx.membership.name} on DocuPro AI: ${link}` });
+  await getEmailProvider().send({ to: parsed.data.email, subject: `You're invited to join ${ctx.membership.name}`, text: `Join ${ctx.membership.name} on Docuzumo: ${link}` });
   revalidatePath("/team");
   return { ok: true, data: { link }, message: "Invite created. Share the link with them." };
 }

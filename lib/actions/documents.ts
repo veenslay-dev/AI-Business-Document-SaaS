@@ -2,7 +2,8 @@
 
 import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { withinDocumentLimit } from "@/lib/billing/plans";
+import { premiumTemplateError } from "./plan-guard";
+import { DOCUMENT_LIMIT_MESSAGE, documentAllowance, monthStartIso } from "@/lib/billing/plans";
 import { buildInvoiceContent, buildProposalContent, buildQuotationContent, formatQuotationNumber, type ClientInfo } from "@/lib/documents/builders";
 import { parseContent } from "@/lib/documents/content";
 import { documentTotals } from "@/lib/documents/totals";
@@ -27,12 +28,11 @@ async function loadClientInfo(ctx: Ctx, clientId: string): Promise<{ info: Clien
 }
 
 async function underPlanLimit(ctx: Ctx): Promise<boolean> {
-  const start = new Date(); start.setUTCDate(1); start.setUTCHours(0, 0, 0, 0);
   const [{ data: sub }, { count }] = await Promise.all([
-    ctx.supabase.from("subscriptions").select("plan").eq("workspace_id", ctx.workspaceId).maybeSingle(),
-    ctx.supabase.from("documents").select("id", { count: "exact", head: true }).eq("workspace_id", ctx.workspaceId).gte("created_at", start.toISOString()),
+    ctx.supabase.from("subscriptions").select("plan, limits, status").eq("workspace_id", ctx.workspaceId).maybeSingle(),
+    ctx.supabase.from("documents").select("id", { count: "exact", head: true }).eq("workspace_id", ctx.workspaceId).gte("created_at", monthStartIso()),
   ]);
-  return withinDocumentLimit(sub?.plan, count ?? 0);
+  return documentAllowance(sub, count ?? 0).ok;
 }
 
 /** Resolves a template choice to columns to store, verifying custom templates belong to the workspace. */
@@ -52,7 +52,7 @@ export async function createProposalAction(input: ProposalFormInput): Promise<Ac
   if (!parsed.success) return fromZod(parsed.error);
   const v = parsed.data;
 
-  if (!(await underPlanLimit(ctx))) return fail("You've reached this month's document limit on your plan.");
+  if (!(await underPlanLimit(ctx))) return fail(DOCUMENT_LIMIT_MESSAGE);
   const client = await loadClientInfo(ctx, v.clientId);
   if (!client) return fail("Choose one of your clients.");
   const brand = await loadLiveBrand(ctx.supabase, ctx.workspaceId);
@@ -68,6 +68,7 @@ export async function createProposalAction(input: ProposalFormInput): Promise<Ac
     }));
   }
 
+  { const denied = await premiumTemplateError(ctx.supabase, ctx.workspaceId, v.templateKey); if (denied) return fail(denied); }
   const tpl = await resolveTemplate(ctx, "proposal", v.templateKey, v.templateId);
   let content = buildProposalContent({
     brand, client: client.info, ai: v.ai, packages, date: new Date().toISOString().slice(0, 10),
@@ -93,7 +94,7 @@ export async function createQuotationAction(input: QuotationFormInput): Promise<
   if (!parsed.success) return fromZod(parsed.error);
   const v = parsed.data;
 
-  if (!(await underPlanLimit(ctx))) return fail("You've reached this month's document limit on your plan.");
+  if (!(await underPlanLimit(ctx))) return fail(DOCUMENT_LIMIT_MESSAGE);
   const client = await loadClientInfo(ctx, v.clientId);
   if (!client) return fail("Choose one of your clients.");
   const brand = await loadLiveBrand(ctx.supabase, ctx.workspaceId);
@@ -104,6 +105,7 @@ export async function createQuotationAction(input: QuotationFormInput): Promise<
     .eq("workspace_id", ctx.workspaceId).eq("type", "quotation").gte("created_at", `${year}-01-01`);
   const number = formatQuotationNumber(year, (count ?? 0) + 1);
 
+  { const denied = await premiumTemplateError(ctx.supabase, ctx.workspaceId, v.templateKey); if (denied) return fail(denied); }
   const tpl = await resolveTemplate(ctx, "quotation", v.templateKey, v.templateId);
   const content = buildQuotationContent({
     brand, client: client.info, number, issueDate: v.issueDate, validUntil: v.validUntil, currency: v.currency,
@@ -129,7 +131,7 @@ export async function createInvoiceAction(input: InvoiceFormInput): Promise<Acti
   if (!parsed.success) return fromZod(parsed.error);
   const v = parsed.data;
 
-  if (!(await underPlanLimit(ctx))) return fail("You've reached this month's document limit on your plan.");
+  if (!(await underPlanLimit(ctx))) return fail(DOCUMENT_LIMIT_MESSAGE);
   const client = await loadClientInfo(ctx, v.clientId);
   if (!client) return fail("Choose one of your clients.");
   const brand = await loadLiveBrand(ctx.supabase, ctx.workspaceId);
@@ -140,6 +142,7 @@ export async function createInvoiceAction(input: InvoiceFormInput): Promise<Acti
     .eq("workspace_id", ctx.workspaceId).eq("type", "invoice").gte("created_at", `${year}-01-01`);
   const number = formatQuotationNumber(year, (count ?? 0) + 1, "INV");
 
+  { const denied = await premiumTemplateError(ctx.supabase, ctx.workspaceId, v.templateKey); if (denied) return fail(denied); }
   const tpl = await resolveTemplate(ctx, "invoice", v.templateKey, v.templateId);
   const content = buildInvoiceContent({
     brand, client: client.info, number, issueDate: v.issueDate, dueDate: v.dueDate, currency: v.currency,
@@ -171,6 +174,7 @@ export async function saveDocumentAction(input: SaveDocumentInput): Promise<Acti
   if (!doc) return fail("This document no longer exists.");
   if (LOCKED.includes(doc.status)) return fail(`This document was ${doc.status} by the client and can't be edited. Duplicate it to make changes.`);
 
+  if (!v.templateId) { const denied = await premiumTemplateError(ctx.supabase, ctx.workspaceId, v.templateKey); if (denied) return fail(denied); }
   const template = v.templateId
     ? await resolveTemplate(ctx, doc.type, "", v.templateId)
     : await resolveTemplate(ctx, doc.type, v.templateKey ?? "", null);
@@ -248,7 +252,7 @@ export async function regenerateLinkAction(id: string): Promise<ActionResult<{ u
 export async function duplicateDocumentAction(id: string): Promise<ActionResult<{ id: string; href: string }>> {
   const ctx = await actionContext("document:create");
   if (!ctx.ok) return ctx.error;
-  if (!(await underPlanLimit(ctx))) return fail("You've reached this month's document limit on your plan.");
+  if (!(await underPlanLimit(ctx))) return fail(DOCUMENT_LIMIT_MESSAGE);
   const doc = await fetchDocument(ctx.supabase, ctx.workspaceId, id);
   if (!doc) return fail("This document no longer exists.");
   const { data, error } = await ctx.supabase.from("documents").insert({

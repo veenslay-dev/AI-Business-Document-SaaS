@@ -1,21 +1,73 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PLAN_CARDS } from "@/lib/marketing";
+import { formatPlanPrice, PLAN_ORDER, type PlanId } from "@/lib/billing/plans";
 import { cn } from "@/lib/utils";
 
-export function PlanGrid() {
+type Currency = "INR" | "USD";
+
+/**
+ * The plan cards, used on the public site and inside the app.
+ * Inside the app, pass `currentPlan` so the right card says "Current plan" and the others link to the upgrade form.
+ */
+export function PlanGrid({ currentPlan, workspace }: { currentPlan?: PlanId; workspace?: string }) {
+  const [currency, setCurrency] = useState<Currency>("INR");
+  const [yearly, setYearly] = useState(false);
+  const inApp = currentPlan !== undefined;
+
+  const cta = (id: PlanId) => {
+    const base = workspace ? `&workspace=${workspace}` : "";
+    if (id === "custom") return { href: `/contact?topic=custom${base}`, label: "Contact us", primary: false };
+    if (id === "free") return { href: "/signup", label: "Start Free", primary: false };
+    const label = inApp ? "Upgrade" : `Get ${PLAN_CARDS.find((p) => p.id === id)?.name}`;
+    return { href: `/contact?topic=upgrade&plan=${id}${yearly ? "&billing=yearly" : ""}${base}`, label, primary: true };
+  };
+
   return (
-    <div className="grid gap-5 md:grid-cols-3">
-      {PLAN_CARDS.map((p) => (
-        <article key={p.id} className={cn("flex flex-col rounded-2xl border bg-surface p-7", p.highlight ? "border-2 border-brand shadow-pop md:-mt-3 md:pb-9" : "border-line shadow-soft")}>
-          <h3 className="flex items-center justify-between font-bold">{p.name}{p.highlight && <span className="rounded-full bg-brand px-2.5 py-0.5 text-xs font-semibold text-white">Most popular</span>}</h3>
-          <p className="mt-3 text-4xl font-extrabold">{p.price === "0" ? "$0" : p.price}</p>
-          <p className="text-xs text-ink-faint">{p.note}</p>
-          <p className="mt-3 text-sm text-ink-soft">{p.blurb}</p>
-          <ul className="mt-5 flex-1 space-y-2 text-sm">{p.features.map((f) => <li key={f} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />{f}</li>)}</ul>
-          <Button asChild className="mt-6" variant={p.highlight ? "primary" : "secondary"}><Link href="/signup">{p.cta}</Link></Button>
-        </article>
+    <div>
+      <div className="mb-8 flex flex-wrap items-center gap-3">
+        <Toggle label="Billing period" options={[["monthly", "Monthly"], ["yearly", "Yearly (2 months free)"]]} value={yearly ? "yearly" : "monthly"} onChange={(v) => setYearly(v === "yearly")} />
+        <Toggle label="Currency" options={[["INR", "₹ INR"], ["USD", "$ USD"]]} value={currency} onChange={(v) => setCurrency(v as Currency)} />
+      </div>
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        {PLAN_ORDER.map((id) => {
+          const p = PLAN_CARDS.find((c) => c.id === id)!;
+          const price = formatPlanPrice(id, currency, yearly);
+          const current = currentPlan === id;
+          const c = cta(id);
+          const lower = inApp && id !== "custom" && PLAN_ORDER.indexOf(id) < PLAN_ORDER.indexOf(currentPlan);
+          return (
+            <article key={id} className={cn("flex flex-col rounded-2xl border bg-surface p-7", p.highlight ? "border-2 border-brand shadow-pop xl:-mt-3 xl:pb-9" : "border-line shadow-soft", current && "ring-2 ring-brand/30")}>
+              <h3 className="flex items-center justify-between font-bold">{p.name}
+                {current ? <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-semibold text-brand">Current plan</span>
+                  : p.highlight ? <span className="rounded-full bg-brand px-2.5 py-0.5 text-xs font-semibold text-white">Most popular</span> : null}
+              </h3>
+              <p className="mt-3 text-4xl font-extrabold tabular-nums">{price.amount}<span className="text-base font-medium text-ink-faint">{price.per}</span></p>
+              <p className="text-xs text-ink-faint">{price.note}</p>
+              <p className="mt-3 text-sm text-ink-soft">{p.blurb}</p>
+              <ul className="mt-5 flex-1 space-y-2 text-sm">{p.features.map((f) => <li key={f} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />{f}</li>)}</ul>
+              {current ? <Button className="mt-6" variant="secondary" disabled>Your current plan</Button>
+                : lower ? <Button className="mt-6" variant="secondary" disabled>Included in your plan</Button>
+                : <Button asChild className="mt-6" variant={c.primary && p.highlight ? "primary" : c.primary ? "primary" : "secondary"}><Link href={c.href}>{c.label}</Link></Button>}
+            </article>
+          );
+        })}
+      </div>
+      <p className="mt-6 text-xs text-ink-faint">Prices exclude taxes where they apply. AI actions reset on the first of each month. Unused actions don't roll over.</p>
+    </div>
+  );
+}
+
+function Toggle({ label, options, value, onChange }: { label: string; options: [string, string][]; value: string; onChange: (v: string) => void }) {
+  return (
+    <div role="group" aria-label={label} className="inline-flex rounded-full border border-line-strong bg-surface p-1 text-sm shadow-soft">
+      {options.map(([v, l]) => (
+        <button key={v} type="button" aria-pressed={value === v} onClick={() => onChange(v)}
+          className={cn("rounded-full px-4 py-1.5 font-medium transition-colors", value === v ? "bg-brand text-white" : "text-ink-soft hover:text-ink")}>{l}</button>
       ))}
     </div>
   );

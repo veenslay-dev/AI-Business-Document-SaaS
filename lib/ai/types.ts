@@ -10,6 +10,8 @@ export type CompletionRequest = {
 /** Anything that can turn a prompt into text. Swap providers without touching callers. */
 export interface AiProvider {
   readonly name: "openai" | "anthropic" | (string & {});
+  /** Tokens used by this provider instance so far, for cost tracking. Filled in as calls complete. */
+  readonly usage: { input: number; output: number; model: string };
   complete(req: CompletionRequest): Promise<string>;
 }
 

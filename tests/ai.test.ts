@@ -6,11 +6,11 @@ import { anthropicProvider, getProvider, openAiProvider } from "@/lib/ai/provide
 import { AI_LIMITS, decideLimit } from "@/lib/ai/ratelimit";
 import { proposalAiSchema, improveSchema } from "@/lib/ai/schemas";
 import { AI_USER_MESSAGES, AiError, type AiProvider } from "@/lib/ai/types";
-import { allows, withinDocumentLimit } from "@/lib/billing/plans";
+import { aiAllowance, canUsePremiumTemplates, documentAllowance, effectivePlan, formatPlanPrice, PLANS } from "@/lib/billing/plans";
 import { SAMPLE_PROPOSAL_AI, ACME_BRAND } from "@/lib/documents/samples";
 
 const scripted = (...replies: string[]): AiProvider & { calls: number; prompts: string[] } => {
-  const p = { name: "fake", calls: 0, prompts: [] as string[], async complete(req: { user: string }) { p.prompts.push(req.user); return replies[Math.min(p.calls++, replies.length - 1)]; } };
+  const p = { name: "fake", usage: { input: 0, output: 0, model: "fake" }, calls: 0, prompts: [] as string[], async complete(req: { user: string }) { p.prompts.push(req.user); return replies[Math.min(p.calls++, replies.length - 1)]; } };
   return p;
 };
 
@@ -132,18 +132,40 @@ describe("limits and plans", () => {
     expect(decideLimit({ workspaceLastHour: 0, userLastMinute: AI_LIMITS.perUserMinute })).toEqual({ ok: false, reason: "user" });
     expect(decideLimit({ workspaceLastHour: AI_LIMITS.perWorkspaceHour, userLastMinute: 0 })).toEqual({ ok: false, reason: "workspace" });
   });
-  it("only enforces plan limits when billing enforcement is on", () => {
-    vi.stubEnv("BILLING_ENFORCEMENT", "");
-    expect(allows("free", "ai")).toBe(true);
-    expect(withinDocumentLimit("free", 99)).toBe(true);
-    vi.stubEnv("BILLING_ENFORCEMENT", "on");
-    expect(allows("free", "ai")).toBe(false);
-    expect(allows("professional", "ai")).toBe(true);
-    expect(allows("professional", "audits")).toBe(false);
-    expect(allows("agency", "audits")).toBe(true);
-    expect(withinDocumentLimit("free", 2)).toBe(true);
-    expect(withinDocumentLimit("free", 3)).toBe(false);
-    expect(withinDocumentLimit("professional", 1000)).toBe(true);
+  it("enforces plan limits by default and can be switched off", () => {
+    vi.stubEnv("BILLING_ENFORCEMENT", "off");
+    expect(documentAllowance({ plan: "free" }, 99).ok).toBe(true);
+    expect(aiAllowance({ plan: "free" }, 99).ok).toBe(true);
     vi.unstubAllEnvs();
+    expect(documentAllowance({ plan: "free" }, 9).ok).toBe(true);
+    expect(documentAllowance({ plan: "free" }, 10)).toMatchObject({ ok: false, limit: 10, reason: "limit" });
+    expect(aiAllowance({ plan: "free" }, 2).ok).toBe(true);
+    expect(aiAllowance({ plan: "free" }, 3)).toMatchObject({ ok: false, limit: 3 });
+    expect(documentAllowance({ plan: "professional" }, 99).ok).toBe(true);
+    expect(documentAllowance({ plan: "professional" }, 100).ok).toBe(false);
+    expect(documentAllowance({ plan: "agency" }, 5000).ok).toBe(true);
+    expect(aiAllowance({ plan: "agency" }, 600).ok).toBe(false);
+  });
+  it("applies per-workspace limits, suspension and unknown plans", () => {
+    const custom = { plan: "custom", limits: { aiPerMonth: 5000, monthlyDocuments: 40, teamMembers: 25 } };
+    expect(effectivePlan(custom)).toMatchObject({ aiPerMonth: 5000, monthlyDocuments: 40, teamMembers: 25 });
+    expect(documentAllowance(custom, 40).ok).toBe(false);
+    expect(effectivePlan({ plan: "nonsense" }).id).toBe("free");
+    expect(effectivePlan({ plan: "free", limits: { aiPerMonth: -3, monthlyDocuments: "x" } })).toMatchObject({ aiPerMonth: 3, monthlyDocuments: 10 });
+    expect(documentAllowance({ plan: "agency", status: "suspended" }, 0)).toMatchObject({ ok: false, reason: "suspended" });
+    expect(aiAllowance({ plan: "agency", status: "suspended" }, 0).ok).toBe(false);
+  });
+  it("keeps premium templates for paid plans", () => {
+    expect(canUsePremiumTemplates({ plan: "free" })).toBe(false);
+    expect(canUsePremiumTemplates({ plan: "professional" })).toBe(true);
+    expect(canUsePremiumTemplates({ plan: "free", limits: { premiumTemplates: true } })).toBe(true);
+  });
+  it("prices plans per month and per year", () => {
+    expect(formatPlanPrice("free", "INR", false).amount).toBe("₹0");
+    expect(formatPlanPrice("professional", "INR", false).amount).toBe("₹999");
+    expect(formatPlanPrice("professional", "INR", true).amount).toBe("₹833");
+    expect(formatPlanPrice("agency", "USD", false).amount).toBe("$35");
+    expect(formatPlanPrice("custom", "INR", false).amount).toBe("Custom");
+    expect(PLANS.free).toMatchObject({ monthlyDocuments: 10, aiPerMonth: 3 });
   });
 });

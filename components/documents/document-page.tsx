@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { DocumentEditor } from "@/components/documents/editor/document-editor";
 import { requireWorkspace } from "@/lib/auth/session";
-import { allows } from "@/lib/billing/plans";
 import { fetchDocument, loadRenderData } from "@/lib/db/render";
 import { listEditorTemplates, listPackages } from "@/lib/db/templates";
 import type { DocType } from "@/lib/documents/templates";
@@ -15,11 +14,10 @@ export async function DocumentEditorPage({ id, type, backHref }: { id: string; t
   const doc = await fetchDocument(supabase, membership.workspaceId, id);
   if (!doc || doc.type !== type) notFound();
 
-  const [render, templates, packages, sub, accepted, feedback] = await Promise.all([
+  const [render, templates, packages, accepted, feedback] = await Promise.all([
     loadRenderData(supabase, doc),
     listEditorTemplates(membership.workspaceId, type),
     listPackages(membership.workspaceId),
-    supabase.from("subscriptions").select("plan").eq("workspace_id", membership.workspaceId).maybeSingle(),
     supabase.from("document_actions").select("metadata, created_at").eq("document_id", doc.id).eq("action", "accepted").order("created_at", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("document_actions").select("id, action, metadata, created_at").eq("document_id", doc.id).in("action", ["comment_added", "rejected"]).order("created_at", { ascending: false }).limit(5),
   ]);
@@ -51,7 +49,7 @@ export async function DocumentEditorPage({ id, type, backHref }: { id: string; t
         templateValue: templates.some((t) => t.value === templateValue) ? templateValue : templates[0].value }}
       initialContent={render.content} brand={render.brand} templates={templates}
       packages={packages.map((p) => ({ id: p.id, name: p.name, price: p.price, description: p.description, features: p.features }))}
-      locked={doc.status === "accepted" || doc.status === "rejected"} hasAi={aiConfigured && allows(sub.data?.plan, "ai")} backHref={backHref}
+      locked={doc.status === "accepted" || doc.status === "rejected"} hasAi={aiConfigured} backHref={backHref}
       acceptance={accepted.data ? { name: meta.name ?? "", designation: meta.designation, date: accepted.data.created_at, signatureDataUrl: meta.signature ?? null } : null}
     />
     </>

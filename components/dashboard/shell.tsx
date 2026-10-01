@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Check, ChevronDown, ChevronsUpDown, ArrowRight, LogOut, Menu, Search, TrendingUp, X } from "lucide-react";
+import { Check, ChevronDown, ChevronsUpDown, ArrowRight, LogOut, Menu, Search, ShieldCheck, TrendingUp, X } from "lucide-react";
 import { NotificationsMenu, type NotificationItem } from "./notifications";
 import { PRODUCT_NAME, Wordmark } from "@/components/ui/logo";
 import { Dropdown, DropdownContent, DropdownItem, DropdownLabel, DropdownSeparator, DropdownTrigger } from "@/components/ui/dropdown";
@@ -25,10 +25,10 @@ function UpgradeCard() {
 type WorkspaceOption = { id: string; name: string; logoUrl: string | null; role: string };
 
 export function AppShell({
-  children, workspaces, activeId, userName, userEmail, notifications, unread,
+  children, workspaces, activeId, userName, userEmail, notifications, unread, isAdmin = false,
 }: {
   children: React.ReactNode; workspaces: WorkspaceOption[]; activeId: string; userName: string; userEmail: string;
-  notifications: NotificationItem[]; unread: number;
+  notifications: NotificationItem[]; unread: number; isAdmin?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -36,7 +36,7 @@ export function AppShell({
 
   const nav = (
     <nav aria-label="Main" className="flex flex-col gap-0.5 px-3">
-      {NAV.filter((n) => n.ready).map(({ href, label, icon: Icon }) => {
+      {[...NAV.filter((n) => n.ready), ...(isAdmin ? [{ href: "/admin", label: "Admin", icon: ShieldCheck, ready: true }] : [])].map(({ href, label, icon: Icon }) => {
         const current = pathname === href || pathname.startsWith(`${href}/`);
         return (
           <Link

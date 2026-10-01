@@ -11,6 +11,8 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           <Link href="/#how-it-works" className="hidden rounded px-3 py-2 text-ink-soft hover:text-brand md:block">How it works</Link>
           <Link href="/#examples" className="hidden rounded px-3 py-2 text-ink-soft hover:text-brand md:block">Examples</Link>
           <Link href="/pricing" className="hidden rounded px-3 py-2 text-ink-soft hover:text-brand sm:block">Pricing</Link>
+          <Link href="/about" className="hidden rounded px-3 py-2 text-ink-soft hover:text-brand lg:block">About</Link>
+          <Link href="/contact" className="hidden rounded px-3 py-2 text-ink-soft hover:text-brand lg:block">Contact</Link>
           <Link href="/#faq" className="hidden rounded px-3 py-2 text-ink-soft hover:text-brand md:block">FAQ</Link>
           <Button asChild variant="ghost"><Link href="/login">Sign in</Link></Button>
           <Button asChild className="rounded-full px-5"><Link href="/signup">Start Free</Link></Button>
@@ -20,7 +22,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
       <footer className="mt-24 border-t border-line bg-surface">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-8 text-sm text-ink-soft">
           <Wordmark />
-          <nav aria-label="Footer" className="flex gap-5"><Link href="/pricing" className="hover:text-ink">Pricing</Link><Link href="/login" className="hover:text-ink">Sign in</Link><Link href="/signup" className="hover:text-ink">Create account</Link></nav>
+          <nav aria-label="Footer" className="flex gap-5"><Link href="/about" className="hover:text-ink">About</Link><Link href="/pricing" className="hover:text-ink">Pricing</Link><Link href="/contact" className="hover:text-ink">Contact</Link><Link href="/login" className="hover:text-ink">Sign in</Link><Link href="/signup" className="hover:text-ink">Create account</Link></nav>
         </div>
       </footer>
     </div>

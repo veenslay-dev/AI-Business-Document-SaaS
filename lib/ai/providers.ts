@@ -24,14 +24,16 @@ async function postJson(url: string, headers: Record<string, string>, body: unkn
 }
 
 export function openAiProvider(apiKey: string, model: string): AiProvider {
+  const usage = { input: 0, output: 0, model };
   return {
-    name: "openai",
+    name: "openai", usage,
     async complete(req: CompletionRequest) {
       const data = (await postJson(`${(process.env.OPENAI_BASE_URL ?? "https://api.openai.com").replace(/\/$/, "")}/v1/chat/completions`, { authorization: `Bearer ${apiKey}` }, {
         model, temperature: req.temperature ?? 0.6, max_tokens: req.maxTokens ?? 3000,
         ...(req.json ? { response_format: { type: "json_object" } } : {}),
         messages: [{ role: "system", content: req.system }, { role: "user", content: req.user }],
-      })) as { choices?: { message?: { content?: string } }[] };
+      })) as { choices?: { message?: { content?: string } }[]; usage?: { prompt_tokens?: number; completion_tokens?: number } };
+      usage.input += data.usage?.prompt_tokens ?? 0; usage.output += data.usage?.completion_tokens ?? 0;
       const text = data.choices?.[0]?.message?.content;
       if (!text) throw new AiError("provider_error", "empty");
       return text;
@@ -40,14 +42,16 @@ export function openAiProvider(apiKey: string, model: string): AiProvider {
 }
 
 export function anthropicProvider(apiKey: string, model: string): AiProvider {
+  const usage = { input: 0, output: 0, model };
   return {
-    name: "anthropic",
+    name: "anthropic", usage,
     async complete(req: CompletionRequest) {
       const data = (await postJson(`${(process.env.ANTHROPIC_BASE_URL ?? "https://api.anthropic.com").replace(/\/$/, "")}/v1/messages`, { "x-api-key": apiKey, "anthropic-version": "2023-06-01" }, {
         model, max_tokens: req.maxTokens ?? 3000, temperature: req.temperature ?? 0.6,
         system: req.json ? `${req.system}\n\nRespond with a single JSON object and nothing else.` : req.system,
         messages: [{ role: "user", content: req.user }],
-      })) as { content?: { type: string; text?: string }[] };
+      })) as { content?: { type: string; text?: string }[]; usage?: { input_tokens?: number; output_tokens?: number } };
+      usage.input += data.usage?.input_tokens ?? 0; usage.output += data.usage?.output_tokens ?? 0;
       const text = data.content?.filter((c) => c.type === "text").map((c) => c.text ?? "").join("");
       if (!text) throw new AiError("provider_error", "empty");
       return text;
