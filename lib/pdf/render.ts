@@ -18,7 +18,8 @@ async function launch(): Promise<Browser> {
     // Serverless friendly Chromium build; used when no local browser path is configured.
     const { default: chromium } = await import("@sparticuz/chromium");
     return await puppeteer.launch({ executablePath: await chromium.executablePath(), headless: true, args: chromium.args });
-  } catch {
+  } catch (e) {
+    console.error("[pdf] could not start Chromium", e instanceof Error ? e.message : "unknown");
     throw new PdfError("no_browser");
   }
 }
