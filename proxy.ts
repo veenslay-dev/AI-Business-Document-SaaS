@@ -6,7 +6,6 @@ const PROTECTED = [
   "/dashboard", "/clients", "/projects", "/proposals", "/quotations", "/invoices", "/admin",
   "/seo-audits", "/social-audits", "/templates", "/brand-kit", "/team", "/settings", "/onboarding", "/search",
 ];
-const AUTH_PAGES = ["/login", "/signup", "/forgot-password"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -41,12 +40,8 @@ export async function proxy(request: NextRequest) {
     url.search = `?next=${encodeURIComponent(path + request.nextUrl.search)}`;
     return NextResponse.redirect(url);
   }
-  if (signedIn && AUTH_PAGES.includes(path)) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    url.search = "";
-    return NextResponse.redirect(url);
-  }
+  // Signed-in visitors are sent away from the sign-in pages by the pages themselves. The token check here
+  // can't tell that an account was paused, and redirecting would loop with the dashboard's own check.
   return response;
 }
 

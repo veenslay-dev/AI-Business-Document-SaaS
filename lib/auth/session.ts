@@ -26,6 +26,11 @@ export const getUser = cache(async () => {
   return data.user;
 });
 
+/** For sign-in pages: sends someone who is already signed in (and not paused) to the dashboard. */
+export async function redirectIfSignedIn() {
+  if (await getUser()) redirect("/dashboard");
+}
+
 /** All workspaces the user belongs to. RLS limits this to their own memberships. */
 export const getMemberships = cache(async (): Promise<Membership[]> => {
   const user = await getUser();

@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { redirectIfSignedIn } from "@/lib/auth/session";
 import { LoginForm } from "@/components/auth/login-form";
 
 export const metadata: Metadata = { title: "Sign in", robots: { index: false } };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
+  await redirectIfSignedIn();
   const { next, error } = await searchParams;
   return (
     <LoginForm
