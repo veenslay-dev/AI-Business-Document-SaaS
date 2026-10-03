@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { costRates } from "@/lib/billing/ai-cost";
 import { checkRazorpayKeys, razorpayMode } from "@/lib/billing/razorpay";
+import { siteUrl } from "@/lib/utils";
 import { enforcementOn, PLANS, PLAN_ORDER } from "@/lib/billing/plans";
 
 const row = (k: string, v: React.ReactNode) => (<div key={k} className="flex items-center justify-between gap-4 border-b border-line py-2.5 text-sm last:border-0"><dt className="text-ink-soft">{k}</dt><dd className="text-right font-medium">{v}</dd></div>);
@@ -13,6 +14,7 @@ export default async function AdminSettingsPage() {
   const key = provider === "openai" ? !!process.env.OPENAI_API_KEY : !!process.env.ANTHROPIC_API_KEY;
   const model = provider === "openai" ? process.env.AI_MODEL_OPENAI ?? "gpt-4o-mini" : process.env.AI_MODEL_ANTHROPIC ?? "claude-sonnet-4-5";
   const r = costRates();
+  const siteOk = /^https:\/\//.test(siteUrl()) && !/vercel\.app|localhost/i.test(siteUrl());
   const yes = <Badge tone="ok">Set</Badge>, no = <Badge tone="signal">Missing</Badge>;
   return (
     <div className="grid gap-6 lg:grid-cols-2">
@@ -38,6 +40,11 @@ export default async function AdminSettingsPage() {
           </table>
         </div>
         <p className="mt-3 text-xs text-ink-faint">Plan numbers and prices live in lib/billing/plans.ts. Change them there and redeploy. Use a workspace's page to give one customer different limits.</p>
+      </section>
+      <section className="rounded-2xl border border-line bg-surface p-6 shadow-soft lg:col-span-2">
+        <h2 className="mb-2 font-bold">Site address</h2>
+        <dl>{row("NEXT_PUBLIC_SITE_URL", <code className="rounded bg-black/5 px-1">{siteUrl()}</code>)}{row("Used for", "Canonical links, the sitemap, social previews and schema markup")}{row("Status", siteOk ? <Badge tone="ok">Looks right</Badge> : <Badge tone="signal">Needs fixing</Badge>)}</dl>
+        {!siteOk && <p role="alert" className="mt-3 rounded-lg bg-signal-soft px-3 py-2 text-sm text-signal">This is not your real domain, so search engines are being told the wrong canonical address. In Vercel, set NEXT_PUBLIC_SITE_URL to https://www.priodraft.com for Production, then redeploy. The value is read when the site is built, so a redeploy is required.</p>}
       </section>
       <section className="rounded-2xl border border-line bg-surface p-6 shadow-soft lg:col-span-2">
         <h2 className="mb-2 font-bold">Online payments (Razorpay)</h2>
