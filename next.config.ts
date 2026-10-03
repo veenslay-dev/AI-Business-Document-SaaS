@@ -38,6 +38,10 @@ const nextConfig: NextConfig = {
       ? [{ protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" }]
       : [],
   },
+  // The bare domain sends visitors to www, keeping the path and query string.
+  async redirects() {
+    return [{ source: "/:path*", has: [{ type: "host", value: "priodraft.com" }], destination: "https://www.priodraft.com/:path*", permanent: true }];
+  },
   async headers() {
     return [
       // General hardening first; the more specific rules below override it.
