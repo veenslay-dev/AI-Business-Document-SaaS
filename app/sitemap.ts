@@ -1,17 +1,23 @@
 import type { MetadataRoute } from "next";
+import { getOverrides, isIndexable } from "@/lib/seo/pages";
+import { PAGES } from "@/lib/seo/registry";
 import { siteUrl } from "@/lib/utils";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export const dynamic = "force-dynamic";
+
+const PRIORITY: Record<string, number> = { "/": 1, "/pricing": 0.8, "/about": 0.5, "/contact": 0.5 };
+
+/** Lists every public page that may be indexed. A page an admin marks noindex drops out automatically. */
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteUrl();
-  return [
-    { url: `${base}/`, changeFrequency: "weekly", priority: 1 },
-    { url: `${base}/pricing`, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${base}/about`, changeFrequency: "yearly", priority: 0.5 },
-    { url: `${base}/contact`, changeFrequency: "yearly", priority: 0.5 },
-    { url: `${base}/terms`, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${base}/privacy`, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${base}/refund-policy`, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${base}/signup`, changeFrequency: "yearly", priority: 0.5 },
-    { url: `${base}/login`, changeFrequency: "yearly", priority: 0.2 },
-  ];
+  const overrides = await getOverrides();
+  return PAGES.filter((p) => isIndexable(p.path, overrides[p.path] ?? null)).map((p) => {
+    const o = overrides[p.path];
+    return {
+      url: `${base}${p.path === "/" ? "/" : p.path}`,
+      changeFrequency: p.path === "/" ? "weekly" : "monthly",
+      priority: PRIORITY[p.path] ?? 0.3,
+      ...(o?.updated_at ? { lastModified: new Date(o.updated_at) } : {}),
+    };
+  });
 }

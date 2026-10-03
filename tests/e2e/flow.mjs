@@ -612,6 +612,67 @@ await step("legal pages: terms, privacy and refund render, link to contact, and 
   await anon.close();
 });
 
+await step("seo: self canonical and schema on every page, admin edits title, content, noindex and schema, reset restores", async () => {
+  const anon = await anonContext(); const ap = await anon.newPage();
+  const head = async (path) => {
+    await ap.goto(`${APP}${path}`);
+    return ap.evaluate(() => ({
+      canonical: document.querySelector("link[rel=canonical]")?.getAttribute("href") ?? null,
+      robots: document.querySelector("meta[name=robots]")?.getAttribute("content") ?? null,
+      title: document.title, description: document.querySelector("meta[name=description]")?.getAttribute("content") ?? null,
+      h1: document.querySelector("h1")?.textContent ?? "", main: document.querySelector("main")?.innerText ?? "",
+      ld: [...document.querySelectorAll("script[type='application/ld+json']")].map((x) => { try { return JSON.parse(x.textContent); } catch { return null; } }),
+    }));
+  };
+  for (const path of ["/", "/pricing", "/about", "/contact", "/terms", "/privacy", "/refund-policy", "/login", "/signup", "/forgot-password"]) {
+    const h = await head(path);
+    eq(h.canonical, `${APP}${path}`, `self canonical on ${path}`);
+    yes(h.ld.length >= 1 && h.ld.every(Boolean), `valid JSON-LD on ${path}`);
+    const types = h.ld.flatMap((d) => d["@graph"].map((n) => n["@type"]));
+    yes(types.includes("Organization") && types.includes("WebSite"), `organization and site schema on ${path}`);
+  }
+  const home = await head("/"); const homeTypes = home.ld.flatMap((d) => d["@graph"].map((n) => n["@type"]));
+  yes(homeTypes.includes("FAQPage") && homeTypes.includes("SoftwareApplication"), "home schema: " + homeTypes.join());
+  const price = await head("/pricing"); yes(JSON.stringify(price.ld).includes('"priceCurrency":"INR"'), "pricing offers in INR");
+  yes((await head("/login")).robots?.includes("noindex"), "login is noindex");
+  // parameters never leak into the canonical
+  eq((await (async () => { await ap.goto(`${APP}/pricing?utm_source=x`); return ap.evaluate(() => document.querySelector("link[rel=canonical]")?.getAttribute("href")); })()), `${APP}/pricing`, "canonical drops the query string");
+  // private pages: canonical to themselves and kept out of search
+  await page.goto(`${APP}/dashboard`);
+  eq(await page.evaluate(() => document.querySelector("link[rel=canonical]")?.getAttribute("href")), `${APP}/dashboard`, "dashboard self canonical");
+  yes((await page.evaluate(() => document.querySelector("meta[name=robots]")?.getAttribute("content") ?? "")).includes("noindex"), "dashboard noindex");
+
+  // admin: list and edit
+  await page.goto(`${APP}/admin/pages`); await page.waitForSelector("text=Terms of Service", { timeout: 10000 });
+  yes((await page.locator("main").innerText()).includes("/refund-policy"), "every page is listed");
+  eq(await anon.request.get(`${APP}/admin/pages`, { maxRedirects: 0 }).then((r) => r.status()) >= 300, true, "admin pages closed to visitors");
+  await page.goto(`${APP}/admin/pages/edit?path=%2Fabout`);
+  await page.fill("#p-title", "About PrioDraft | Custom SEO title"); await page.fill("#p-desc", "A custom meta description written in the admin panel.");
+  await page.fill("#p-h1", "Custom about heading"); await page.fill("#p-intro", "Custom intro text for the about page.");
+  await page.fill("#p-extra", "## Our promise\n\nWe reply **fast**. [Talk to us](/contact)\n\n- First point\n- Second point");
+  await page.fill("#p-schema", '{"@context":"https://schema.org","@type":"Event","name":"Launch webinar"}');
+  await page.click("button:has-text('Save page')"); await page.waitForSelector("text=Saved. The page is updated now.", { timeout: 10000 });
+  const about = await head("/about");
+  eq(about.title, "About PrioDraft | Custom SEO title", "custom title");
+  eq(about.description, "A custom meta description written in the admin panel.", "custom description");
+  eq(about.h1, "Custom about heading", "custom h1"); yes(about.main.includes("Custom intro text") && about.main.includes("Our promise") && about.main.includes("Second point"), "custom intro and extra content");
+  yes(JSON.stringify(about.ld).includes("Launch webinar"), "custom schema added"); eq(about.canonical, `${APP}/about`, "still self canonical");
+  // bad schema is refused with a clear message
+  await page.fill("#p-schema", "{nope"); await page.click("button:has-text('Save page')"); await page.waitForSelector("text=not valid JSON", { timeout: 10000 });
+  // noindex removes the page from the sitemap
+  await page.goto(`${APP}/admin/pages/edit?path=%2Fpricing`); await page.selectOption("#p-robots", "noindex");
+  await page.click("button:has-text('Save page')"); await page.waitForSelector("text=Saved. The page is updated now.", { timeout: 10000 });
+  yes((await head("/pricing")).robots?.includes("noindex"), "pricing noindex after the change");
+  let sm = await (await anon.request.get(`${APP}/sitemap.xml`)).text(); yes(!sm.includes("/pricing") && sm.includes("/about"), "sitemap drops a noindex page");
+  // reset
+  for (const path of ["%2Fpricing", "%2Fabout"]) {
+    await page.goto(`${APP}/admin/pages/edit?path=${path}`); await page.click("text=Reset to built-in settings"); await page.waitForSelector("text=Back to the built-in settings", { timeout: 10000 });
+  }
+  const back = await head("/about"); yes(back.title.startsWith("About | "), "title back to default: " + back.title); eq(back.h1, "Professional client documents, without the busywork", "heading back to default");
+  sm = await (await anon.request.get(`${APP}/sitemap.xml`)).text(); yes(sm.includes("/pricing"), "pricing back in the sitemap");
+  await anon.close();
+});
+
 await step("public pages recognise a signed-in visitor", async () => {
   await page.goto(`${APP}/`);
   await page.locator("header a:has-text('Go to dashboard')").waitFor({ timeout: 10000 });

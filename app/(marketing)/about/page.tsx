@@ -1,14 +1,12 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { FileCheck2, Palette, ShieldCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PRODUCT_NAME } from "@/components/ui/logo";
+import { PageSchema } from "@/components/seo/page-schema";
+import { Markdown } from "@/lib/seo/markdown";
+import { getPageContent, pageMetadata } from "@/lib/seo/pages";
 
-export const metadata: Metadata = {
-  title: "About",
-  description: `${PRODUCT_NAME} helps agencies and freelancers send proposals, quotations, invoices and audits that look like their own company made them.`,
-  alternates: { canonical: "/about" },
-};
+export const generateMetadata = () => pageMetadata("/about");
 
 const VALUES = [
   { icon: Palette, title: "Your brand, every time", body: "Set your logo, colors, fonts and terms once. Every document picks them up, so nothing goes out looking half finished." },
@@ -17,13 +15,15 @@ const VALUES = [
   { icon: ShieldCheck, title: "Your data stays yours", body: "Each company's records are separated at the database level. Shared documents are only reachable through their private link." },
 ];
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const c = await getPageContent("/about");
   return (
     <main>
+      <PageSchema path="/about" />
       <section className="mx-auto max-w-4xl px-5 pb-12 pt-14 text-center">
         <p className="mb-4 inline-block rounded-full bg-brand-soft px-3.5 py-1.5 text-sm font-semibold text-brand">About {PRODUCT_NAME}</p>
-        <h1 className="text-4xl font-extrabold leading-tight sm:text-5xl">Professional client documents, <span className="text-brand">without the busywork</span></h1>
-        <p className="mx-auto mt-5 max-w-2xl text-lg text-ink-soft">{PRODUCT_NAME} is for agencies, consultants and freelancers who write proposals, quotations, invoices and audit reports and want each one to look like it came from a bigger company.</p>
+        <h1 className="text-4xl font-extrabold leading-tight sm:text-5xl">{c.heading ?? <>Professional client documents, <span className="text-brand">without the busywork</span></>}</h1>
+        <p className="mx-auto mt-5 max-w-2xl text-lg text-ink-soft">{c.intro ?? `${PRODUCT_NAME} is for agencies, consultants and freelancers who write proposals, quotations, invoices and audit reports and want each one to look like it came from a bigger company.`}</p>
       </section>
 
       <section className="mx-auto max-w-4xl space-y-5 px-5 pb-14 text-ink-soft">
@@ -43,6 +43,8 @@ export default function AboutPage() {
           ))}
         </div>
       </section>
+
+      {c.extraMd && <section className="mx-auto max-w-3xl px-5 pt-10 text-ink-soft"><Markdown md={c.extraMd} /></section>}
 
       <section className="mx-auto max-w-3xl px-5 py-16 text-center">
         <h2 className="text-2xl font-extrabold">Want to try it?</h2>

@@ -1,22 +1,23 @@
-import type { Metadata } from "next";
 import { PlanGrid } from "@/components/marketing/plan-grid";
+import { PageSchema } from "@/components/seo/page-schema";
 import { getUser } from "@/lib/auth/session";
-import { PRODUCT_NAME } from "@/components/ui/logo";
+import { Markdown } from "@/lib/seo/markdown";
+import { getPageContent, pageMetadata } from "@/lib/seo/pages";
+import { PAGE_BY_PATH } from "@/lib/seo/registry";
 
-export const metadata: Metadata = {
-  title: "Pricing",
-  description: `${PRODUCT_NAME} plans: a free plan with 10 documents and 3 AI actions a month, Pro and Agency plans with more documents, AI and team members, and a custom plan.`,
-  alternates: { canonical: "/pricing" },
-  openGraph: { title: `Pricing | ${PRODUCT_NAME}`, url: "/pricing" },
-};
+export const generateMetadata = () => pageMetadata("/pricing");
 
 export default async function PricingPage() {
   const signedIn = !!(await getUser());
+  const c = await getPageContent("/pricing");
+  const def = PAGE_BY_PATH["/pricing"];
   return (
     <main className="mx-auto max-w-7xl px-5 py-12">
-      <h1 className="text-4xl font-extrabold">Simple, fair pricing</h1>
-      <p className="mb-8 mt-3 max-w-2xl text-ink-soft">Start free with 10 documents and 3 AI actions a month. Upgrade when you need more documents, more AI and more people. Need something bigger? Ask for a custom plan.</p>
+      <PageSchema path="/pricing" />
+      <h1 className="text-4xl font-extrabold">{c.heading ?? def.heading}</h1>
+      <p className="mb-8 mt-3 max-w-2xl text-ink-soft">{c.intro ?? def.intro}</p>
       <PlanGrid signedIn={signedIn} />
+      {c.extraMd && <div className="mt-12 max-w-3xl text-ink-soft"><Markdown md={c.extraMd} /></div>}
     </main>
   );
 }

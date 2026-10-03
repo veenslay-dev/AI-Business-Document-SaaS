@@ -1,20 +1,25 @@
 import Link from "next/link";
 import { PRODUCT_NAME } from "@/components/ui/logo";
+import { PageSchema } from "@/components/seo/page-schema";
 import { LEGAL_UPDATED, operator } from "@/lib/legal";
+import { Markdown } from "@/lib/seo/markdown";
+import { getPageContent } from "@/lib/seo/pages";
 
 export type LegalSection = { id: string; title: string; body: React.ReactNode };
 
 const LINKS = [["/terms", "Terms of Service"], ["/privacy", "Privacy Policy"], ["/refund-policy", "Refund Policy"]] as const;
 
 /** Shared layout for the legal pages: a contents list on wide screens and a Contact link at the end. */
-export function LegalPage({ current, title, intro, sections }: { current: string; title: string; intro: React.ReactNode; sections: LegalSection[] }) {
+export async function LegalPage({ current, title, intro, sections }: { current: string; title: string; intro: React.ReactNode; sections: LegalSection[] }) {
   const op = operator();
+  const c = await getPageContent(current);
   return (
     <main className="mx-auto max-w-6xl px-5 py-12">
+      <PageSchema path={current} />
       <header className="max-w-3xl">
-        <h1 className="text-4xl font-extrabold">{title}</h1>
+        <h1 className="text-4xl font-extrabold">{c.heading ?? title}</h1>
         <p className="mt-2 text-sm text-ink-faint">Last updated {LEGAL_UPDATED}</p>
-        <div className="mt-5 space-y-3 text-ink-soft">{intro}</div>
+        <div className="mt-5 space-y-3 text-ink-soft">{c.intro ? <p>{c.intro}</p> : intro}</div>
       </header>
       <div className="mt-10 grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)]">
         <aside className="hidden lg:block">
@@ -30,6 +35,7 @@ export function LegalPage({ current, title, intro, sections }: { current: string
               {s.body}
             </section>
           ))}
+          {c.extraMd && <section className="space-y-3"><Markdown md={c.extraMd} /></section>}
           <section className="rounded-2xl border border-line bg-surface p-6 shadow-soft">
             <h2 className="text-lg font-bold text-ink">Questions about this page?</h2>
             <p className="mt-2">Send us a message and we will reply by email, usually within one working day.</p>

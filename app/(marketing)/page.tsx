@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BarChart3, Check, FileText, LayoutTemplate, Palette, PlayCircle, Share2, Sparkles } from "lucide-react";
 import { DocumentRenderer } from "@/components/documents/document-renderer";
@@ -6,21 +5,16 @@ import { CroppedPreview } from "@/components/marketing/cropped-preview";
 import { ExampleTabs } from "@/components/marketing/example-tabs";
 import { PlanGrid } from "@/components/marketing/plan-grid";
 import { Button } from "@/components/ui/button";
-import { PRODUCT_NAME } from "@/components/ui/logo";
 import { ACME_BRAND, HARBOR_BRAND, sampleAudit, sampleProposal, sampleQuotation, sampleSocialAudit } from "@/lib/documents/samples";
 import { getSystemTemplate, type TemplateConfig } from "@/lib/documents/templates";
 import type { DocumentContent } from "@/lib/documents/content";
 import { FAQ, FEATURES } from "@/lib/marketing";
 import { getUser } from "@/lib/auth/session";
-import { siteUrl } from "@/lib/utils";
+import { PageSchema } from "@/components/seo/page-schema";
+import { Markdown } from "@/lib/seo/markdown";
+import { getPageContent, pageMetadata } from "@/lib/seo/pages";
 
-export const metadata: Metadata = {
-  title: { absolute: `${PRODUCT_NAME}: branded proposals, quotations and SEO audits` },
-  description: "Build your company profile once. Generate branded proposals, quotations and SEO audits in minutes with AI, share them by link and see when clients open and accept them.",
-  alternates: { canonical: "/" },
-  openGraph: { title: `${PRODUCT_NAME}: create once, brand everything`, description: "Proposals, quotations and audits that look like your company made them.", type: "website", url: "/" },
-  twitter: { card: "summary_large_image" },
-};
+export const generateMetadata = () => pageMetadata("/");
 
 const FEATURE_ICONS = [Palette, LayoutTemplate, Sparkles, FileText, Share2, BarChart3];
 
@@ -40,21 +34,17 @@ export default async function HomePage() {
   const heroB = <DocumentRenderer content={proposal} brand={HARBOR_BRAND} template={cfg("proposal-elegant")} meta={{ type: "proposal" }} />;
   const letter = cfg("proposal-modern", { cover: "none" });
 
-  const jsonLd = [
-    { "@context": "https://schema.org", "@type": "SoftwareApplication", name: PRODUCT_NAME, applicationCategory: "BusinessApplication", operatingSystem: "Web", url: siteUrl(),
-      description: "Branded proposals, quotations and SEO audit reports generated with AI from a one-time company profile." },
-    { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: FAQ.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) },
-  ];
+  const content = await getPageContent("/");
 
   return (
     <main>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
+      <PageSchema path="/" />
 
       <section className="mx-auto grid max-w-7xl gap-12 px-5 pb-24 pt-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,540px)] lg:pt-16">
         <div className="lg:pt-6">
           <p className="mb-5 inline-block rounded-full bg-brand-soft px-3.5 py-1.5 text-sm font-semibold text-brand">Create. Edit. Share. Professional documents.</p>
-          <h1 className="text-4xl font-extrabold leading-[1.08] sm:text-5xl lg:text-[3.4rem]">Create proposals, quotations and audits <span className="text-brand">that look like your company created them.</span></h1>
-          <p className="mt-5 max-w-xl text-lg text-ink-soft">Build your company profile once. Generate branded client documents in minutes with AI.</p>
+          <h1 className="text-4xl font-extrabold leading-[1.08] sm:text-5xl lg:text-[3.4rem]">{content.heading ?? <>Create proposals, quotations and audits <span className="text-brand">that look like your company created them.</span></>}</h1>
+          <p className="mt-5 max-w-xl text-lg text-ink-soft">{content.intro ?? "Build your company profile once. Generate branded client documents in minutes with AI."}</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg" className="rounded-full px-7"><Link href={start.href}>{start.label}<ArrowRight className="size-4" aria-hidden /></Link></Button>
             <Button asChild size="lg" variant="secondary" className="rounded-full px-7"><Link href="#how-it-works"><PlayCircle className="size-4" aria-hidden />See How It Works</Link></Button>
@@ -169,6 +159,7 @@ export default async function HomePage() {
         </div>
         <div className="mt-12 text-center"><Button asChild size="lg" className="rounded-full px-8"><Link href={start.href}>{start.label}<ArrowRight className="size-4" aria-hidden /></Link></Button></div>
       </section>
+      {content.extraMd && <section className="mx-auto max-w-3xl px-5 pb-16 text-ink-soft"><Markdown md={content.extraMd} /></section>}
     </main>
   );
 }

@@ -1,13 +1,9 @@
-import type { Metadata } from "next";
 import { A, LegalPage, P, UL, type LegalSection } from "@/components/marketing/legal-page";
 import { PRODUCT_NAME } from "@/components/ui/logo";
 import { operator } from "@/lib/legal";
+import { pageMetadata } from "@/lib/seo/pages";
 
-export const metadata: Metadata = {
-  title: "Terms of Service",
-  description: `The terms that apply when you use ${PRODUCT_NAME} to create, share and track business documents.`,
-  alternates: { canonical: "/terms" },
-};
+export const generateMetadata = () => pageMetadata("/terms");
 
 export default function TermsPage() {
   const op = operator();

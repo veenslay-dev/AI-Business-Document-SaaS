@@ -1,16 +1,13 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Clock, Mail, MessageSquareText } from "lucide-react";
 import { ContactForm } from "@/components/marketing/contact-form";
-import { PRODUCT_NAME } from "@/components/ui/logo";
+import { PageSchema } from "@/components/seo/page-schema";
 import { getUser } from "@/lib/auth/session";
+import { Markdown } from "@/lib/seo/markdown";
+import { getPageContent, pageMetadata } from "@/lib/seo/pages";
 import { CONTACT_PLANS, CONTACT_TOPICS } from "@/lib/validation/contact";
 
-export const metadata: Metadata = {
-  title: "Contact",
-  description: `Contact ${PRODUCT_NAME} for help, plan upgrades or a custom plan.`,
-  alternates: { canonical: "/contact" },
-};
+export const generateMetadata = () => pageMetadata("/contact");
 export const dynamic = "force-dynamic";
 
 export default async function ContactPage({ searchParams }: { searchParams: Promise<{ topic?: string; plan?: string; workspace?: string; billing?: string }> }) {
@@ -19,16 +16,19 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
   const topic = (CONTACT_TOPICS as readonly string[]).includes(sp.topic ?? "") ? (sp.topic as (typeof CONTACT_TOPICS)[number]) : "general";
   const plan = (CONTACT_PLANS as readonly string[]).includes(sp.plan ?? "") ? (sp.plan as (typeof CONTACT_PLANS)[number]) : topic === "custom" ? "custom" : null;
   const email = process.env.NEXT_PUBLIC_CONTACT_EMAIL;
-  const heading = topic === "upgrade" ? "Upgrade your plan" : topic === "custom" ? "Ask for a custom plan" : "Get in touch";
+  const c = await getPageContent("/contact");
+  const heading = topic === "upgrade" ? "Upgrade your plan" : topic === "custom" ? "Ask for a custom plan" : c.heading ?? "Get in touch";
   const sub = topic === "upgrade" ? "Tell us which plan you want. We'll reply with the payment details and switch it on for your workspace."
     : topic === "custom" ? "Need more AI actions, documents or team members than the standard plans? Tell us what you need and we'll put together a plan."
-    : "Questions, feedback or a problem with your account? Send us a message and we'll reply by email.";
+    : c.intro ?? "Questions, feedback or a problem with your account? Send us a message and we'll reply by email.";
 
   return (
     <main className="mx-auto grid max-w-6xl gap-10 px-5 py-12 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <PageSchema path="/contact" />
       <div>
         <h1 className="text-4xl font-extrabold">{heading}</h1>
         <p className="mb-8 mt-3 max-w-xl text-ink-soft">{sub}</p>
+        {c.extraMd && <div className="mb-8 max-w-xl text-sm text-ink-soft"><Markdown md={c.extraMd} /></div>}
         <ContactForm defaults={{
           name: (user?.user_metadata?.full_name as string | undefined) ?? "", email: user?.email ?? "", topic, plan,
           workspaceId: user && sp.workspace ? sp.workspace : null, billing: sp.billing,

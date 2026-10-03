@@ -367,3 +367,22 @@ begin
   if n <> 0 then raise exception 'FAIL: Bob sees Carol payments'; end if;
 end $$;
 reset role;
+
+-- 17. Site page overrides: no signed-in or anonymous access at all, only the server.
+reset role;
+insert into public.site_pages (path, seo_title) values ('/about', 'Hidden from users');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+do $$
+begin
+  begin
+    perform 1 from public.site_pages;
+    raise exception 'FAIL: a member read site_pages';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    insert into public.site_pages (path) values ('/x');
+    raise exception 'FAIL: a member wrote site_pages';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+reset role;

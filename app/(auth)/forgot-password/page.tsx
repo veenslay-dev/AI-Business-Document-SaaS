@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import { PageSchema } from "@/components/seo/page-schema";
+import { pageMetadata } from "@/lib/seo/pages";
 import { redirectIfSignedIn } from "@/lib/auth/session";
 import { ForgotPasswordForm } from "@/components/auth/password-forms";
 
-export const metadata: Metadata = { title: "Forgot password", robots: { index: false } };
-export default async function Page() { await redirectIfSignedIn(); return <ForgotPasswordForm />; }
+export const generateMetadata = () => pageMetadata("/forgot-password");
+export default async function Page() { await redirectIfSignedIn(); return <><PageSchema path="/forgot-password" /><ForgotPasswordForm /></>; }

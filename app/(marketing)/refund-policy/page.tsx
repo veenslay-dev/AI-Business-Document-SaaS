@@ -1,12 +1,8 @@
-import type { Metadata } from "next";
 import { A, LegalPage, P, UL, type LegalSection } from "@/components/marketing/legal-page";
 import { PRODUCT_NAME } from "@/components/ui/logo";
+import { pageMetadata } from "@/lib/seo/pages";
 
-export const metadata: Metadata = {
-  title: "Refund Policy",
-  description: `When ${PRODUCT_NAME} refunds a payment, how to ask for one, and how long it takes.`,
-  alternates: { canonical: "/refund-policy" },
-};
+export const generateMetadata = () => pageMetadata("/refund-policy");
 
 export default function RefundPolicyPage() {
   const sections: LegalSection[] = [

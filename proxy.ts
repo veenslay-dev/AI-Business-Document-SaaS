@@ -8,6 +8,8 @@ const PROTECTED = [
 ];
 
 export async function proxy(request: NextRequest) {
+  // Lets the root layout write a canonical URL that points at the page itself, query string left out.
+  request.headers.set("x-pathname", request.nextUrl.pathname);
   let response = NextResponse.next({ request });
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
