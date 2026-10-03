@@ -560,6 +560,19 @@ await step("public pages recognise a signed-in visitor", async () => {
   eq(await p.locator("header a:has-text('Go to dashboard')").count(), 0, "visitors still see Start Free"); await anon.close();
 });
 
+await step("homepage: hovering the dashboard button reveals Log out, which returns to the homepage signed out", async () => {
+  const c = await browser.newContext({ storageState: await ctx.storageState(), viewport: { width: 1360, height: 900 } }); const p = await c.newPage();
+  await p.goto(`${APP}/`);
+  const btn = p.locator("header a:has-text('Go to dashboard')"); await btn.waitFor({ timeout: 10000 });
+  const logout = p.locator("header button:has-text('Log out')");
+  yes(!(await logout.isVisible()), "menu hidden until hover");
+  await btn.hover(); await logout.waitFor({ state: "visible", timeout: 5000 });
+  await logout.click(); await p.waitForURL(`${APP}/`, { timeout: 15000 });
+  await p.locator("header a:has-text('Start Free')").waitFor({ timeout: 10000 });
+  await p.goto(`${APP}/dashboard`); yes(p.url().includes("/login"), "signed out for real: " + p.url());
+  await c.close();
+});
+
 yes(consoleErrors.length === 0 || true);
 if (consoleErrors.length) console.log("Uncaught page errors:", consoleErrors.slice(0, 5));
 await browser.close();

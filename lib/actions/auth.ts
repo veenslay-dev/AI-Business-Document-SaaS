@@ -69,10 +69,11 @@ export async function signUpAction(input: SignupInput, next?: string): Promise<A
   return { ok: true, data: { needsConfirmation: true } };
 }
 
-export async function signOutAction() {
+/** Signs out. A form can pass a "next" path (for example "/") to land somewhere other than the sign-in page. */
+export async function signOutAction(formData?: FormData) {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/login");
+  redirect(safeNext(typeof formData?.get === "function" ? String(formData.get("next") ?? "") : "", "/login"));
 }
 
 export async function forgotPasswordAction(input: ForgotPasswordInput): Promise<ActionResult> {
