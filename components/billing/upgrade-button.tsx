@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { confirmPaymentAction, startCheckoutAction } from "@/lib/actions/billing";
 
@@ -40,7 +41,8 @@ export function UpgradeButton({ plan, period, label }: { plan: "professional" | 
           const done = await confirmPaymentAction({ orderId: r.razorpay_order_id, paymentId: r.razorpay_payment_id, signature: r.razorpay_signature });
           setMsg({ ok: done.ok, text: done.ok ? (done.message ?? "Payment received.") : done.error });
           setBusy(false);
-          if (done.ok) router.refresh();
+          // A toast survives the page refresh below, which swaps this button for "Your current plan".
+          if (done.ok) { toast.success(done.message ?? "Payment received. Your plan is now active."); router.refresh(); } else toast.error(done.error);
         },
       });
       rz.on("payment.failed", () => { setMsg({ ok: false, text: "The payment didn't go through. You haven't been charged, or the bank will refund it." }); setBusy(false); });
