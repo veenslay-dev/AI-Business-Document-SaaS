@@ -114,7 +114,7 @@ export async function TemplateHub() {
               <h2 className="text-xl font-extrabold"><Link href={t.path} className="hover:text-brand">{t.name}</Link></h2>
               <p className="mt-2 flex-1 text-sm text-ink-soft">{t.description}</p>
               <p className="mt-3 text-xs text-ink-faint"><span className="font-semibold text-ink-soft">Best for:</span> {t.bestFor}</p>
-              <div className="mt-5"><Button asChild variant="secondary"><Link href={t.path}>View template<ArrowRight className="size-4" aria-hidden /></Link></Button></div>
+              <div className="mt-5"><Button asChild variant="secondary"><Link href={t.path}>{t.name}<ArrowRight className="size-4" aria-hidden /></Link></Button></div>
             </div>
           </article>
         ))}

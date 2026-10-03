@@ -682,6 +682,17 @@ await step("seo: self canonical and schema on every page, admin edits title, con
   for (const path of ["/", "/pricing", "/about", "/contact", "/terms", "/privacy", "/refund-policy", "/login", "/signup", "/forgot-password", "/document-templates", "/document-templates/seo-proposal", "/document-templates/website-quotation-gst", "/document-templates/social-media-audit", "/document-templates/digital-marketing-proposal"]) {
     const h = await head(path);
     eq(h.canonical, path === "/" ? APP : `${APP}${path}`, `self canonical on ${path}`);
+    const seo = await ap.evaluate(() => {
+      const hs = [...document.querySelectorAll("h1,h2,h3,h4,h5,h6")].map((h) => Number(h.tagName[1]));
+      let skip = false; for (let i = 1; i < hs.length; i++) if (hs[i] > hs[i - 1] + 1) skip = true;
+      const m = (q) => document.querySelector(q)?.getAttribute("content") ?? "";
+      return { h1: hs.filter((x) => x === 1).length, skip, lang: document.documentElement.lang, og: m("meta[property='og:image']"), ogW: m("meta[property='og:image:width']"), tw: m("meta[name='twitter:image']"), card: m("meta[name='twitter:card']"), mains: document.querySelectorAll("main").length, noAlt: [...document.querySelectorAll("img")].filter((i) => !i.hasAttribute("alt")).length };
+    });
+    eq(seo.h1, 1, `exactly one H1 on ${path}`); yes(!seo.skip, `no skipped heading levels on ${path}`);
+    eq(seo.lang, "en-IN", `html lang on ${path}`); eq(seo.mains, 1, `one main landmark on ${path}`); eq(seo.noAlt, 0, `every image has alt text on ${path}`);
+    yes(/^https?:\/\/[^ ]+\/og\?path=/.test(seo.og) && seo.tw === seo.og && seo.ogW === "1200" && seo.card === "summary_large_image", `og:image and twitter:image on ${path}: ${seo.og}`);
+    const img = await anon.request.get(seo.og.replace(/^https?:\/\/[^/]+/, APP));
+    yes(img.status() === 200 && (img.headers()["content-type"] ?? "").includes("image/png"), `share image renders for ${path}`);
     yes(h.ld.length >= 1 && h.ld.every(Boolean), `valid JSON-LD on ${path}`);
     const types = h.ld.flatMap((d) => d["@graph"].map((n) => n["@type"]));
     yes(types.includes("Organization") && types.includes("WebSite"), `organization and site schema on ${path}`);

@@ -52,7 +52,7 @@ function baseCss(brand: BrandContext["brand"], t: TemplateConfig, bg: string): s
   font-family:var(--bfont);color:var(--ink);font-size:${t.density === "compact" ? 12.5 : 14}px;line-height:1.6;background:var(--paper);
   -webkit-print-color-adjust:exact;print-color-adjust:exact}
 .doc *{box-sizing:border-box}
-.doc h1,.doc h2,.doc h3,.doc h4{font-family:var(--hfont);color:var(--heading);margin:0;line-height:1.2;font-weight:${t.headings === "sans" ? 700 : 600}}
+.doc :is(h1,.h1),.doc h2,.doc h3,.doc h4{font-family:var(--hfont);color:var(--heading);margin:0;line-height:1.2;font-weight:${t.headings === "sans" ? 700 : 600}}
 .doc h2,.doc h3{break-after:avoid;page-break-after:avoid}
 .doc p{margin:0 0 ${0.8 * pad}em;orphans:3;widows:3}
 .doc img{max-width:100%}
@@ -61,29 +61,29 @@ function baseCss(brand: BrandContext["brand"], t: TemplateConfig, bg: string): s
 /* Covers */
 .doc .cover{position:relative;min-height:1040px;display:flex;flex-direction:column;justify-content:space-between;padding:56px;break-after:page;page-break-after:always}
 .doc .cover.band{background:var(--header);color:var(--on-header)}
-.doc .cover.band h1{color:var(--on-header)}
+.doc .cover.band :is(h1,.h1){color:var(--on-header)}
 .doc .cover.split{padding-left:120px;border-left:56px solid var(--header)}
 .doc .cover.minimal{min-height:640px;border-bottom:1px solid var(--line)}
 .doc .cover.block{padding:0;justify-content:flex-start}
 .doc .cover.block .top{background:var(--header);color:var(--on-header);padding:56px;min-height:640px;display:flex;flex-direction:column;justify-content:space-between}
-.doc .cover.block h1{color:var(--on-header);font-size:48px}
+.doc .cover.block :is(h1,.h1){color:var(--on-header);font-size:48px}
 .doc .cover.block .bottom{padding:40px 56px;flex:1;display:flex;flex-direction:column;justify-content:flex-end;border-bottom:14px solid var(--accent)}
 .doc .cover.block .meta{color:var(--ink)}
 .doc .cover.block .meta dt{color:var(--muted);opacity:1}
 .doc .cover.frame{margin:28px;min-height:984px;border:2px solid var(--header);outline:1px solid var(--header);outline-offset:-10px;text-align:center;align-items:center;padding:72px 56px}
 .doc .cover.frame .rule{margin:22px auto}
-.doc .cover.frame h1{max-width:14em;font-size:42px}
+.doc .cover.frame :is(h1,.h1){max-width:14em;font-size:42px}
 .doc .cover.frame .meta{text-align:center;width:100%}
 .doc .cover.noir{background:var(--deep);color:#fff;overflow:hidden}
 .doc .cover.noir:before{content:"";position:absolute;top:0;right:0;width:44%;height:30%;background:var(--accent);border-bottom-left-radius:220px}
 .doc .cover.noir:after{content:"";position:absolute;left:56px;bottom:170px;width:84px;height:6px;background:var(--accent)}
 .doc .cover.noir>*{position:relative;z-index:1}
-.doc .cover.noir h1{color:#fff;font-size:54px;max-width:11em;line-height:1.08}
+.doc .cover.noir :is(h1,.h1){color:#fff;font-size:54px;max-width:11em;line-height:1.08}
 .doc .cover.noir .rule{display:none}
 .doc .cover.noir .brandname{color:#fff}
 .doc .cover.noir .sub{opacity:.8}
 .doc .cover.aurora{color:#fff;background:radial-gradient(120% 90% at 100% 0%,var(--accent) 0%,transparent 55%),radial-gradient(90% 70% at 0% 100%,var(--header) 0%,transparent 60%),var(--deep)}
-.doc .cover.aurora h1{color:#fff;font-size:50px}
+.doc .cover.aurora :is(h1,.h1){color:#fff;font-size:50px}
 .doc .cover.aurora .brandname{color:#fff}
 .doc .cover.aurora .rule{background:#fff;opacity:.85}
 .doc .cover.sidebar{padding:0;flex-direction:row;justify-content:flex-start}
@@ -91,7 +91,7 @@ function baseCss(brand: BrandContext["brand"], t: TemplateConfig, bg: string): s
 .doc .cover.sidebar aside .brandname{color:var(--on-header)}
 .doc .cover.sidebar aside .meta{grid-template-columns:1fr;gap:18px}
 .doc .cover.sidebar .main{flex:1;display:flex;flex-direction:column;justify-content:center;padding:56px 48px;border-right:14px solid var(--accent)}
-.doc .cover.sidebar h1{font-size:44px}
+.doc .cover.sidebar :is(h1,.h1){font-size:44px}
 .doc .cover.sidebar .kicker{color:var(--accent);opacity:1}
 .doc .toc{break-after:page;page-break-after:always;margin-bottom:${34 * pad}px}
 .doc .toc h2{font-size:26px;margin-bottom:18px}
@@ -108,7 +108,7 @@ function baseCss(brand: BrandContext["brand"], t: TemplateConfig, bg: string): s
 .doc .cover.band .brandname,.doc .cover.block .top .brandname{color:var(--on-header)}
 .doc .cover .kicker{font-size:12px;letter-spacing:.2em;text-transform:uppercase;opacity:.75;margin-bottom:18px}
 .doc .cover.frame .kicker{color:var(--accent);opacity:1}
-.doc .cover h1{font-size:44px;max-width:15em}
+.doc .cover :is(h1,.h1){font-size:44px;max-width:15em}
 .doc .cover .rule{width:56px;height:4px;background:var(--accent);margin:22px 0}
 .doc .cover .sub{font-size:17px;max-width:32em;opacity:.9}
 .doc .cover .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:20px;font-size:13px}
@@ -123,7 +123,7 @@ function baseCss(brand: BrandContext["brand"], t: TemplateConfig, bg: string): s
 .doc .lh .ref{font-size:12px;color:var(--muted);margin-top:4px}
 .doc .lh.classic{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;border-bottom:3px solid var(--header)}
 .doc .lh.classic .title{text-align:right}
-.doc .lh.classic .title h1{font-size:28px}
+.doc .lh.classic .title :is(h1,.h1){font-size:28px}
 .doc .lh.banner{background:var(--header);color:var(--on-header);display:flex;justify-content:space-between;align-items:center;gap:24px;padding:${34 * pad}px 52px}
 .doc .lh.banner .brandname{color:var(--on-header)}
 .doc .lh.banner .co{color:var(--on-header);opacity:.8}
@@ -239,7 +239,7 @@ function baseCss(brand: BrandContext["brand"], t: TemplateConfig, bg: string): s
 .doc .empty{color:var(--muted);font-style:italic}
 @media (max-width:640px){
   .doc .page,.doc .cover{padding:24px}.doc .lh,.doc .parties{padding-left:24px;padding-right:24px}
-  .doc .cover{min-height:auto;gap:40px}.doc .cover h1{font-size:30px}.doc .cover.split{padding-left:60px;border-left-width:24px}
+  .doc .cover{min-height:auto;gap:40px}.doc .cover :is(h1,.h1){font-size:30px}.doc .cover.split{padding-left:60px;border-left-width:24px}
   .doc .cover.block .top{min-height:420px;padding:28px}.doc .cover.block .bottom{padding:24px}.doc .cover.frame{margin:12px;padding:40px 24px}
   .doc .parties,.doc .sig{grid-template-columns:1fr}.doc .lh.classic,.doc .lh.banner,.doc .lh.studio .row{flex-direction:column;align-items:flex-start}.doc .lh .title{text-align:left}
   .doc .lh.studio .doctype{font-size:30px}.doc .totalbanner{margin-left:24px;margin-right:24px}.doc .footbar{padding:14px 24px}

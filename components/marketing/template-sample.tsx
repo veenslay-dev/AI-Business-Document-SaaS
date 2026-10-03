@@ -18,11 +18,11 @@ const LABEL: Record<TemplateSlug, string> = {
 export function TemplateSample({ slug, height }: { slug: TemplateSlug; height: number }) {
   const render = () => {
     switch (slug) {
-      case "seo-proposal": return <DocumentRenderer content={sampleProposal()} brand={ACME_BRAND} template={cfg("proposal-bold")} meta={{ type: "proposal" }} />;
-      case "website-quotation-gst": return <DocumentRenderer content={sampleQuotation()} brand={ACME_BRAND} template={cfg("quotation-executive")} meta={{ type: "quotation" }} />;
-      case "invoice-template": return <DocumentRenderer content={sampleInvoice(SAMPLE_CLIENTS[1], true)} brand={ACME_BRAND} template={cfg("invoice-executive")} meta={{ type: "invoice" }} />;
-      case "social-media-audit": return <DocumentRenderer content={sampleSocialAudit()} brand={ACME_BRAND} template={cfg("social-audit-scorecard", { cover: "none", headerStyle: "studio" })} meta={{ type: "social_audit" }} />;
-      case "digital-marketing-proposal": return <DocumentRenderer content={sampleMarketingProposal()} brand={ACME_BRAND} template={cfg("proposal-elegant")} meta={{ type: "proposal" }} />;
+      case "seo-proposal": return <DocumentRenderer content={sampleProposal()} brand={ACME_BRAND} template={cfg("proposal-bold")} meta={{ type: "proposal" }} embedded />;
+      case "website-quotation-gst": return <DocumentRenderer content={sampleQuotation()} brand={ACME_BRAND} template={cfg("quotation-executive")} meta={{ type: "quotation" }} embedded />;
+      case "invoice-template": return <DocumentRenderer content={sampleInvoice(SAMPLE_CLIENTS[1], true)} brand={ACME_BRAND} template={cfg("invoice-executive")} meta={{ type: "invoice" }} embedded />;
+      case "social-media-audit": return <DocumentRenderer content={sampleSocialAudit()} brand={ACME_BRAND} template={cfg("social-audit-scorecard", { cover: "none", headerStyle: "studio" })} meta={{ type: "social_audit" }} embedded />;
+      case "digital-marketing-proposal": return <DocumentRenderer content={sampleMarketingProposal()} brand={ACME_BRAND} template={cfg("proposal-elegant")} meta={{ type: "proposal" }} embedded />;
     }
   };
   return <CroppedPreview label={LABEL[slug]} height={height}>{render()}</CroppedPreview>;

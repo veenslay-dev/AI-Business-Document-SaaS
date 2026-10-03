@@ -22,6 +22,7 @@ export default async function PricingPage() {
       <section className="mx-auto max-w-7xl px-5 pb-6 pt-12">
         <h1 className="max-w-3xl text-4xl font-extrabold leading-tight">{c.heading ?? def.heading}</h1>
         <p className="mb-8 mt-3 max-w-3xl text-lg text-ink-soft">{c.intro ?? def.intro}</p>
+        <h2 className="mb-5 text-2xl font-extrabold">Choose your plan</h2>
         <PlanGrid signedIn={signedIn} />
       </section>
 

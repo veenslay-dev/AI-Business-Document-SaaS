@@ -17,8 +17,8 @@ export type RenderMeta = { type: DocType; acceptance?: Acceptance | null };
  * so the editor preview, public page and PDF can never drift apart.
  */
 export function DocumentRenderer({
-  content, brand, template, meta,
-}: { content: DocumentContent; brand: BrandContext; template: TemplateConfig; meta: RenderMeta }) {
+  content, brand, template, meta, embedded = false,
+}: { content: DocumentContent; brand: BrandContext; template: TemplateConfig; meta: RenderMeta; embedded?: boolean }) {
   const fonts = googleFontsUrl([brand.brand.headingFont, brand.brand.bodyFont]);
   const pageBg = content.style?.background ?? null;
   const cls = `doc ${documentScope(brand.brand, template, pageBg)} sec-${template.sectionStyle} tbl-${template.tableStyle} tot-${template.totals}${template.pagePerSection ? " pps" : ""}`;
@@ -32,7 +32,7 @@ export function DocumentRenderer({
     <div className={cls}>
       {fonts && <link rel="stylesheet" href={fonts} />}
       <style dangerouslySetInnerHTML={{ __html: documentCss(brand.brand, template, pageBg) }} />
-      {hasCover ? <Cover content={content} brand={brand} template={template} /> : <Letterhead content={content} brand={brand} meta={meta} template={template} />}
+      {hasCover ? <Cover content={content} brand={brand} template={template} embedded={embedded} /> : <Letterhead content={content} brand={brand} meta={meta} template={template} embedded={embedded} />}
       {!hasCover && <Parties content={content} brand={brand} invoice={meta.type === "invoice"} />}
       {!hasCover && template.totals === "banner" && <TotalBanner content={content} invoice={meta.type === "invoice"} />}
       <div className="page">
@@ -62,8 +62,10 @@ function Logo({ brand, onDark }: { brand: BrandContext; onDark: boolean }) {
   return url ? <img className="logo" src={url} alt={`${brand.company.name} logo`} /> : <span className="brandname">{brand.company.name}</span>;
 }
 
-function Cover({ content, brand, template }: { content: DocumentContent; brand: BrandContext; template: TemplateConfig }) {
+function Cover({ content, brand, template, embedded }: { content: DocumentContent; brand: BrandContext; template: TemplateConfig; embedded?: boolean }) {
   const c = content.cover;
+  // On marketing pages a sample document must not add a second H1, so its title becomes a styled block instead of a heading.
+  const Title = (embedded ? "div" : "h1") as "h1";
   const onDark = template.cover === "band" || template.cover === "block" || template.cover === "noir" || template.cover === "aurora";
   const meta = (
     <dl className="meta">
@@ -76,7 +78,7 @@ function Cover({ content, brand, template }: { content: DocumentContent; brand: 
   const titleBlock = (
     <div>
       {c.kicker && <p className="kicker">{c.kicker}</p>}
-      <h1>{c.title}</h1>
+      <Title className={embedded ? "h1" : undefined}>{c.title}</Title>
       <div className="rule" />
       {c.subtitle && <p className="sub">{c.subtitle}</p>}
     </div>
@@ -124,8 +126,9 @@ function TotalBanner({ content, invoice }: { content: DocumentContent; invoice?:
   return null;
 }
 
-function Letterhead({ content, brand, meta, template }: { content: DocumentContent; brand: BrandContext; meta: RenderMeta; template: TemplateConfig }) {
+function Letterhead({ content, brand, meta, template, embedded }: { content: DocumentContent; brand: BrandContext; meta: RenderMeta; template: TemplateConfig; embedded?: boolean }) {
   const c = content.cover;
+  const Title = (embedded ? "div" : "h1") as "h1";
   const co = brand.company;
   const lines = [co.address, co.email, co.phone, co.website, co.gst ? `GST: ${co.gst}` : "", co.pan ? `PAN: ${co.pan}` : ""].filter(Boolean).join("\n");
   const q = content.sections.flatMap((s) => s.blocks).find((b) => b.type === "quotation");
@@ -152,7 +155,7 @@ function Letterhead({ content, brand, meta, template }: { content: DocumentConte
   return (
     <header className="lh classic">
       <div><Logo brand={brand} onDark={false} /><div className="co">{lines}</div></div>
-      <div className="title"><h1>{c.title}</h1><p className="ref">{refLine}</p></div>
+      <div className="title"><Title className={embedded ? "h1" : undefined}>{c.title}</Title><p className="ref">{refLine}</p></div>
     </header>
   );
 }
