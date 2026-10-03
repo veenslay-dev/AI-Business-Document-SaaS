@@ -1,6 +1,7 @@
 import { PRODUCT_NAME } from "@/components/ui/logo";
+import { TEMPLATE_HUB, TEMPLATE_PAGES } from "./templates";
 
-export type PageKind = "home" | "pricing" | "about" | "contact" | "legal" | "auth";
+export type PageKind = "home" | "pricing" | "about" | "contact" | "legal" | "auth" | "templates" | "template";
 
 export type PageDef = {
   path: string;
@@ -16,6 +17,8 @@ export type PageDef = {
   intro?: string;
   content: boolean;
   noindex?: boolean;
+  /** For nested pages: the page above this one in the breadcrumb. */
+  parent?: string;
 };
 
 export const PAGES: PageDef[] = [
@@ -32,6 +35,8 @@ export const PAGES: PageDef[] = [
   { path: "/contact", name: "Contact", kind: "contact", content: true, title: "Contact",
     description: `Contact ${PRODUCT_NAME} for help, plan upgrades or a custom plan.`,
     heading: "Get in touch", intro: "Questions, feedback or a problem with your account? Send us a message and we'll reply by email." },
+  { path: TEMPLATE_HUB.path, name: "Templates", kind: "templates", content: true, title: TEMPLATE_HUB.title, description: TEMPLATE_HUB.description, heading: TEMPLATE_HUB.h1, intro: TEMPLATE_HUB.intro },
+  ...TEMPLATE_PAGES.map((t) => ({ path: t.path, name: t.name, kind: "template" as const, content: true, title: t.title, description: t.description, heading: t.h1, intro: t.intro, parent: TEMPLATE_HUB.path })),
   { path: "/terms", name: "Terms of Service", kind: "legal", content: true, title: "Terms of Service",
     description: `The terms that apply when you use ${PRODUCT_NAME} to create, share and track business documents.`, heading: "Terms of Service" },
   { path: "/privacy", name: "Privacy Policy", kind: "legal", content: true, title: "Privacy Policy",

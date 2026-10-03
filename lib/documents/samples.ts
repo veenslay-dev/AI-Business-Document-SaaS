@@ -87,6 +87,44 @@ export function sampleQuotation(client = SAMPLE_CLIENTS[1]): DocumentContent {
   });
 }
 
+export const SAMPLE_MARKETING_AI: ProposalAi = {
+  title: "Digital marketing plan for Urban Properties",
+  executive_summary: "Urban Properties lists new apartments every quarter but depends almost entirely on brokers and walk-ins for leads. This plan builds a steady flow of direct enquiries by combining local search, Google Ads for launch periods, Instagram content from the sites and a monthly email to past enquirers. Every channel is reported in one monthly summary, so you can see which spend produced site visits.",
+  client_challenges: ["Project pages rank for the project name only, not for what buyers search, such as 2 BHK in Bandra West.", "Paid campaigns were run for one launch with no tracking of calls or form fills.", "The Instagram page posts renders only, with no walkthroughs, site progress or buyer questions.", "Past enquirers are never contacted again once a project sells out."],
+  objectives: ["Set up tracking so every enquiry is traced to its source within the first month.", "Bring the cost of a qualified enquiry down against the current broker commission.", "Publish three Instagram posts a week with at least one video.", "Send one email a month to everyone who has enquired before."],
+  strategy: [
+    { title: "Search and local presence", description: "Fix project page titles and content, set up a Google Business Profile for each sales office, and publish area guides that answer what buyers ask." },
+    { title: "Launch advertising", description: "Run Google Search and Meta lead campaigns around each launch, with dedicated landing pages and call tracking, and pause them when a phase sells out." },
+    { title: "Social media", description: "A content calendar built on site walkthroughs, construction progress, buyer FAQs and customer stories, with replies to comments and messages within one working day." },
+    { title: "Email and follow-up", description: "A monthly newsletter and a short follow-up sequence for new enquirers, so interest does not go cold between calls." },
+  ],
+  deliverables: ["Tracking setup for calls, forms and WhatsApp clicks", "Rewritten titles and descriptions for all project pages", "Google and Meta campaigns for each launch", "12 social posts per month, including 4 videos", "One email newsletter per month", "Monthly report with a call to review it"],
+  timeline: [
+    { phase: "Setup", duration: "Weeks 1 to 3", description: "Tracking, accounts, audit of current pages and a content calendar for the first quarter." },
+    { phase: "Launch", duration: "Weeks 4 to 8", description: "Search fixes go live, first campaigns start and the posting schedule begins." },
+    { phase: "Optimise", duration: "Month 3 onward", description: "Shift budget to what is producing enquiries and report on it every month." },
+  ],
+  investment: {
+    currency: "INR",
+    items: [{ name: "Setup and tracking (one time)", description: "", amount: 35000 }, { name: "Monthly management", description: "SEO, social, email and reporting", amount: 70000 }, { name: "Ad campaign management", description: "Per month while campaigns run, excludes ad spend", amount: 20000 }],
+    notes: "Ad spend is paid directly to Google and Meta from the client's own account and is not included. Prices exclude GST.",
+  },
+  terms: "",
+};
+
+export function sampleMarketingProposal(client = SAMPLE_CLIENTS[2]): DocumentContent {
+  return buildProposalContent({
+    brand: ACME_BRAND, ai: SAMPLE_MARKETING_AI, date: "2026-03-09",
+    client: { company: client.company, contact: client.contact, email: client.email, phone: client.phone, address: client.address },
+    input: { title: SAMPLE_MARKETING_AI.title, description: "A multi-channel marketing plan for a real estate developer with quarterly launches.", goals: "", requirements: "", services: [], timeline: "", budget: "", notes: "", currency: "INR" },
+    packages: [
+      { name: "Essentials", price: 55000, description: "Search and social", features: ["Local SEO and Google Business Profile", "8 social posts a month", "Monthly report"] },
+      { name: "Launch", price: 90000, description: "Everything for a project launch", features: ["Everything in Essentials", "Google and Meta campaign management", "Landing pages", "Monthly email"], selected: true },
+      { name: "Full service", price: 140000, description: "Always on across channels", features: ["Everything in Launch", "12 social posts and 4 videos", "Email follow-up sequences", "Fortnightly review calls"] },
+    ],
+  });
+}
+
 /** A plain invoice with no tax and no discount, so the tax and discount columns stay hidden. */
 export function sampleInvoice(client = SAMPLE_CLIENTS[1], withTax = false): DocumentContent {
   return buildInvoiceContent({

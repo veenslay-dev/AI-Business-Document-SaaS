@@ -612,6 +612,35 @@ await step("legal pages: terms, privacy and refund render, link to contact, and 
   await anon.close();
 });
 
+await step("templates: menu with submenu, hub page, and four template pages with live samples and schema", async () => {
+  const anon = await anonContext(); const p = await anon.newPage(); await p.setViewportSize({ width: 1360, height: 900 });
+  await p.goto(`${APP}/`);
+  const menu = p.locator("header a:has-text('Templates')").first(); await menu.waitFor({ timeout: 10000 });
+  await menu.hover();
+  for (const l of ["All templates", "SEO Proposal Template", "Website Quotation with GST", "Social Media Audit Template", "Digital Marketing Proposal"]) await p.locator(`header a:has-text('${l}')`).first().waitFor({ state: "visible", timeout: 5000 });
+  await p.locator("header a:has-text('Website Quotation with GST')").click(); await p.waitForURL("**/document-templates/website-quotation-gst", { timeout: 15000 });
+  const q = await p.locator("main").innerText();
+  yes(/GST/.test(q) && q.includes("Bright Dental") && q.includes("29ABCDE1234F1Z5"), "GST quotation sample shows the GSTIN and tax");
+  yes(await p.locator("main [role=img]").first().isVisible(), "sample is rendered");
+  yes(await p.locator("nav[aria-label=Breadcrumb] a:has-text('Templates')").isVisible(), "breadcrumb links to the hub");
+  yes(await p.locator("main a[href='/signup']").first().isVisible(), "call to action for visitors");
+  await p.goto(`${APP}/document-templates`);
+  await p.locator("h1:has-text('Business document templates')").waitFor({ timeout: 10000 });
+  eq(await p.locator("main article").count(), 4, "four template cards");
+  for (const [slug, h1, needle] of [["seo-proposal", "SEO proposal template", "Nova Furniture"], ["social-media-audit", "Social media audit template", "Scorecard"], ["digital-marketing-proposal", "Digital marketing proposal template", "Urban Properties"]]) {
+    await p.goto(`${APP}/document-templates/${slug}`);
+    await p.locator(`h1:has-text('${h1}')`).waitFor({ timeout: 10000 });
+    yes((await p.locator("main").innerText()).includes(needle), `${slug} sample content`);
+    yes(await p.locator("main details").count() >= 3, `${slug} shows its questions`);
+  }
+  eq((await anon.request.get(`${APP}/document-templates/nope`)).status(), 404, "unknown template is a 404");
+  const sm = await (await anon.request.get(`${APP}/sitemap.xml`)).text(); yes(sm.includes("/document-templates/seo-proposal") && sm.includes("/document-templates/digital-marketing-proposal"), "sitemap lists the templates");
+  await p.goto(`${APP}/document-templates/seo-proposal`);
+  const types = await p.evaluate(() => [...document.querySelectorAll("script[type='application/ld+json']")].flatMap((x) => JSON.parse(x.textContent)["@graph"].map((n) => n["@type"])));
+  yes(types.includes("FAQPage") && types.includes("HowTo") && types.includes("BreadcrumbList"), "template schema: " + types.join());
+  await anon.close();
+});
+
 await step("seo: self canonical and schema on every page, admin edits title, content, noindex and schema, reset restores", async () => {
   const anon = await anonContext(); const ap = await anon.newPage();
   const head = async (path) => {
@@ -624,7 +653,7 @@ await step("seo: self canonical and schema on every page, admin edits title, con
       ld: [...document.querySelectorAll("script[type='application/ld+json']")].map((x) => { try { return JSON.parse(x.textContent); } catch { return null; } }),
     }));
   };
-  for (const path of ["/", "/pricing", "/about", "/contact", "/terms", "/privacy", "/refund-policy", "/login", "/signup", "/forgot-password"]) {
+  for (const path of ["/", "/pricing", "/about", "/contact", "/terms", "/privacy", "/refund-policy", "/login", "/signup", "/forgot-password", "/document-templates", "/document-templates/seo-proposal", "/document-templates/website-quotation-gst", "/document-templates/social-media-audit", "/document-templates/digital-marketing-proposal"]) {
     const h = await head(path);
     eq(h.canonical, path === "/" ? APP : `${APP}${path}`, `self canonical on ${path}`);
     yes(h.ld.length >= 1 && h.ld.every(Boolean), `valid JSON-LD on ${path}`);

@@ -3,6 +3,7 @@ import { PLANS, YEARLY_MONTHS, type PlanId } from "@/lib/billing/plans";
 import { FAQ } from "@/lib/marketing";
 import { LEGAL_UPDATED_ISO } from "@/lib/legal";
 import { PAGE_BY_PATH } from "./registry";
+import { TEMPLATE_BY_PATH, TEMPLATE_PAGES } from "./templates";
 
 type Json = Record<string, unknown>;
 export type SchemaOverride = { seo_title?: string | null; seo_description?: string | null; canonical?: string | null; schema_json?: string | null; updated_at?: string | null } | null;
@@ -53,7 +54,7 @@ export function buildPageSchema(path: string, o: SchemaOverride, base: string, o
   });
   graph.push({ "@type": "WebSite", "@id": siteId, url: `${base}/`, name: PRODUCT_NAME, inLanguage: "en-IN", publisher: { "@id": orgId } });
 
-  const pageType = def.kind === "about" ? "AboutPage" : def.kind === "contact" ? "ContactPage" : "WebPage";
+  const pageType = def.kind === "about" ? "AboutPage" : def.kind === "contact" ? "ContactPage" : def.kind === "templates" ? "CollectionPage" : "WebPage";
   graph.push({
     "@type": pageType, "@id": pageId, url, name, description, inLanguage: "en-IN", isPartOf: { "@id": siteId }, publisher: { "@id": orgId },
     ...(modified ? { dateModified: modified } : {}),
@@ -62,10 +63,18 @@ export function buildPageSchema(path: string, o: SchemaOverride, base: string, o
     potentialAction: [{ "@type": "ReadAction", target: [url] }],
   });
   if (path !== "/") {
-    graph.push({ "@type": "BreadcrumbList", "@id": `${url}#breadcrumb`, itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: `${base}/` },
-      { "@type": "ListItem", position: 2, name: def.name, item: url },
-    ] });
+    const parent = def.parent ? PAGE_BY_PATH[def.parent] : null;
+    const trail = [{ name: "Home", item: `${base}/` }, ...(parent ? [{ name: parent.name, item: abs(base, parent.path) }] : []), { name: def.name, item: url }];
+    graph.push({ "@type": "BreadcrumbList", "@id": `${url}#breadcrumb`, itemListElement: trail.map((t, i) => ({ "@type": "ListItem", position: i + 1, name: t.name, item: t.item })) });
+  }
+  if (def.kind === "templates") {
+    graph.push({ "@type": "ItemList", "@id": `${url}#list`, name: "Document templates", itemListElement: TEMPLATE_PAGES.map((t, i) => ({ "@type": "ListItem", position: i + 1, name: t.name, url: abs(base, t.path) })) });
+  }
+  const tpl = TEMPLATE_BY_PATH[path];
+  if (def.kind === "template" && tpl) {
+    // Both the questions and the steps are shown on the page, which is what search engines require of this markup.
+    graph.push({ "@type": "FAQPage", "@id": `${url}#faq`, mainEntity: tpl.faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) });
+    graph.push({ "@type": "HowTo", "@id": `${url}#howto`, name: `How to use the ${tpl.name.toLowerCase()}`, step: tpl.steps.map((s, i) => ({ "@type": "HowToStep", position: i + 1, name: s.title, text: s.body })) });
   }
 
   if (def.kind === "home") {

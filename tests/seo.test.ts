@@ -3,6 +3,7 @@ import { PAGES, PAGE_BY_PATH } from "@/lib/seo/registry";
 import { buildPageSchema, parseCustomSchema, serializeJsonLd } from "@/lib/seo/schema";
 import { parseMarkdown, safeHref } from "@/lib/seo/markdown";
 import { PLANS } from "@/lib/billing/plans";
+import { TEMPLATE_HUB, TEMPLATE_PAGES } from "@/lib/seo/templates";
 
 const BASE = "https://www.priodraft.com";
 type Node = Record<string, unknown>;
@@ -21,7 +22,7 @@ describe("schema markup", () => {
     for (const p of PAGES) {
       const t = types(graph(p.path));
       expect(t).toContain("Organization"); expect(t).toContain("WebSite");
-      expect(t.some((x) => ["WebPage", "AboutPage", "ContactPage"].includes(x as string))).toBe(true);
+      expect(t.some((x) => ["WebPage", "AboutPage", "ContactPage", "CollectionPage"].includes(x as string))).toBe(true);
     }
   });
   it("uses the right page type and breadcrumbs", () => {
@@ -61,6 +62,31 @@ describe("schema markup", () => {
     expect(serializeJsonLd({ a: "</script><script>alert(1)</script>" })).not.toContain("</script>");
   });
   it("noindex pages are known", () => { expect(PAGE_BY_PATH["/login"].noindex).toBe(true); expect(PAGE_BY_PATH["/about"].noindex).toBeFalsy(); });
+});
+
+describe("template pages", () => {
+  it("are registered under the Templates hub and listed in its ItemList", () => {
+    expect(PAGE_BY_PATH["/document-templates"].kind).toBe("templates");
+    for (const t of TEMPLATE_PAGES) expect(PAGE_BY_PATH[t.path]).toMatchObject({ kind: "template", parent: "/document-templates" });
+    const list = graph("/document-templates").find((n) => n["@type"] === "ItemList") as { itemListElement: unknown[] };
+    expect(list.itemListElement).toHaveLength(TEMPLATE_PAGES.length);
+  });
+  it("each template page has a three step breadcrumb, a FAQ and a HowTo that match what is shown", () => {
+    for (const t of TEMPLATE_PAGES) {
+      const g = graph(t.path);
+      const crumbs = g.find((n) => n["@type"] === "BreadcrumbList") as { itemListElement: { name: string }[] };
+      expect(crumbs.itemListElement.map((c) => c.name)).toEqual(["Home", "Templates", t.name]);
+      const faq = g.find((n) => n["@type"] === "FAQPage") as { mainEntity: unknown[] };
+      expect(faq.mainEntity).toHaveLength(t.faq.length);
+      const how = g.find((n) => n["@type"] === "HowTo") as { step: unknown[] };
+      expect(how.step).toHaveLength(t.steps.length);
+    }
+  });
+  it("the copy follows the house rules", () => {
+    const text = JSON.stringify(TEMPLATE_PAGES) + JSON.stringify(TEMPLATE_HUB);
+    expect(text).not.toContain("\u2014");
+    for (const t of TEMPLATE_PAGES) { expect(t.faq.length).toBeGreaterThanOrEqual(3); expect(t.includes.length).toBeGreaterThanOrEqual(6); expect(t.description.length).toBeLessThanOrEqual(200); }
+  });
 });
 
 describe("extra content markdown", () => {
