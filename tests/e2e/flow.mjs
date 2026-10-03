@@ -649,7 +649,7 @@ await step("content: every main page has a FAQ section that matches its FAQ sche
     const r = await p.evaluate(() => ({
       shown: [...document.querySelectorAll("main details summary")].map((x) => x.textContent.replace(/\s*\+$/, "").trim()),
       schema: [...document.querySelectorAll("script[type='application/ld+json']")].flatMap((x) => JSON.parse(x.textContent)["@graph"]).filter((n) => n["@type"] === "FAQPage").flatMap((n) => n.mainEntity.map((q) => q.name)),
-      text: document.body.innerText,
+      text: [...document.querySelectorAll("main, header, footer")].map((x) => x.textContent).join("\n"),
     }));
     yes(r.shown.length >= 4, `${path} shows at least four questions`);
     eq(JSON.stringify(r.schema), JSON.stringify(r.shown), `${path} FAQ schema lists the same questions as the page`);
