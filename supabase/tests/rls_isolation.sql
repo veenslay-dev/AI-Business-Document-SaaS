@@ -310,3 +310,32 @@ begin
   select count(*) into n from public.workspace_members where workspace_id = ws and role = 'owner';
   if n <> 1 then raise exception 'FAIL: admin created workspace has no owner'; end if;
 end $$;
+
+-- 14. The admin stays pinned to the first account, even if it is deleted.
+do $$
+declare first_id uuid; again uuid; other uuid;
+begin
+  first_id := public.platform_first_user_id();
+  again := public.platform_first_user_id();
+  if first_id is null or first_id <> again then raise exception 'FAIL: admin id not stable'; end if;
+  select id into other from auth.users where id <> first_id limit 1;
+  delete from public.workspace_members where user_id = first_id;
+  delete from auth.users where id = first_id;
+  if public.platform_first_user_id() is not null then raise exception 'FAIL: admin role passed to another account'; end if;
+end $$;
+
+-- 15. AI usage totals for the admin cost pages work for the service role only.
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+do $$
+begin
+  begin
+    perform * from public.admin_ai_usage();
+    raise exception 'FAIL: admin_ai_usage callable by a user';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+reset role;
+do $$
+begin
+  perform * from public.admin_ai_usage(now() - interval '30 days', now());
+end $$;

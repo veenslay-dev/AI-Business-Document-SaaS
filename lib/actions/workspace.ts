@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { ACTIVE_WORKSPACE_COOKIE, getActiveMembership, getMemberships, getUser } from "@/lib/auth/session";
 import { can } from "@/lib/permissions/roles";
+import { looksLikeImage } from "@/lib/uploads";
 import { businessInfoSchema, companyInfoSchema, type BusinessInfoInput, type CompanyInfoInput } from "@/lib/validation/company";
 import { brandKitSchema, ALLOWED_ASSET_TYPES, ASSET_KINDS, MAX_ASSET_BYTES, type BrandKitInput } from "@/lib/validation/brand";
 import { fail, fromZod, GENERIC_ERROR, type ActionResult } from "./result";
@@ -105,8 +106,10 @@ export async function saveBrandKitAction(input: BrandKitInput): Promise<ActionRe
     : "Brand kit saved. Draft documents update right away. Documents you have already shared keep the look the client saw, use \"Refresh branding\" in the editor to update them." };
 }
 
+const MAX_FILES_PER_WORKSPACE = 300;
+
 const EXT: Record<string, string> = {
-  "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/svg+xml": "svg",
+  "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp",
 };
 
 /** Uploads a logo, dark logo, favicon or signature into the workspace's storage folder. */
@@ -120,10 +123,14 @@ export async function uploadBrandAssetAction(formData: FormData): Promise<Action
   if (!(ASSET_KINDS as readonly string[]).includes(kind)) return fail("Unknown asset type.");
   if (!(file instanceof File) || file.size === 0) return fail("Choose an image to upload.");
   if (file.size > MAX_ASSET_BYTES) return fail("That file is larger than 2 MB. Try a smaller image.");
-  if (!(ALLOWED_ASSET_TYPES as readonly string[]).includes(file.type)) return fail("Use a PNG, JPG, WebP or SVG image.");
+  if (!(ALLOWED_ASSET_TYPES as readonly string[]).includes(file.type)) return fail("Use a PNG, JPG or WebP image.");
+  // The browser-declared type is only a claim, so check what the file really is.
+  if (!looksLikeImage(new Uint8Array(await file.slice(0, 12).arrayBuffer()), file.type)) return fail("That file doesn't look like a real image.");
 
   const supabase = await createClient();
-  const path = `${membership.workspaceId}/${kind}-${Date.now()}.${EXT[file.type]}`;
+  const { data: existing } = await supabase.storage.from("brand-assets").list(membership.workspaceId, { limit: MAX_FILES_PER_WORKSPACE + 1 });
+  if ((existing?.length ?? 0) > MAX_FILES_PER_WORKSPACE) return fail("This workspace has reached its upload limit. Contact support to clear old files.");
+  const path = `${membership.workspaceId}/${kind}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${EXT[file.type]}`;
   const { error: uploadError } = await supabase.storage
     .from("brand-assets")
     .upload(path, file, { contentType: file.type, upsert: false });

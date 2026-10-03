@@ -52,7 +52,7 @@ export function AssetUploader({
           <Button type="button" variant="secondary" size="sm" loading={pending} onClick={() => input.current?.click()}>
             {url ? "Replace" : "Upload"}
           </Button>
-          <p className="mt-1 text-xs text-ink-faint">{hint ?? "PNG, JPG, WebP or SVG, up to 2 MB."}</p>
+          <p className="mt-1 text-xs text-ink-faint">{hint ?? "PNG, JPG or WebP, up to 2 MB."}</p>
         </div>
       </div>
       {error && <p role="alert" className="text-xs text-signal">{error}</p>}

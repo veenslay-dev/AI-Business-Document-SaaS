@@ -1,2 +1,2 @@
-/** Where "Create Your First Document" points. Switches to the proposal builder in Phase 3. */
+/** Where "Create Your First Document" points. */
 export const FIRST_DOCUMENT_HREF = "/dashboard";

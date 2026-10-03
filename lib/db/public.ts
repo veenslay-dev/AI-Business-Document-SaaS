@@ -45,9 +45,10 @@ export async function getPublicDocument(token: string): Promise<PublicDocument |
 
 /** One-way hash of the visitor's IP, scoped to the document. The raw address is never stored. */
 export function hashIp(ip: string | null, documentId: string): string {
-  return createHash("sha256").update(`${process.env.IP_HASH_SALT ?? "docupro"}:${documentId}:${ip ?? "unknown"}`).digest("hex").slice(0, 32);
+  return createHash("sha256").update(`${process.env.IP_HASH_SALT || process.env.SUPABASE_SERVICE_ROLE_KEY || "unset"}:${documentId}:${ip ?? "unknown"}`).digest("hex").slice(0, 32);
 }
 
 export function clientIp(headers: Headers): string | null {
-  return headers.get("x-forwarded-for")?.split(",")[0]?.trim() || headers.get("x-real-ip") || null;
+  // Hosts such as Vercel set these themselves. A visitor-supplied X-Forwarded-For comes last because it can be faked.
+  return headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() || headers.get("x-real-ip") || headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
 }

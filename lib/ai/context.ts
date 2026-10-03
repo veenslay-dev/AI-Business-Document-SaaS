@@ -5,7 +5,7 @@ export type KnowledgeItem = { title: string; type: string; content: string | nul
 const STOP = new Set(["the", "and", "for", "with", "that", "this", "from", "your", "our", "are", "you", "will", "have", "into"]);
 const tokens = (s: string) => s.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 2 && !STOP.has(w));
 
-/** Picks the knowledge base entries that share the most words with the query. No embeddings needed for the MVP. */
+/** Picks the knowledge base entries that share the most words with the query. Plain word overlap, no embeddings. */
 export function selectKnowledge(items: KnowledgeItem[], query: string, limit = 4): KnowledgeItem[] {
   const q = new Set(tokens(query));
   if (q.size === 0) return [];

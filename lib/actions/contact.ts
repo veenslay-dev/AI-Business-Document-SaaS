@@ -1,11 +1,14 @@
 "use server";
 
+import { headers } from "next/headers";
+import { clientIp, hashIp } from "@/lib/db/public";
 import { getMemberships, getUser } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { contactSchema, type ContactInput } from "@/lib/validation/contact";
 import { fail, fromZod, GENERIC_ERROR, type ActionResult } from "./result";
 
 const PER_EMAIL_PER_HOUR = 3;
+const PER_IP_PER_HOUR = 6;
 const TOTAL_PER_HOUR = 40;
 
 /** Stores a message from the public contact form or an upgrade request. Only the admin panel reads them. */
@@ -19,11 +22,13 @@ export async function submitContactAction(input: ContactInput): Promise<ActionRe
   try {
     const admin = createAdminClient();
     const since = new Date(Date.now() - 3600_000).toISOString();
-    const [mine, all] = await Promise.all([
+    const ipHash = hashIp(clientIp(await headers()), "contact-form");
+    const [mine, all, fromIp] = await Promise.all([
       admin.from("contact_messages").select("id", { count: "exact", head: true }).eq("email", v.email).gte("created_at", since),
       admin.from("contact_messages").select("id", { count: "exact", head: true }).gte("created_at", since),
+      admin.from("contact_messages").select("id", { count: "exact", head: true }).eq("ip_hash", ipHash).gte("created_at", since),
     ]);
-    if ((mine.count ?? 0) >= PER_EMAIL_PER_HOUR || (all.count ?? 0) >= TOTAL_PER_HOUR) return fail("We've received several messages from you already. We'll reply soon.");
+    if ((mine.count ?? 0) >= PER_EMAIL_PER_HOUR || (fromIp.count ?? 0) >= PER_IP_PER_HOUR || (all.count ?? 0) >= TOTAL_PER_HOUR) return fail("We've received several messages from you already. We'll reply soon.");
 
     // The workspace id comes from the browser, so it is only kept when the signed-in user really belongs to it.
     const user = await getUser();
@@ -32,7 +37,7 @@ export async function submitContactAction(input: ContactInput): Promise<ActionRe
 
     const { error } = await admin.from("contact_messages").insert({
       name: v.name, email: v.email, company: v.company || null, phone: v.phone || null, topic: v.topic,
-      plan_interest: v.plan, message: v.message, workspace_id: workspaceId, user_id: user?.id ?? null,
+      plan_interest: v.plan, message: v.message, workspace_id: workspaceId, user_id: user?.id ?? null, ip_hash: ipHash,
     });
     if (error) { console.error("[contact] insert failed", error.message); return fail(GENERIC_ERROR); }
     return { ok: true, message: "Thanks, we've got your message and will reply by email soon." };

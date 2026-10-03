@@ -49,7 +49,7 @@ export function AuditForm({ clients, presetClient, aiConfigured, templates }: {
       </label>
       <Button type="submit" loading={pending}>{pending ? "Scanning the site" : "Run audit"}</Button>
       {pending && <p className="flex items-center gap-2 text-sm text-ink-soft" role="status"><Loader2 className="size-4 animate-spin" aria-hidden />Checking the home page, a few inner pages, robots.txt, the sitemap and speed. This takes 20 to 60 seconds.</p>}
-      <p className="text-xs text-ink-faint">The scan reads public pages only, about 20 requests in total, and identifies itself as DocuProAuditBot.</p>
+      <p className="text-xs text-ink-faint">The scan reads public pages only, about 20 requests in total, and identifies itself as DocuzumoAuditBot.</p>
     </form>
   );
 }

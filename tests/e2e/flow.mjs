@@ -26,6 +26,8 @@ const ctx = await browser.newContext({ viewport: { width: 1360, height: 900 } })
 const page = await ctx.newPage();
 const consoleErrors = [];
 page.on("pageerror", (e) => consoleErrors.push(String(e)));
+const cspViolations = [];
+page.on("console", (m) => { if (/Content Security Policy|Refused to (load|apply|execute)/i.test(m.text())) cspViolations.push(m.text().slice(0, 200)); });
 let docId = "", shareUrl = "", clientId = "", quoteId = "";
 
 await step("signup creates an account and lands on onboarding", async () => {
@@ -510,6 +512,40 @@ await step("admin: add a user, assign a plan and custom limits, pause, restore a
   // the admin account itself can't be deleted from here
   await page.goto(`${APP}/admin/users?q=${encodeURIComponent("owner-")}`); await page.locator("a", { hasText: "Manage" }).first().click();
   await page.waitForSelector("text=platform admin account", { timeout: 10000 });
+});
+
+await step("security: headers, upload checks, contact flood limit, admin-only exports", async () => {
+  const anon = await anonContext();
+  const r = await anon.request.get(`${APP}/pricing`); const h = r.headers();
+  yes((h["content-security-policy"] ?? "").includes("frame-ancestors 'self'") && (h["content-security-policy"] ?? "").includes("object-src 'none'"), "CSP header present");
+  eq(h["x-content-type-options"], "nosniff", "nosniff"); yes((h["strict-transport-security"] ?? "").includes("max-age"), "HSTS");
+  yes(!h["x-powered-by"], "no x-powered-by"); yes((h["permissions-policy"] ?? "").includes("camera=()"), "permissions policy");
+  eq((await anon.request.get(`${APP}/admin/costs/export`)).status() === 404 || (await anon.request.get(`${APP}/admin/costs/export`)).url().includes("/login"), true, "export closed to visitors");
+  // a spammer rotating nothing but the address gets stopped
+  const p = await anon.newPage(); let blocked = false;
+  for (let i = 0; i < 4 && !blocked; i++) {
+    await p.goto(`${APP}/contact`); await p.fill("#c-name", "Spam Bot"); await p.fill("#c-email", `spam-${suffix}@flood.test`); await p.fill("#c-message", "Buy cheap things right now please " + i);
+    await p.click("button[type=submit]");
+    blocked = await p.waitForSelector("text=several messages", { timeout: 4000 }).then(() => true).catch(() => false);
+  }
+  yes(blocked, "flood limit"); await anon.close();
+
+  // a file that only claims to be an image is refused
+  await page.goto(`${APP}/brand-kit`); await page.waitForSelector("#upload-logo", { state: "attached", timeout: 15000 });
+  await page.setInputFiles("#upload-logo", { name: "evil.png", mimeType: "image/png", buffer: Buffer.from("<html><script>alert(1)</script></html>") });
+  await page.waitForSelector("text=doesn't look like a real image", { timeout: 15000 });
+
+  // admin cost pages
+  await page.goto(`${APP}/admin/costs`); await page.waitForSelector("text=Spend by user", { timeout: 15000 });
+  const t = (await page.locator("main").innerText()).replace(/\n/g, " ");
+  yes(t.includes("Total AI spend") && t.includes("Spend by feature") && t.includes("₹"), "costs page: " + t.slice(0, 200));
+  yes(await page.locator("a:has-text('Download CSV')").isVisible(), "csv link");
+  const csv = await ctx.request.get(`${APP}/admin/costs/export?period=all`);
+  eq(csv.status(), 200, "csv status"); yes((csv.headers()["content-type"] ?? "").includes("text/csv"), "csv type"); yes((await csv.text()).startsWith("Email,Name"), "csv header row");
+  await page.goto(`${APP}/admin/costs?period=30d`); await page.waitForSelector("text=Last 30 days", { timeout: 10000 });
+  await page.goto(`${APP}/admin`); await page.waitForSelector("text=Needs attention", { timeout: 10000 });
+  yes((await page.locator("main").innerText()).includes("OpenAI spend"), "overview shows OpenAI spend");
+  eq(cspViolations.length, 0, "no CSP violations: " + cspViolations.join(" | "));
 });
 
 yes(consoleErrors.length === 0 || true);

@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/admin", label: "Overview" }, { href: "/admin/workspaces", label: "Workspaces" }, { href: "/admin/users", label: "Users" },
-  { href: "/admin/messages", label: "Messages" }, { href: "/admin/settings", label: "Settings" },
+  { href: "/admin/costs", label: "AI costs" }, { href: "/admin/messages", label: "Messages" }, { href: "/admin/settings", label: "Settings" },
 ];
 
 export function AdminNav() {

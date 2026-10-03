@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { safeNext } from "@/lib/auth/redirect";
 import { siteUrl } from "@/lib/utils";
 import {
   forgotPasswordSchema, loginSchema, resetPasswordSchema, signupSchema,
@@ -18,11 +19,6 @@ function isNetworkFailure(e: unknown): boolean {
   if (e && typeof e === "object" && "digest" in e && String((e as { digest?: string }).digest).startsWith("NEXT_REDIRECT")) return false;
   console.error("[auth] request to Supabase failed:", e instanceof Error ? `${e.name}: ${e.message}` : e);
   return true;
-}
-
-/** Only allow same-site relative redirects. */
-function safeNext(next: string | undefined, fallback: string) {
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : fallback;
 }
 
 export async function signInAction(input: LoginInput, next?: string): Promise<ActionResult> {

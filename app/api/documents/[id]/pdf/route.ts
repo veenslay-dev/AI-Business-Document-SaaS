@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getActiveMembership, getUser } from "@/lib/auth/session";
 import { documentToPdf } from "@/lib/db/pdf-document";
 import { fetchDocument, loadRenderData } from "@/lib/db/render";
+import { isPlatformAdmin } from "@/lib/auth/admin";
 import { PDF_USER_MESSAGE, PdfError, pdfFileName } from "@/lib/pdf/render";
 import { createClient } from "@/lib/supabase/server";
 
@@ -31,6 +32,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   } catch (e) {
     console.error("[pdf] route failed", e instanceof Error ? e.message : "unknown");
     const busy = e instanceof PdfError && e.code === "busy";
-    return NextResponse.json({ error: busy ? "PDF generation is busy. Try again in a few seconds." : PDF_USER_MESSAGE + (process.env.PDF_HIDE_DETAIL !== "1" ? ` [${(e instanceof PdfError && e.detail ? e.detail : e instanceof Error ? e.message : "unknown").slice(0, 300)}]` : "") }, { status: busy ? 429 : 500 });
+    return NextResponse.json({ error: busy ? "PDF generation is busy. Try again in a few seconds." : PDF_USER_MESSAGE + ((await isPlatformAdmin()) ? ` [${(e instanceof PdfError && e.detail ? e.detail : e instanceof Error ? e.message : "unknown").slice(0, 300)}]` : "") }, { status: busy ? 429 : 500 });
   }
 }

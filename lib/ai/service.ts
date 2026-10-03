@@ -1,7 +1,7 @@
 import "server-only";
 import { getActiveMembership, getUser } from "@/lib/auth/session";
 import { getWorkspaceBranding } from "@/lib/db/workspace";
-import { aiAllowance, effectivePlan, monthStartIso } from "@/lib/billing/plans";
+import { aiAllowance, effectivePlan, enforcementOn, monthStartIso } from "@/lib/billing/plans";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { BrandContext } from "@/lib/documents/branding";
@@ -53,6 +53,16 @@ export async function withAi<T>(operation: string, fn: (ctx: AiContext) => Promi
     const provider = getProvider();
     // Record before calling so concurrent requests can't slip past the limit.
     const { data: usageRow } = await supabase.from("ai_usage").insert({ workspace_id: membership.workspaceId, user_id: user.id, operation, provider: provider.name }).select("id").single();
+    // Two requests can pass the count above at the same moment. Count again now that our own row exists
+    // and back out if this call went over the plan.
+    if (usageRow?.id && enforcementOn()) {
+      const { count: after } = await supabase.from("ai_usage").select("id", { count: "exact", head: true })
+        .eq("workspace_id", membership.workspaceId).neq("operation", "audit_scan").gte("created_at", monthStartIso());
+      if (!aiAllowance(sub, Math.max(0, (after ?? 1) - 1)).ok) {
+        try { await createAdminClient().from("ai_usage").delete().eq("id", usageRow.id); } catch { /* the next check still holds */ }
+        return { ok: false, error: `You've used all ${allowance.limit} AI actions included in your ${effectivePlan(sub).name} plan this month. Upgrade in Settings, then Subscription, for more.` };
+      }
+    }
     finish = async (refund: boolean) => {
       if (!usageRow?.id) return;
       try {

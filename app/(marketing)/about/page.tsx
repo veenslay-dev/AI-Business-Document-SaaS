@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 const VALUES = [
   { icon: Palette, title: "Your brand, every time", body: "Set your logo, colors, fonts and terms once. Every document picks them up, so nothing goes out looking half finished." },
-  { icon: Sparkles, title: "AI that stays in its lane", body: "The assistant drafts from the facts you give it and never sends anything on its own. You read and edit everything before a client sees it." },
+  { icon: Sparkles, title: "AI you stay in control of", body: "The assistant drafts from the facts you give it and never sends anything on its own. You read and edit everything before a client sees it." },
   { icon: FileCheck2, title: "Documents that close work", body: "Share a private link, see when it's opened, and let clients accept, decline or ask for changes without an email chain." },
   { icon: ShieldCheck, title: "Your data stays yours", body: "Each company's records are separated at the database level. Shared documents are only reachable through their private link." },
 ];

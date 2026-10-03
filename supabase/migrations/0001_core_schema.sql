@@ -1,4 +1,4 @@
--- DocuPro AI core schema: multi-tenant workspaces, brand, clients, documents.
+-- Core schema: multi-tenant workspaces, brand, clients, documents.
 -- Every tenant table carries workspace_id and is protected by Row Level Security.
 
 create extension if not exists "pgcrypto";

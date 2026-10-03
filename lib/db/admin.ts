@@ -1,8 +1,8 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { firstUserId } from "@/lib/auth/admin";
-import { PLANS, PLAN_ORDER, type PlanId } from "@/lib/billing/plans";
-import { estimateCostUsd } from "@/lib/billing/ai-cost";
+import { PLANS, PLAN_ORDER, effectivePlan, type PlanId } from "@/lib/billing/plans";
+import { costRates, estimateCostUsd } from "@/lib/billing/ai-cost";
 
 export type AdminWorkspace = {
   id: string; name: string; created_at: string; owner_email: string | null; plan: string; status: string; limits: Record<string, unknown> | null; note: string | null;
@@ -22,9 +22,11 @@ export async function listAdminWorkspaces(): Promise<AdminWorkspace[]> {
   }));
 }
 
+export type AttentionItem = { id: string; kind: "limit" | "loss" | "paused"; workspaceId: string; workspaceName: string; plan: string; text: string };
+
 export type AdminOverview = {
   users: number; workspaces: number; documentsMonth: number; documentsTotal: number; aiMonth: number; tokensIn: number; tokensOut: number;
-  aiCostUsd: number; byPlan: { plan: PlanId; count: number }[]; mrrInr: number; newMessages: number; recent: AdminWorkspace[];
+  aiCostUsd: number; attention: AttentionItem[]; byPlan: { plan: PlanId; count: number }[]; mrrInr: number; newMessages: number; recent: AdminWorkspace[];
 };
 
 export async function getAdminOverview(): Promise<AdminOverview> {
@@ -36,7 +38,22 @@ export async function getAdminOverview(): Promise<AdminOverview> {
   ]);
   const byPlan = PLAN_ORDER.map((plan) => ({ plan, count: rows.filter((r) => r.plan === plan).length }));
   const tokensIn = rows.reduce((a, r) => a + r.tokens_in_month, 0), tokensOut = rows.reduce((a, r) => a + r.tokens_out_month, 0);
+  const rates = costRates();
+  const attention: AttentionItem[] = [];
+  for (const w of rows) {
+    const p = effectivePlan({ plan: w.plan, limits: w.limits, status: w.status });
+    if (w.status === "suspended") { attention.push({ id: `p-${w.id}`, kind: "paused", workspaceId: w.id, workspaceName: w.name, plan: w.plan, text: "This workspace is paused." }); continue; }
+    const aiPct = p.aiPerMonth ? w.ai_month / p.aiPerMonth : 0, docPct = p.monthlyDocuments ? w.documents_month / p.monthlyDocuments : 0;
+    if (aiPct >= 0.8 || docPct >= 0.8) {
+      const bits = [aiPct >= 0.8 ? `AI ${w.ai_month} of ${p.aiPerMonth}` : "", docPct >= 0.8 ? `documents ${w.documents_month} of ${p.monthlyDocuments}` : ""].filter(Boolean).join(", ");
+      attention.push({ id: `l-${w.id}`, kind: "limit", workspaceId: w.id, workspaceName: w.name, plan: w.plan, text: `Close to the limit this month: ${bits}.` });
+    }
+    const cost = estimateCostUsd(w.tokens_in_month, w.tokens_out_month, rates) * rates.usdToInr;
+    const price = PLANS[w.plan as PlanId]?.priceInr ?? 0;
+    if (cost > price && cost >= 1) attention.push({ id: `c-${w.id}`, kind: "loss", workspaceId: w.id, workspaceName: w.name, plan: w.plan, text: `AI cost this month (₹${cost.toFixed(2)}) is more than the plan brings in (₹${price}).` });
+  }
   return {
+    attention,
     users: (users.data as { total?: number; users?: unknown[] } | null)?.total || (users.data as { users?: unknown[] } | null)?.users?.length || 0,
     workspaces: rows.length, documentsMonth: rows.reduce((a, r) => a + r.documents_month, 0), documentsTotal: rows.reduce((a, r) => a + r.documents_total, 0),
     aiMonth: rows.reduce((a, r) => a + r.ai_month, 0), tokensIn, tokensOut, aiCostUsd: estimateCostUsd(tokensIn, tokensOut),

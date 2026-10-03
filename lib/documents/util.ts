@@ -4,7 +4,10 @@ import type { Block } from "./content";
 export function safeImageUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   const u = url.trim();
-  if (/^https?:\/\//i.test(u)) return u;
+  if (/^https:\/\/[^\s"'<>]+$/i.test(u)) return u;
+  // Plain http is only trusted for our own storage host (a local Supabase during development).
+  const own = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (own && own.startsWith("http://") && u.startsWith(`${own.replace(/\/$/, "")}/`) && !/[\s"'<>]/.test(u)) return u;
   if (/^data:image\/(png|jpeg|webp);base64,[a-z0-9+/=]+$/i.test(u) && u.length < 400_000) return u;
   return null;
 }

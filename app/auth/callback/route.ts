@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { safeNext } from "@/lib/auth/redirect";
 import { createClient } from "@/lib/supabase/server";
 
 /** Completes email confirmation and password reset links. */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");
-  const rawNext = searchParams.get("next") ?? "/dashboard";
-  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/dashboard";
+  const next = safeNext(searchParams.get("next"), "/dashboard");
 
   if (code) {
     const supabase = await createClient();

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { effectivePlan } from "@/lib/billing/plans";
 import { getUser } from "@/lib/auth/session";
 import { getAdminUser, getAdminWorkspace } from "@/lib/db/admin";
+import { getAiCosts } from "@/lib/db/admin-costs";
 import { timeAgo } from "@/lib/time";
 
 export default async function AdminUserPage({ params }: { params: Promise<{ id: string }> }) {
@@ -16,7 +17,9 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
   const user = await getAdminUser(id);
   if (!user) notFound();
   const me = await getUser();
-  const details = await Promise.all(user.workspaces.map((w) => getAdminWorkspace(w.id)));
+  const [details, monthCosts, allCosts] = await Promise.all([Promise.all(user.workspaces.map((w) => getAdminWorkspace(w.id))), getAiCosts("month"), getAiCosts("all")]);
+  const inr = (n: number) => `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const spendMonth = monthCosts.byUser.find((c) => c.userId === id)?.costInr ?? 0, spendAll = allCosts.byUser.find((c) => c.userId === id)?.costInr ?? 0;
 
   return (
     <div className="space-y-6">
@@ -25,6 +28,11 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
         <div className="flex flex-wrap items-center gap-2"><h2 className="break-all text-2xl font-extrabold">{user.email}</h2>{user.isAdmin && <Badge tone="brand">Admin</Badge>}{user.paused && <Badge tone="signal">Paused</Badge>}</div>
         <p className="mt-1 text-sm text-ink-soft">{user.fullName || "No name"} · joined {timeAgo(user.created_at)} · last sign-in {user.last_sign_in_at ? timeAgo(user.last_sign_in_at) : "never"} · email {user.confirmed ? "confirmed" : "not confirmed"}</p>
       </div>
+
+      <section className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-2xl border border-line bg-surface p-5 shadow-soft"><p className="text-sm text-ink-soft">OpenAI spend this month</p><p className="mt-1 text-2xl font-extrabold tabular-nums">{inr(spendMonth)}</p></div>
+        <div className="rounded-2xl border border-line bg-surface p-5 shadow-soft"><p className="text-sm text-ink-soft">OpenAI spend, all time</p><p className="mt-1 text-2xl font-extrabold tabular-nums">{inr(spendAll)}</p></div>
+      </section>
 
       <section className="rounded-2xl border border-line bg-surface p-6 shadow-soft">
         <h3 className="mb-3 font-bold">Account</h3>

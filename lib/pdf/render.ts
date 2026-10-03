@@ -1,6 +1,8 @@
 import "server-only";
 import { PDFDocument } from "pdf-lib";
+import { lookup } from "node:dns/promises";
 import puppeteer, { type Browser } from "puppeteer-core";
+import { isPrivateAddress } from "@/lib/audit/ssrf";
 
 export class PdfError extends Error {
   constructor(public code: "busy" | "failed" | "no_browser", public detail = "") { super(code); this.name = "PdfError"; }
@@ -25,6 +27,21 @@ async function launch(): Promise<Browser> {
   }
 }
 
+/** Whether the PDF browser may fetch this address. Images and fonts must come from the public internet. */
+async function allowedRequest(raw: string): Promise<boolean> {
+  if (raw.startsWith("data:") || raw === "about:blank") return true;
+  let u: URL;
+  try { u = new URL(raw); } catch { return false; }
+  if (u.protocol !== "https:" && !(u.protocol === "http:" && process.env.NEXT_PUBLIC_SUPABASE_URL?.startsWith(`${u.origin}`))) return false;
+  if (u.username || u.password) return false;
+  const host = u.hostname.replace(/^\[|\]$/g, "");
+  if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".internal") || host.endsWith(".local")) return u.origin === new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://invalid.invalid").origin;
+  try {
+    const addrs = await lookup(host, { all: true });
+    return addrs.length > 0 && addrs.every((a) => !isPrivateAddress(a.address));
+  } catch { return false; }
+}
+
 /** Renders an HTML page to an A4 PDF with running header/footer and page numbers. */
 export async function htmlToPdf(html: string, opts: { header: string; footer: string; coverPage?: boolean }): Promise<Buffer> {
   if (active >= MAX_CONCURRENT) throw new PdfError("busy");
@@ -33,6 +50,10 @@ export async function htmlToPdf(html: string, opts: { header: string; footer: st
   try {
     browser = await launch();
     const page = await browser.newPage();
+    // Nothing in a document needs scripts, and a document must not be able to make the server call internal addresses.
+    await page.setJavaScriptEnabled(false);
+    await page.setRequestInterception(true);
+    page.on("request", (req) => { void allowedRequest(req.url()).then((ok) => (ok ? req.continue() : req.abort("blockedbyclient"))).catch(() => req.abort("failed")); });
     await page.setContent(html, { waitUntil: "load", timeout: 30_000 });
     // Give web fonts a few seconds; fall back to system fonts if the font host is unreachable.
     await Promise.race([page.evaluate(() => document.fonts.ready), new Promise((r) => setTimeout(r, 6000))]);
