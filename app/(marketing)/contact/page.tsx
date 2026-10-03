@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Clock, Mail, MessageSquareText } from "lucide-react";
 import { ContactForm } from "@/components/marketing/contact-form";
 import { PRODUCT_NAME } from "@/components/ui/logo";
@@ -40,6 +41,7 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
           <li className="flex gap-3"><Clock className="mt-0.5 size-5 shrink-0 text-brand" aria-hidden /><span>We reply by email, usually within one working day.</span></li>
           <li className="flex gap-3"><Mail className="mt-0.5 size-5 shrink-0 text-brand" aria-hidden /><span>{email ? <>Prefer email? Write to <a className="font-semibold text-brand hover:underline" href={`mailto:${email}`}>{email}</a>.</> : "We only use your details to answer you."}</span></li>
         </ul>
+      <p className="text-xs text-ink-faint">See also our <Link href="/terms" className="text-brand hover:underline">Terms of Service</Link>, <Link href="/privacy" className="text-brand hover:underline">Privacy Policy</Link> and <Link href="/refund-policy" className="text-brand hover:underline">Refund Policy</Link>.</p>
       </aside>
     </main>
   );

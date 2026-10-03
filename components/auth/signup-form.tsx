@@ -64,6 +64,7 @@ export function SignupForm({ next }: { next?: string }) {
         <Input id="password" type="password" autoComplete="new-password" aria-invalid={!!errors.password} {...register("password")} />
       </Field>
       <Button type="submit" className="w-full" loading={pending}>Create account</Button>
+      <p className="text-center text-xs text-ink-faint">By creating an account you agree to our <Link href="/terms" target="_blank" className="font-medium text-brand hover:underline">Terms of Service</Link> and <Link href="/privacy" target="_blank" className="font-medium text-brand hover:underline">Privacy Policy</Link>.</p>
       <p className="text-center text-sm text-ink-soft">
         Already have an account? <Link href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} className="font-medium text-brand hover:underline">Sign in</Link>
       </p>

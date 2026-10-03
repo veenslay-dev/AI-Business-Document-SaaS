@@ -47,9 +47,9 @@ export default async function MarketingLayout({ children }: { children: React.Re
       </header>
       {children}
       <footer className="mt-24 border-t border-line bg-surface">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-8 text-sm text-ink-soft">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-4 px-5 py-8 text-sm text-ink-soft">
           <Wordmark />
-          <nav aria-label="Footer" className="flex gap-5"><Link href="/about" className="hover:text-ink">About</Link><Link href="/pricing" className="hover:text-ink">Pricing</Link><Link href="/contact" className="hover:text-ink">Contact</Link>{user ? <Link href="/dashboard" className="hover:text-ink">Dashboard</Link> : <><Link href="/login" className="hover:text-ink">Sign in</Link><Link href="/signup" className="hover:text-ink">Create account</Link></>}</nav>
+          <nav aria-label="Footer" className="flex flex-wrap gap-x-5 gap-y-2"><Link href="/about" className="hover:text-ink">About</Link><Link href="/pricing" className="hover:text-ink">Pricing</Link><Link href="/contact" className="hover:text-ink">Contact Us</Link><Link href="/terms" className="hover:text-ink">Terms &amp; Conditions</Link><Link href="/privacy" className="hover:text-ink">Privacy Policy</Link><Link href="/refund-policy" className="hover:text-ink">Refund Policy</Link>{user ? <Link href="/dashboard" className="hover:text-ink">Dashboard</Link> : <><Link href="/login" className="hover:text-ink">Sign in</Link><Link href="/signup" className="hover:text-ink">Create account</Link></>}</nav>
         </div>
       </footer>
     </div>

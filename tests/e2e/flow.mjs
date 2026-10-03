@@ -597,6 +597,21 @@ await step("razorpay: pay for Pro online, signature checked, plan switches on, w
   await c.close();
 });
 
+await step("legal pages: terms, privacy and refund render, link to contact, and are in the footer and sitemap", async () => {
+  const anon = await anonContext(); const p = await anon.newPage();
+  for (const [path, h] of [["/terms", "Terms of Service"], ["/privacy", "Privacy Policy"], ["/refund-policy", "Refund Policy"]]) {
+    await p.goto(`${APP}${path}`);
+    await p.locator(`h1:has-text('${h}')`).waitFor({ timeout: 10000 });
+    yes(await p.locator("main a[href='/contact']").first().isVisible(), `${path} links to the contact page`);
+    yes((await p.locator("main").innerText()).includes("Last updated"), `${path} shows its date`);
+  }
+  await p.goto(`${APP}/`);
+  for (const l of ["Contact Us", "Terms & Conditions", "Privacy Policy", "Refund Policy"]) yes(await p.locator(`footer a:has-text('${l}')`).first().isVisible(), `footer link ${l}`);
+  await p.goto(`${APP}/signup`); yes(await p.locator("a[href='/terms']").first().isVisible(), "signup links the terms");
+  const sm = await (await anon.request.get(`${APP}/sitemap.xml`)).text(); yes(sm.includes("/refund-policy") && sm.includes("/privacy") && sm.includes("/terms"), "sitemap lists them");
+  await anon.close();
+});
+
 await step("public pages recognise a signed-in visitor", async () => {
   await page.goto(`${APP}/`);
   await page.locator("header a:has-text('Go to dashboard')").waitFor({ timeout: 10000 });
