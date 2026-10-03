@@ -52,8 +52,8 @@ function baseCss(brand: BrandContext["brand"], t: TemplateConfig, bg: string): s
   font-family:var(--bfont);color:var(--ink);font-size:${t.density === "compact" ? 12.5 : 14}px;line-height:1.6;background:var(--paper);
   -webkit-print-color-adjust:exact;print-color-adjust:exact}
 .doc *{box-sizing:border-box}
-.doc :is(h1,.h1),.doc h2,.doc h3,.doc h4{font-family:var(--hfont);color:var(--heading);margin:0;line-height:1.2;font-weight:${t.headings === "sans" ? 700 : 600}}
-.doc h2,.doc h3{break-after:avoid;page-break-after:avoid}
+.doc :is(h1,[data-h="1"]),.doc :is(h2,[data-h="2"]),.doc :is(h3,[data-h="3"]),.doc :is(h4,[data-h="4"]){font-family:var(--hfont);color:var(--heading);margin:0;line-height:1.2;font-weight:${t.headings === "sans" ? 700 : 600}}
+.doc :is(h2,[data-h="2"]),.doc :is(h3,[data-h="3"]){break-after:avoid;page-break-after:avoid}
 .doc p{margin:0 0 ${0.8 * pad}em;orphans:3;widows:3}
 .doc img{max-width:100%}
 .doc .page{padding:${44 * pad}px ${52 * pad}px}
@@ -61,29 +61,29 @@ function baseCss(brand: BrandContext["brand"], t: TemplateConfig, bg: string): s
 /* Covers */
 .doc .cover{position:relative;min-height:1040px;display:flex;flex-direction:column;justify-content:space-between;padding:56px;break-after:page;page-break-after:always}
 .doc .cover.band{background:var(--header);color:var(--on-header)}
-.doc .cover.band :is(h1,.h1){color:var(--on-header)}
+.doc .cover.band :is(h1,[data-h="1"]){color:var(--on-header)}
 .doc .cover.split{padding-left:120px;border-left:56px solid var(--header)}
 .doc .cover.minimal{min-height:640px;border-bottom:1px solid var(--line)}
 .doc .cover.block{padding:0;justify-content:flex-start}
 .doc .cover.block .top{background:var(--header);color:var(--on-header);padding:56px;min-height:640px;display:flex;flex-direction:column;justify-content:space-between}
-.doc .cover.block :is(h1,.h1){color:var(--on-header);font-size:48px}
+.doc .cover.block :is(h1,[data-h="1"]){color:var(--on-header);font-size:48px}
 .doc .cover.block .bottom{padding:40px 56px;flex:1;display:flex;flex-direction:column;justify-content:flex-end;border-bottom:14px solid var(--accent)}
 .doc .cover.block .meta{color:var(--ink)}
 .doc .cover.block .meta dt{color:var(--muted);opacity:1}
 .doc .cover.frame{margin:28px;min-height:984px;border:2px solid var(--header);outline:1px solid var(--header);outline-offset:-10px;text-align:center;align-items:center;padding:72px 56px}
 .doc .cover.frame .rule{margin:22px auto}
-.doc .cover.frame :is(h1,.h1){max-width:14em;font-size:42px}
+.doc .cover.frame :is(h1,[data-h="1"]){max-width:14em;font-size:42px}
 .doc .cover.frame .meta{text-align:center;width:100%}
 .doc .cover.noir{background:var(--deep);color:#fff;overflow:hidden}
 .doc .cover.noir:before{content:"";position:absolute;top:0;right:0;width:44%;height:30%;background:var(--accent);border-bottom-left-radius:220px}
 .doc .cover.noir:after{content:"";position:absolute;left:56px;bottom:170px;width:84px;height:6px;background:var(--accent)}
 .doc .cover.noir>*{position:relative;z-index:1}
-.doc .cover.noir :is(h1,.h1){color:#fff;font-size:54px;max-width:11em;line-height:1.08}
+.doc .cover.noir :is(h1,[data-h="1"]){color:#fff;font-size:54px;max-width:11em;line-height:1.08}
 .doc .cover.noir .rule{display:none}
 .doc .cover.noir .brandname{color:#fff}
 .doc .cover.noir .sub{opacity:.8}
 .doc .cover.aurora{color:#fff;background:radial-gradient(120% 90% at 100% 0%,var(--accent) 0%,transparent 55%),radial-gradient(90% 70% at 0% 100%,var(--header) 0%,transparent 60%),var(--deep)}
-.doc .cover.aurora :is(h1,.h1){color:#fff;font-size:50px}
+.doc .cover.aurora :is(h1,[data-h="1"]){color:#fff;font-size:50px}
 .doc .cover.aurora .brandname{color:#fff}
 .doc .cover.aurora .rule{background:#fff;opacity:.85}
 .doc .cover.sidebar{padding:0;flex-direction:row;justify-content:flex-start}
@@ -91,24 +91,24 @@ function baseCss(brand: BrandContext["brand"], t: TemplateConfig, bg: string): s
 .doc .cover.sidebar aside .brandname{color:var(--on-header)}
 .doc .cover.sidebar aside .meta{grid-template-columns:1fr;gap:18px}
 .doc .cover.sidebar .main{flex:1;display:flex;flex-direction:column;justify-content:center;padding:56px 48px;border-right:14px solid var(--accent)}
-.doc .cover.sidebar :is(h1,.h1){font-size:44px}
+.doc .cover.sidebar :is(h1,[data-h="1"]){font-size:44px}
 .doc .cover.sidebar .kicker{color:var(--accent);opacity:1}
 .doc .toc{break-after:page;page-break-after:always;margin-bottom:${34 * pad}px}
-.doc .toc h2{font-size:26px;margin-bottom:18px}
+.doc .toc :is(h2,[data-h="2"]){font-size:26px;margin-bottom:18px}
 .doc .toc ol{list-style:none;margin:0;padding:0}
 .doc .toc li{display:flex;gap:16px;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line);font-size:15px}
 .doc .toc .n{font-family:var(--hfont);color:var(--accent);font-weight:700;min-width:2em;font-variant-numeric:tabular-nums}
 .doc .frbar{display:none}
 .doc.sec-card .frbar{display:block;background:#111;color:#fff;font-family:var(--bfont);font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:9px 14px;margin:6px 0 12px;border-radius:3px}
 .doc.sec-card section.sec{border:1px solid var(--line);border-left:6px solid var(--accent);border-radius:4px;padding:${20 * pad}px 22px;background:var(--card)}
-.doc.sec-card section.sec>h2{font-size:26px;border-bottom:1px solid var(--line);padding-bottom:10px}
+.doc.sec-card section.sec>:is(h2,[data-h="2"]){font-size:26px;border-bottom:1px solid var(--line);padding-bottom:10px}
 .doc.pps section.sec{margin-bottom:${34 * pad}px}
 .doc .cover .logo{max-height:52px;max-width:220px;object-fit:contain}
 .doc .cover .brandname{font-family:var(--hfont);font-size:20px;font-weight:600}
 .doc .cover.band .brandname,.doc .cover.block .top .brandname{color:var(--on-header)}
 .doc .cover .kicker{font-size:12px;letter-spacing:.2em;text-transform:uppercase;opacity:.75;margin-bottom:18px}
 .doc .cover.frame .kicker{color:var(--accent);opacity:1}
-.doc .cover :is(h1,.h1){font-size:44px;max-width:15em}
+.doc .cover :is(h1,[data-h="1"]){font-size:44px;max-width:15em}
 .doc .cover .rule{width:56px;height:4px;background:var(--accent);margin:22px 0}
 .doc .cover .sub{font-size:17px;max-width:32em;opacity:.9}
 .doc .cover .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:20px;font-size:13px}
@@ -123,7 +123,7 @@ function baseCss(brand: BrandContext["brand"], t: TemplateConfig, bg: string): s
 .doc .lh .ref{font-size:12px;color:var(--muted);margin-top:4px}
 .doc .lh.classic{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;border-bottom:3px solid var(--header)}
 .doc .lh.classic .title{text-align:right}
-.doc .lh.classic .title :is(h1,.h1){font-size:28px}
+.doc .lh.classic .title :is(h1,[data-h="1"]){font-size:28px}
 .doc .lh.banner{background:var(--header);color:var(--on-header);display:flex;justify-content:space-between;align-items:center;gap:24px;padding:${34 * pad}px 52px}
 .doc .lh.banner .brandname{color:var(--on-header)}
 .doc .lh.banner .co{color:var(--on-header);opacity:.8}
@@ -141,18 +141,18 @@ function baseCss(brand: BrandContext["brand"], t: TemplateConfig, bg: string): s
 .doc .lh.studio .doctitle{font-size:15px;color:var(--ink);margin-top:10px}
 .doc .parties{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:${22 * pad}px 52px 0;font-size:13px}
 .doc .parties>div{border-left:3px solid var(--accent);padding-left:14px}
-.doc .parties h4{font-family:var(--bfont);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:4px}
+.doc .parties :is(h4,[data-h="4"]){font-family:var(--bfont);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:4px}
 .doc .totalbanner{display:flex;justify-content:space-between;align-items:center;gap:16px;margin:${22 * pad}px 52px 0;padding:14px 20px;background:var(--accent);color:var(--on-accent);font-weight:700;font-size:18px;border-radius:2px}
 .doc .totalbanner small{font-size:12px;font-weight:500;opacity:.9;display:block}
 
 /* Sections */
 .doc section.sec{margin-bottom:${34 * pad}px}
 .doc section.sec.break{break-before:page;page-break-before:always}
-.doc section.sec>h2{font-size:24px;margin-bottom:${14 * pad}px}
-.doc.sec-ruled section.sec>h2{border-bottom:2px solid var(--header);padding-bottom:8px}
-.doc.sec-numbered section.sec>h2 .num,.doc.sec-bar section.sec>h2 .num{display:inline-block;min-width:2.2em;color:var(--accent);font-variant-numeric:tabular-nums}
-.doc.sec-bar section.sec>h2{font-size:19px;background:var(--tint);border-left:6px solid var(--header);padding:9px 14px;margin-bottom:${16 * pad}px;border-radius:0 3px 3px 0}
-.doc h3{font-size:17px;margin:${18 * pad}px 0 6px}
+.doc section.sec>:is(h2,[data-h="2"]){font-size:24px;margin-bottom:${14 * pad}px}
+.doc.sec-ruled section.sec>:is(h2,[data-h="2"]){border-bottom:2px solid var(--header);padding-bottom:8px}
+.doc.sec-numbered section.sec>:is(h2,[data-h="2"]) .num,.doc.sec-bar section.sec>:is(h2,[data-h="2"]) .num{display:inline-block;min-width:2.2em;color:var(--accent);font-variant-numeric:tabular-nums}
+.doc.sec-bar section.sec>:is(h2,[data-h="2"]){font-size:19px;background:var(--tint);border-left:6px solid var(--header);padding:9px 14px;margin-bottom:${16 * pad}px;border-radius:0 3px 3px 0}
+.doc :is(h3,[data-h="3"]){font-size:17px;margin:${18 * pad}px 0 6px}
 .doc ul,.doc ol{margin:0 0 ${0.9 * pad}em;padding-left:1.3em}
 .doc li{margin-bottom:.35em}
 .doc .callout{background:var(--tint);border-left:4px solid var(--accent);padding:12px 16px;margin:0 0 1em;border-radius:2px;break-inside:avoid}
@@ -197,7 +197,7 @@ function baseCss(brand: BrandContext["brand"], t: TemplateConfig, bg: string): s
 .doc .score{text-align:center;border:1px solid var(--line);border-radius:4px;padding:14px 8px;break-inside:avoid;background:var(--card)}
 .doc .score .label{font-size:12px;color:var(--muted);margin-top:6px}
 .doc .finding{border:1px solid var(--line);border-left-width:5px;border-radius:3px;padding:12px 14px;margin-bottom:12px;break-inside:avoid}
-.doc .finding h4{font-size:15px;margin-bottom:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;color:var(--ink)}
+.doc .finding :is(h4,[data-h="4"]){font-size:15px;margin-bottom:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;color:var(--ink)}
 .doc .finding dl{margin:0;display:grid;grid-template-columns:130px 1fr;gap:4px 12px;font-size:13px}
 .doc .finding dt{color:var(--muted);font-weight:600}
 .doc .finding dd{margin:0;overflow-wrap:anywhere}
@@ -206,7 +206,7 @@ function baseCss(brand: BrandContext["brand"], t: TemplateConfig, bg: string): s
 .doc .finding.critical{border-left-color:#b3261e}.doc .finding.high{border-left-color:#d9631b}.doc .finding.medium{border-left-color:#b08800}.doc .finding.low{border-left-color:#4a6fa5}.doc .finding.passed{border-left-color:#2f7d55}
 .doc .chartrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:6px 0 18px}
 .doc .chartcard{border:1px solid var(--line);border-radius:4px;padding:12px 14px;background:var(--card);break-inside:avoid;min-width:0}
-.doc .chartcard h4{font-family:var(--bfont);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 10px}
+.doc .chartcard :is(h4,[data-h="4"]){font-family:var(--bfont);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 10px}
 .doc .chart.pie{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .doc .legend{list-style:none;margin:0;padding:0;font-size:12px;flex:1;min-width:110px}
 .doc .legend li{display:flex;align-items:center;gap:7px;padding:2px 0}
@@ -239,7 +239,7 @@ function baseCss(brand: BrandContext["brand"], t: TemplateConfig, bg: string): s
 .doc .empty{color:var(--muted);font-style:italic}
 @media (max-width:640px){
   .doc .page,.doc .cover{padding:24px}.doc .lh,.doc .parties{padding-left:24px;padding-right:24px}
-  .doc .cover{min-height:auto;gap:40px}.doc .cover :is(h1,.h1){font-size:30px}.doc .cover.split{padding-left:60px;border-left-width:24px}
+  .doc .cover{min-height:auto;gap:40px}.doc .cover :is(h1,[data-h="1"]){font-size:30px}.doc .cover.split{padding-left:60px;border-left-width:24px}
   .doc .cover.block .top{min-height:420px;padding:28px}.doc .cover.block .bottom{padding:24px}.doc .cover.frame{margin:12px;padding:40px 24px}
   .doc .parties,.doc .sig{grid-template-columns:1fr}.doc .lh.classic,.doc .lh.banner,.doc .lh.studio .row{flex-direction:column;align-items:flex-start}.doc .lh .title{text-align:left}
   .doc .lh.studio .doctype{font-size:30px}.doc .totalbanner{margin-left:24px;margin-right:24px}.doc .footbar{padding:14px 24px}

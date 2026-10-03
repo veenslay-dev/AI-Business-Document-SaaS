@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, BarChart3, Check, FileText, LayoutTemplate, Palette, PlayCircle, Share2, Sparkles } from "lucide-react";
-import { DocumentRenderer } from "@/components/documents/document-renderer";
+import { StaticDocument } from "@/components/marketing/static-document";
 import { CroppedPreview } from "@/components/marketing/cropped-preview";
 import { ExampleTabs } from "@/components/marketing/example-tabs";
 import { PlanGrid } from "@/components/marketing/plan-grid";
@@ -35,8 +35,8 @@ export default async function HomePage() {
   const proposal = sampleProposal();
   const investment = only(proposal, ["Timeline", "Investment"]);
   const RED_BRAND = { ...ACME_BRAND, brand: { ...ACME_BRAND.brand, primary: "#dc1c26", header: "#5a0b10", accent: "#dc1c26" } };
-  const heroA = <DocumentRenderer content={proposal} brand={RED_BRAND} template={cfg("proposal-bold")} meta={{ type: "proposal" }} embedded />;
-  const heroB = <DocumentRenderer content={proposal} brand={HARBOR_BRAND} template={cfg("proposal-elegant")} meta={{ type: "proposal" }} embedded />;
+  const heroA = <StaticDocument content={proposal} brand={RED_BRAND} template={cfg("proposal-bold")} meta={{ type: "proposal" }} />;
+  const heroB = <StaticDocument content={proposal} brand={HARBOR_BRAND} template={cfg("proposal-elegant")} meta={{ type: "proposal" }} />;
   const letter = cfg("proposal-modern", { cover: "none" });
 
   const content = await getPageContent("/");
@@ -102,13 +102,13 @@ export default async function HomePage() {
         <p className="mb-8 mt-2 max-w-2xl text-ink-soft">These pages are rendered by the same engine that produces your documents, using sample data for a fictional agency.</p>
         <ExampleTabs panels={[
           { id: "proposal", label: "Proposal", caption: "Proposals follow a sensible 13 part structure, but sections can be added, removed and reordered. Pricing packages sit next to itemised fees, with the recommended one highlighted.",
-            node: <CroppedPreview label="Sample proposal page with timeline and pricing packages" height={900}><DocumentRenderer content={investment} brand={ACME_BRAND} template={letter} meta={{ type: "proposal" }} embedded /></CroppedPreview> },
+            node: <CroppedPreview label="Sample proposal page with timeline and pricing packages" height={900}><StaticDocument content={investment} brand={ACME_BRAND} template={letter} meta={{ type: "proposal" }} /></CroppedPreview> },
           { id: "quotation", label: "Quotation", caption: "A quotation here is a priced scope of work: overview, what is included, deliverables and timeline, then line items with per-line discounts and configurable tax, a payment schedule and acceptance. Totals are calculated in whole paise or cents in INR, USD, GBP or EUR.",
-            node: <CroppedPreview label="Sample quotation with scope of work" height={900}><DocumentRenderer content={sampleQuotation()} brand={ACME_BRAND} template={cfg("quotation-executive")} meta={{ type: "quotation" }} embedded /></CroppedPreview> },
+            node: <CroppedPreview label="Sample quotation with scope of work" height={900}><StaticDocument content={sampleQuotation()} brand={ACME_BRAND} template={cfg("quotation-executive")} meta={{ type: "quotation" }} /></CroppedPreview> },
           { id: "social", label: "Social media audit", caption: "A checklist audit you complete by hand while reviewing a client's accounts. Mark each checkpoint Good, Needs work or Poor, add notes and a recommendation, and the scorecard works itself out. Add your own sections for anything new you find.",
-            node: <CroppedPreview label="Sample social media audit scorecard and checklist" height={900}><DocumentRenderer content={sampleSocialAudit()} brand={ACME_BRAND} template={cfg("social-audit-scorecard", { cover: "none", headerStyle: "studio" })} meta={{ type: "social_audit" }} embedded /></CroppedPreview> },
+            node: <CroppedPreview label="Sample social media audit scorecard and checklist" height={900}><StaticDocument content={sampleSocialAudit()} brand={ACME_BRAND} template={cfg("social-audit-scorecard", { cover: "none", headerStyle: "studio" })} meta={{ type: "social_audit" }} /></CroppedPreview> },
           { id: "audit", label: "SEO audit", caption: "The scan produces scored categories and findings, each with why it matters, the recommended action, its priority and the pages affected. Edit anything before you send it.",
-            node: <CroppedPreview label="Sample SEO audit summary and findings" height={900}><DocumentRenderer content={sampleAudit()} brand={ACME_BRAND} template={cfg("audit-seo-professional", { cover: "none" })} meta={{ type: "seo_audit" }} embedded /></CroppedPreview> },
+            node: <CroppedPreview label="Sample SEO audit summary and findings" height={900}><StaticDocument content={sampleAudit()} brand={ACME_BRAND} template={cfg("audit-seo-professional", { cover: "none" })} meta={{ type: "seo_audit" }} /></CroppedPreview> },
         ]} />
       </section>
 
@@ -123,8 +123,8 @@ export default async function HomePage() {
             </ul>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <CroppedPreview label="Investment section in the navy brand" height={560} className="rounded-sm"><DocumentRenderer content={investment} brand={ACME_BRAND} template={letter} meta={{ type: "proposal" }} embedded /></CroppedPreview>
-            <CroppedPreview label="The same section in the green brand" height={560} className="mt-10 rounded-sm"><DocumentRenderer content={investment} brand={HARBOR_BRAND} template={cfg("proposal-corporate", { cover: "none" })} meta={{ type: "proposal" }} embedded /></CroppedPreview>
+            <CroppedPreview label="Investment section in the navy brand" height={560} className="rounded-sm"><StaticDocument content={investment} brand={ACME_BRAND} template={letter} meta={{ type: "proposal" }} /></CroppedPreview>
+            <CroppedPreview label="The same section in the green brand" height={560} className="mt-10 rounded-sm"><StaticDocument content={investment} brand={HARBOR_BRAND} template={cfg("proposal-corporate", { cover: "none" })} meta={{ type: "proposal" }} /></CroppedPreview>
           </div>
         </div>
       </section>

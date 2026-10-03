@@ -101,3 +101,15 @@ describe("extra content markdown", () => {
     for (const bad of ["javascript:alert(1)", "//evil.com", "http://insecure.test", "data:text/html,x", " javascript:x"]) expect(safeHref(bad)).toBeNull();
   });
 });
+
+import { demoteHeadings } from "@/components/marketing/static-document";
+describe("sample documents on marketing pages", () => {
+  it("turns every heading into a styled block, keeping attributes and text", () => {
+    const html = '<h1 class="a">Title</h1><p>x</p><h2>Sec</h2><h3 id="y">Sub</h3><h4>Deep</h4><h6>Tiny</h6><hr><header>keep</header><h10>no</h10>';
+    const out = demoteHeadings(html);
+    expect(out).not.toMatch(/<\/?h[1-6][\s>]/);
+    expect(out).toContain('<div data-h="1" class="a">Title</div>');
+    expect(out).toContain('<div data-h="3" id="y">Sub</div>');
+    expect(out).toContain("<header>keep</header>");
+  });
+});
