@@ -31,6 +31,7 @@ export default async function SubscriptionPage() {
   const { membership } = await requireWorkspace();
   const u = await getPlanUsage(membership.workspaceId);
   const p = u.plan;
+  const online = razorpayConfigured();
   const canUpgrade = membership.role === "owner" || membership.role === "admin";
 
   return (
@@ -48,7 +49,7 @@ export default async function SubscriptionPage() {
           {p.expiredOn && <p role="alert" className="mt-3 rounded-lg bg-signal-soft px-3 py-2 text-sm text-signal">Your paid plan ended on {formatDate(p.expiredOn)}, so the workspace is back on Free limits. Upgrade again to restore it.</p>}
           {u.status === "suspended" && <p role="alert" className="mt-3 rounded-lg bg-signal-soft px-3 py-2 text-sm text-signal">This workspace is paused, so new documents and AI are switched off. Contact us to restore access.</p>}
           <div className="mt-5 flex flex-wrap gap-2">
-            {canUpgrade && p.id !== "agency" && p.id !== "custom" && <Button asChild><Link href={`/contact?topic=upgrade&plan=${p.id === "free" ? "professional" : "agency"}&workspace=${membership.workspaceId}`}>Upgrade plan</Link></Button>}
+            {canUpgrade && p.id !== "agency" && p.id !== "custom" && <Button asChild><Link href={online ? "#plans" : `/contact?topic=upgrade&plan=${p.id === "free" ? "professional" : "agency"}&workspace=${membership.workspaceId}`}>Upgrade plan</Link></Button>}
             <Button asChild variant="secondary"><Link href={`/contact?topic=custom&workspace=${membership.workspaceId}`}>Need something custom?</Link></Button>
           </div>
           {!canUpgrade && <p className="mt-3 text-xs text-ink-faint">Only owners and admins can change the plan.</p>}
@@ -62,10 +63,10 @@ export default async function SubscriptionPage() {
         </div>
       </section>
 
-      <section>
+      <section id="plans" className="scroll-mt-24">
         <h2 className="mb-1 text-xl font-bold">Compare plans</h2>
-        <p className="mb-6 text-sm text-ink-soft">{razorpayConfigured() ? "Pay securely online with UPI, cards or net banking. Your plan switches on as soon as the payment clears. There's no auto-renewal, so you'll renew when you choose to." : "Choose a plan and we'll confirm the payment details with you, then switch it on for this workspace."}</p>
-        <PlanGrid currentPlan={p.id} workspace={membership.workspaceId} onlinePayments={razorpayConfigured()} canPay={canUpgrade} />
+        <p className="mb-6 text-sm text-ink-soft">{online ? "Pay securely online with UPI, cards or net banking. Your plan switches on as soon as the payment clears. There's no auto-renewal, so you'll renew when you choose to." : "Choose a plan and we'll confirm the payment details with you, then switch it on for this workspace."}</p>
+        <PlanGrid currentPlan={p.id} workspace={membership.workspaceId} onlinePayments={online} canPay={canUpgrade} />
       </section>
     </div>
   );

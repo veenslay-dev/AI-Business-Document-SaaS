@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { activatePayment, amountPaise, PAID_PLANS } from "@/lib/billing/payments";
-import { createRazorpayOrder, razorpayConfigured, razorpayKeyId, verifyCheckoutSignature } from "@/lib/billing/razorpay";
+import { createRazorpayOrder, RazorpayError, razorpayConfigured, razorpayKeyId, verifyCheckoutSignature } from "@/lib/billing/razorpay";
 import { actionContext } from "./context";
 import { fail, GENERIC_ERROR, type ActionResult } from "./result";
 
@@ -33,7 +33,9 @@ export async function startCheckoutAction(input: unknown): Promise<ActionResult<
     });
     if (error) { console.error("[billing] could not record the order", error.message); return fail(GENERIC_ERROR); }
     return { ok: true, data: { orderId: order.id, keyId, amountPaise: amount, planName: plan === "agency" ? "Agency" : "Professional", email: ctx.user.email ?? "" } };
-  } catch {
+  } catch (e) {
+    if (e instanceof RazorpayError && e.status === 401) return fail("Online payment is set up incorrectly on our side (the payment keys were rejected). Please contact us and we'll sort it out.");
+    if (e instanceof RazorpayError && e.status >= 400 && e.status < 500) return fail("The payment provider refused this order. Please contact us and we'll sort it out.");
     return fail("We couldn't reach the payment provider. Please try again in a moment.");
   }
 }

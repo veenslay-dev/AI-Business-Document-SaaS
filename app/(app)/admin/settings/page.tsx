@@ -1,10 +1,14 @@
 import { Badge } from "@/components/ui/badge";
 import { costRates } from "@/lib/billing/ai-cost";
+import { checkRazorpayKeys, razorpayMode } from "@/lib/billing/razorpay";
 import { enforcementOn, PLANS, PLAN_ORDER } from "@/lib/billing/plans";
 
 const row = (k: string, v: React.ReactNode) => (<div key={k} className="flex items-center justify-between gap-4 border-b border-line py-2.5 text-sm last:border-0"><dt className="text-ink-soft">{k}</dt><dd className="text-right font-medium">{v}</dd></div>);
 
-export default function AdminSettingsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminSettingsPage() {
+  const rz = await checkRazorpayKeys();
   const provider = (process.env.AI_PROVIDER ?? "anthropic").toLowerCase();
   const key = provider === "openai" ? !!process.env.OPENAI_API_KEY : !!process.env.ANTHROPIC_API_KEY;
   const model = provider === "openai" ? process.env.AI_MODEL_OPENAI ?? "gpt-4o-mini" : process.env.AI_MODEL_ANTHROPIC ?? "claude-sonnet-4-5";
@@ -34,6 +38,17 @@ export default function AdminSettingsPage() {
           </table>
         </div>
         <p className="mt-3 text-xs text-ink-faint">Plan numbers and prices live in lib/billing/plans.ts. Change them there and redeploy. Use a workspace's page to give one customer different limits.</p>
+      </section>
+      <section className="rounded-2xl border border-line bg-surface p-6 shadow-soft lg:col-span-2">
+        <h2 className="mb-2 font-bold">Online payments (Razorpay)</h2>
+        <dl>
+          {row("RAZORPAY_KEY_ID", process.env.RAZORPAY_KEY_ID?.trim() ? yes : no)}
+          {row("RAZORPAY_KEY_SECRET", process.env.RAZORPAY_KEY_SECRET?.trim() ? yes : no)}
+          {row("RAZORPAY_WEBHOOK_SECRET", process.env.RAZORPAY_WEBHOOK_SECRET?.trim() ? yes : <Badge tone="warn">Missing</Badge>)}
+          {row("Mode", razorpayMode() ?? "Not configured")}
+          {row("Connection test", rz.ok ? <Badge tone="ok">Working</Badge> : <Badge tone="signal">Failed</Badge>)}
+        </dl>
+        <p className={rz.ok ? "mt-3 text-xs text-ink-faint" : "mt-3 text-xs text-signal"}>{rz.message}. {rz.ok ? "Customers see Pay buttons on Settings, Subscription. Without the webhook secret, a customer who closes the tab right after paying may need a moment or a refresh." : "Until this works, upgrade buttons open the contact form instead. After changing variables in Vercel you must redeploy."}</p>
       </section>
       <section className="rounded-2xl border border-line bg-surface p-6 shadow-soft lg:col-span-2">
         <h2 className="mb-2 font-bold">Who is the admin?</h2>

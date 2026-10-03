@@ -31,6 +31,22 @@ export function verifyWebhookSignature(rawBody: string, signature: string | null
   return same(hmac(secret, rawBody), signature.trim().toLowerCase());
 }
 
+export class RazorpayError extends Error {
+  constructor(public status: number, public detail: string) { super(`razorpay ${status}`); }
+}
+
+/** Asks Razorpay whether the saved keys work, without charging anything. Used by the admin settings page. */
+export async function checkRazorpayKeys(): Promise<{ ok: boolean; message: string }> {
+  const key = process.env.RAZORPAY_KEY_ID?.trim(), secret = process.env.RAZORPAY_KEY_SECRET?.trim();
+  if (!key || !secret) return { ok: false, message: "RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET is missing" };
+  try {
+    const res = await fetch(`${apiBase()}/v1/orders?count=1`, { headers: { authorization: `Basic ${Buffer.from(`${key}:${secret}`).toString("base64")}` }, signal: AbortSignal.timeout(10_000), cache: "no-store" });
+    if (res.ok) return { ok: true, message: "Razorpay accepted the keys" };
+    if (res.status === 401) return { ok: false, message: "Razorpay rejected the keys. The key id and secret must come from the same key pair and the same mode (test or live)." };
+    return { ok: false, message: `Razorpay answered ${res.status}. Check that the account is activated for live payments.` };
+  } catch { return { ok: false, message: "Could not reach Razorpay from the server" }; }
+}
+
 export async function createRazorpayOrder(input: { amountPaise: number; receipt: string; notes: Record<string, string> }): Promise<{ id: string }> {
   const key = process.env.RAZORPAY_KEY_ID?.trim(), secret = process.env.RAZORPAY_KEY_SECRET?.trim();
   if (!key || !secret) throw new Error("razorpay not configured");
@@ -42,7 +58,11 @@ export async function createRazorpayOrder(input: { amountPaise: number; receipt:
       headers: { "content-type": "application/json", authorization: `Basic ${Buffer.from(`${key}:${secret}`).toString("base64")}` },
       body: JSON.stringify({ amount: input.amountPaise, currency: "INR", receipt: input.receipt, notes: input.notes }),
     });
-    if (!res.ok) { console.error(`[razorpay] order creation answered ${res.status}`); throw new Error("order failed"); }
+    if (!res.ok) {
+      const detail = await res.text().then((t) => (JSON.parse(t) as { error?: { description?: string } }).error?.description ?? "").catch(() => "");
+      console.error(`[razorpay] order creation answered ${res.status}: ${detail}`);
+      throw new RazorpayError(res.status, detail);
+    }
     const data = (await res.json()) as { id?: string };
     if (!data.id) throw new Error("no order id");
     return { id: data.id };

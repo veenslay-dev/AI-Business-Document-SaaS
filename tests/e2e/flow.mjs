@@ -565,6 +565,7 @@ await step("razorpay: pay for Pro online, signature checked, plan switches on, w
   await up.goto(`${APP}/settings/subscription`); await up.waitForSelector("h2:has-text('Free plan')", { timeout: 15000 });
   eq(await up.getByRole("button", { name: /USD/ }).count(), 0, "no USD option");
   yes((await up.locator("main").innerText()).includes("₹999"), "INR prices");
+  eq(await up.locator("a:has-text('Upgrade plan')").first().getAttribute("href"), "#plans", "top Upgrade button goes to the payable plan cards, not the contact form");
 
   // stand-in for Razorpay's checkout window: it signs the payment the way Razorpay would
   let orderId = "", paymentId = "pay_e2e_" + suffix;
@@ -579,6 +580,8 @@ await step("razorpay: pay for Pro online, signature checked, plan switches on, w
   yes((await up.locator("main").innerText()).includes("Active until"), "end date shown");
   eq(violations.length, 0, "no CSP violations: " + violations.join(" | "));
 
+  await page.goto(`${APP}/admin/settings`); await page.waitForSelector("text=Online payments (Razorpay)", { timeout: 10000 });
+  yes((await page.locator("main").innerText()).includes("RAZORPAY_KEY_SECRET"), "admin settings lists the payment keys");
   // the webhook: unsigned and wrongly signed calls are refused, a signed one is accepted and does not extend the plan twice
   const body = JSON.stringify({ event: "payment.captured", payload: { payment: { entity: { id: paymentId, order_id: orderId, amount: 99900 } } } });
   eq((await c.request.post(`${APP}/api/razorpay/webhook`, { data: body, headers: { "content-type": "application/json" } })).status(), 401, "unsigned webhook");
