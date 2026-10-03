@@ -531,7 +531,7 @@ await step("security: headers, upload checks, contact flood limit, admin-only ex
   yes(blocked, "flood limit"); await anon.close();
 
   // a file that only claims to be an image is refused
-  await page.goto(`${APP}/brand-kit`); await page.waitForSelector("#upload-logo", { state: "attached", timeout: 15000 });
+  await page.goto(`${APP}/brand-kit`); await page.waitForSelector("#upload-logo", { state: "attached", timeout: 15000 }); await page.waitForTimeout(2500);
   await page.setInputFiles("#upload-logo", { name: "evil.png", mimeType: "image/png", buffer: Buffer.from("<html><script>alert(1)</script></html>") });
   await page.waitForSelector("text=doesn't look like a real image", { timeout: 15000 });
 
