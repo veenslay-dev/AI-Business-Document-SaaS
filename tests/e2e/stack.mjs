@@ -73,6 +73,11 @@ export async function start() {
         }
         files.set(key, { data: file, type: ftype }); return send(res, 200, { Key: key, Id: randomUUID() });
       }
+      if (p === "/v1/orders" && req.method === "POST") {
+        const b = JSON.parse((await readBody(req)).toString());
+        if (!/^Basic /.test(req.headers.authorization ?? "") || !b.amount) return send(res, 400, { error: "bad" });
+        return send(res, 200, { id: "order_" + randomUUID().replace(/-/g, "").slice(0, 14), amount: b.amount, currency: b.currency });
+      }
       if (p === "/v1/messages" && req.method === "POST") {
         const b = JSON.parse((await readBody(req)).toString()); const prompt = String(b.messages?.[0]?.content ?? "");
         let out;

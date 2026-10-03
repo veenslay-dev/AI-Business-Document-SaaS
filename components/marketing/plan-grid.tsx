@@ -5,17 +5,15 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PLAN_CARDS } from "@/lib/marketing";
+import { UpgradeButton } from "@/components/billing/upgrade-button";
 import { formatPlanPrice, PLAN_ORDER, type PlanId } from "@/lib/billing/plans";
 import { cn } from "@/lib/utils";
-
-type Currency = "INR" | "USD";
 
 /**
  * The plan cards, used on the public site and inside the app.
  * Inside the app, pass `currentPlan` so the right card says "Current plan" and the others link to the upgrade form.
  */
-export function PlanGrid({ currentPlan, workspace, signedIn = false }: { currentPlan?: PlanId; workspace?: string; signedIn?: boolean }) {
-  const [currency, setCurrency] = useState<Currency>("INR");
+export function PlanGrid({ currentPlan, workspace, signedIn = false, onlinePayments = false, canPay = true }: { currentPlan?: PlanId; workspace?: string; signedIn?: boolean; onlinePayments?: boolean; canPay?: boolean }) {
   const [yearly, setYearly] = useState(false);
   const inApp = currentPlan !== undefined;
 
@@ -33,12 +31,11 @@ export function PlanGrid({ currentPlan, workspace, signedIn = false }: { current
     <div>
       <div className="mb-8 flex flex-wrap items-center gap-3">
         <Toggle label="Billing period" options={[["monthly", "Monthly"], ["yearly", "Yearly (2 months free)"]]} value={yearly ? "yearly" : "monthly"} onChange={(v) => setYearly(v === "yearly")} />
-        <Toggle label="Currency" options={[["INR", "₹ INR"], ["USD", "$ USD"]]} value={currency} onChange={(v) => setCurrency(v as Currency)} />
       </div>
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         {PLAN_ORDER.map((id) => {
           const p = PLAN_CARDS.find((c) => c.id === id)!;
-          const price = formatPlanPrice(id, currency, yearly);
+          const price = formatPlanPrice(id, yearly);
           const current = currentPlan === id;
           const c = cta(id);
           const lower = inApp && id !== "custom" && PLAN_ORDER.indexOf(id) < PLAN_ORDER.indexOf(currentPlan);
@@ -54,6 +51,7 @@ export function PlanGrid({ currentPlan, workspace, signedIn = false }: { current
               <ul className="mt-5 flex-1 space-y-2 text-sm">{p.features.map((f) => <li key={f} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />{f}</li>)}</ul>
               {current ? <Button className="mt-6" variant="secondary" disabled>Your current plan</Button>
                 : lower ? <Button className="mt-6" variant="secondary" disabled>Included in your plan</Button>
+                : onlinePayments && inApp && canPay && (id === "professional" || id === "agency") ? <UpgradeButton plan={id} period={yearly ? "yearly" : "monthly"} label={`Pay ${yearly ? "yearly" : "monthly"} and upgrade`} />
                 : <Button asChild className="mt-6" variant={c.primary && p.highlight ? "primary" : c.primary ? "primary" : "secondary"}><Link href={c.href}>{c.label}</Link></Button>}
             </article>
           );

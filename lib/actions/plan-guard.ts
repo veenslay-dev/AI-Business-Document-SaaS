@@ -7,6 +7,6 @@ import { getSystemTemplate } from "@/lib/documents/templates";
 export async function premiumTemplateError(supabase: SupabaseClient, workspaceId: string, templateKey: string | null | undefined): Promise<string | null> {
   const t = getSystemTemplate(templateKey);
   if (!t?.premium) return null;
-  const { data: sub } = await supabase.from("subscriptions").select("plan, limits, status").eq("workspace_id", workspaceId).maybeSingle();
+  const { data: sub } = await supabase.from("subscriptions").select("plan, limits, status, current_period_end").eq("workspace_id", workspaceId).maybeSingle();
   return canUsePremiumTemplates(sub) ? null : `"${t.name} report" is a Pro template. Upgrade in Settings, then Subscription, or choose another template.`;
 }

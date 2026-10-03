@@ -29,7 +29,7 @@ async function loadClientInfo(ctx: Ctx, clientId: string): Promise<{ info: Clien
 
 async function underPlanLimit(ctx: Ctx): Promise<boolean> {
   const [{ data: sub }, { count }] = await Promise.all([
-    ctx.supabase.from("subscriptions").select("plan, limits, status").eq("workspace_id", ctx.workspaceId).maybeSingle(),
+    ctx.supabase.from("subscriptions").select("plan, limits, status, current_period_end").eq("workspace_id", ctx.workspaceId).maybeSingle(),
     ctx.supabase.from("documents").select("id", { count: "exact", head: true }).eq("workspace_id", ctx.workspaceId).gte("created_at", monthStartIso()),
   ]);
   return documentAllowance(sub, count ?? 0).ok;

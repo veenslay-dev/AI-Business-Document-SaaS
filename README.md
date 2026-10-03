@@ -60,6 +60,15 @@ PDF generation needs Chromium. On serverless hosts it uses `@sparticuz/chromium`
 
 Never put the service role key or an AI key in a `NEXT_PUBLIC_` variable.
 
+## Online payments (Razorpay, INR only)
+
+Prices are charged in rupees exactly as listed (GST is not added on top). Paying extends the workspace's plan by one month or one year; there is no auto-renewal, and a plan that runs past its end date drops back to Free limits.
+
+1. Run `supabase/migrations/0008_payments.sql` in the Supabase SQL editor.
+2. In Vercel, add `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` and `RAZORPAY_WEBHOOK_SECRET` as ordinary server variables. Never give them a `NEXT_PUBLIC_` prefix. Use `rzp_test_` keys first.
+3. In the Razorpay dashboard, add a webhook pointing to `https://www.priodraft.com/api/razorpay/webhook` with the events `payment.captured`, `order.paid` and `payment.failed`, and use the same secret as `RAZORPAY_WEBHOOK_SECRET`.
+4. Redeploy. Without the keys the Upgrade buttons fall back to the contact form.
+
 ## Checks
 
 ```

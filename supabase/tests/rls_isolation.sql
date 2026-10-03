@@ -339,3 +339,31 @@ do $$
 begin
   perform * from public.admin_ai_usage(now() - interval '30 days', now());
 end $$;
+
+-- 16. Payments: members read only their own workspace's rows and can never write them.
+insert into public.payments (workspace_id, plan, period, amount_paise, razorpay_order_id, status) values (:'ws_a', 'professional', 'monthly', 99900, 'order_rls_1', 'paid');
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+do $$
+declare n int;
+begin
+  select count(*) into n from public.payments;
+  if n <> 1 then raise exception 'FAIL: Carol sees % payments', n; end if;
+  begin
+    insert into public.payments (workspace_id, plan, period, amount_paise, razorpay_order_id) values (current_setting('app.ws_a')::uuid, 'agency', 'yearly', 1, 'order_rls_x');
+    raise exception 'FAIL: a member inserted a payment';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    update public.payments set status = 'paid';
+    raise exception 'FAIL: a member updated a payment';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+do $$
+declare n int;
+begin
+  select count(*) into n from public.payments;
+  if n <> 0 then raise exception 'FAIL: Bob sees Carol payments'; end if;
+end $$;
+reset role;

@@ -34,7 +34,7 @@ export async function createAuditAction(input: z.input<typeof schema>): Promise<
   let url: URL;
   try { url = parsePublicUrl(v.url); } catch (e) { return fail(e instanceof UnsafeUrlError ? e.message : "Enter a valid website address."); }
 
-  const { data: sub } = await ctx.supabase.from("subscriptions").select("plan, limits, status").eq("workspace_id", ctx.workspaceId).maybeSingle();
+  const { data: sub } = await ctx.supabase.from("subscriptions").select("plan, limits, status, current_period_end").eq("workspace_id", ctx.workspaceId).maybeSingle();
   const { count: monthDocs } = await ctx.supabase.from("documents").select("id", { count: "exact", head: true }).eq("workspace_id", ctx.workspaceId).gte("created_at", monthStartIso());
   if (!documentAllowance(sub, monthDocs ?? 0).ok) return fail(DOCUMENT_LIMIT_MESSAGE);
   const denied = await premiumTemplateError(ctx.supabase, ctx.workspaceId, v.templateKey);

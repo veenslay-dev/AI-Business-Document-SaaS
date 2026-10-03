@@ -20,7 +20,7 @@ export async function inviteMemberAction(input: InviteInput): Promise<ActionResu
   if (!parsed.success) return fromZod(parsed.error);
 
   if (enforcementOn()) {
-    const { data: sub } = await ctx.supabase.from("subscriptions").select("plan, limits, status").eq("workspace_id", ctx.workspaceId).maybeSingle();
+    const { data: sub } = await ctx.supabase.from("subscriptions").select("plan, limits, status, current_period_end").eq("workspace_id", ctx.workspaceId).maybeSingle();
     const limit = effectivePlan(sub).teamMembers;
     const [{ count: members }, { count: invites }] = await Promise.all([
       ctx.supabase.from("workspace_members").select("id", { count: "exact", head: true }).eq("workspace_id", ctx.workspaceId),

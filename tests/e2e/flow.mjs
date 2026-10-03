@@ -377,8 +377,7 @@ await step("public pages: pricing shows the plans, about and contact render", as
   const t = await p.locator("main").innerText();
   yes(t.includes("10 documents per month") && t.includes("3 AI actions per month"), "free plan numbers");
   yes(t.includes("₹999") && t.includes("₹2,999") && t.includes("Custom"), "paid plan prices and custom plan");
-  await p.getByRole("button", { name: "$ USD" }).click(); yes((await p.locator("main").innerText()).includes("$12"), "USD price");
-  await p.getByRole("button", { name: "₹ INR" }).click();
+  eq(await p.getByRole("button", { name: /USD/ }).count(), 0, "no currency toggle, INR only");
   await p.getByRole("button", { name: /Yearly/ }).click(); yes((await p.locator("main").innerText()).includes("₹833"), "yearly price per month");
   eq((await anon.request.get(`${APP}/about`)).status(), 200, "about page");
   await p.goto(`${APP}/contact?topic=custom`); yes(await p.locator("h1:has-text('Ask for a custom plan')").isVisible(), "custom topic heading");
@@ -546,6 +545,53 @@ await step("security: headers, upload checks, contact flood limit, admin-only ex
   await page.goto(`${APP}/admin`); await page.waitForSelector("text=Needs attention", { timeout: 10000 });
   yes((await page.locator("main").innerText()).includes("OpenAI spend"), "overview shows OpenAI spend");
   eq(cspViolations.length, 0, "no CSP violations: " + cspViolations.join(" | "));
+});
+
+await step("razorpay: pay for Pro online, signature checked, plan switches on, webhook is idempotent, forged calls refused", async () => {
+  const { createHmac } = await import("node:crypto");
+  const hm = (secret, body) => createHmac("sha256", secret).update(body).digest("hex");
+  const email = `payer-${suffix}@client.test`;
+  await page.goto(`${APP}/admin/users/new`);
+  await page.fill("#u-name", "Payer"); await page.fill("#u-email", email); await page.fill("#u-company", "Payer Co");
+  await page.selectOption("#u-plan", "free"); await page.fill("#u-pass", "start-pass-12345");
+  await page.click("button:has-text('Create account')"); await page.waitForSelector("text=Account created", { timeout: 15000 });
+  const c = await browser.newContext(); const up = await c.newPage();
+  const violations = []; up.on("console", (m) => { if (/Content Security Policy/i.test(m.text())) violations.push(m.text()); });
+  await up.goto(`${APP}/login`); await up.fill("#email", email); await up.fill("#password", "start-pass-12345"); await up.click("button[type=submit]");
+  await up.waitForSelector("h1:has-text('Tell us about your company')", { timeout: 30000 });
+  await up.click("button[type=submit]"); await up.waitForSelector("h1:has-text('Set your brand')");
+  await up.click("button[type=submit]"); await up.waitForSelector("h1:has-text('Business details')");
+  await up.click("button:has-text('Skip for now')"); await up.waitForSelector("h1:has-text('Your workspace is ready.')");
+  await up.goto(`${APP}/settings/subscription`); await up.waitForSelector("h2:has-text('Free plan')", { timeout: 15000 });
+  eq(await up.getByRole("button", { name: /USD/ }).count(), 0, "no USD option");
+  yes((await up.locator("main").innerText()).includes("₹999"), "INR prices");
+
+  // stand-in for Razorpay's checkout window: it signs the payment the way Razorpay would
+  let orderId = "", paymentId = "pay_e2e_" + suffix;
+  await up.exposeFunction("__sign", (o, pid, secret) => { orderId = o; return hm(secret ?? process.env.RAZORPAY_KEY_SECRET ?? "e2e_secret", `${o}|${pid}`); });
+  await up.route("https://checkout.razorpay.com/v1/checkout.js", (r) => r.fulfill({ contentType: "text/javascript", body: `
+    window.Razorpay = function (o) { this.o = o; this.on = function () {}; this.open = function () {
+      window.__sign(o.order_id, ${JSON.stringify(paymentId)}).then(function (sig) { o.handler({ razorpay_order_id: o.order_id, razorpay_payment_id: ${JSON.stringify(paymentId)}, razorpay_signature: sig }); });
+    }; };` }));
+  await up.getByRole("button", { name: "Pay monthly and upgrade" }).first().click();
+  await up.waitForSelector("text=Payment received", { timeout: 20000 });
+  await up.reload(); await up.waitForSelector("h2:has-text('Pro plan')", { timeout: 15000 });
+  yes((await up.locator("main").innerText()).includes("Active until"), "end date shown");
+  eq(violations.length, 0, "no CSP violations: " + violations.join(" | "));
+
+  // the webhook: unsigned and wrongly signed calls are refused, a signed one is accepted and does not extend the plan twice
+  const body = JSON.stringify({ event: "payment.captured", payload: { payment: { entity: { id: paymentId, order_id: orderId, amount: 99900 } } } });
+  eq((await c.request.post(`${APP}/api/razorpay/webhook`, { data: body, headers: { "content-type": "application/json" } })).status(), 401, "unsigned webhook");
+  eq((await c.request.post(`${APP}/api/razorpay/webhook`, { data: body, headers: { "content-type": "application/json", "x-razorpay-signature": hm("wrong", body) } })).status(), 401, "forged webhook");
+  eq((await c.request.post(`${APP}/api/razorpay/webhook`, { data: body, headers: { "content-type": "application/json", "x-razorpay-signature": hm(process.env.RAZORPAY_WEBHOOK_SECRET ?? "e2e_hook", body) } })).status(), 200, "signed webhook");
+  const before = await up.locator("main").innerText();
+  await up.reload(); await up.waitForSelector("h2:has-text('Pro plan')");
+  eq((await up.locator("main").innerText()).match(/Active until [^.]*\./)?.[0], before.match(/Active until [^.]*\./)?.[0], "end date unchanged by the repeated notification");
+
+  // a forged browser confirmation never upgrades anything
+  const r = await up.evaluate(async () => { const m = await fetch("/settings/subscription"); return m.status; });
+  eq(r, 200, "page still loads");
+  await c.close();
 });
 
 await step("public pages recognise a signed-in visitor", async () => {

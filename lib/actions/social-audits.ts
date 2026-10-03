@@ -29,7 +29,7 @@ export async function createSocialAuditAction(input: SocialAuditInput): Promise<
   if (!parsed.success) return fromZod(parsed.error);
   const v = parsed.data;
 
-  const { data: sub } = await ctx.supabase.from("subscriptions").select("plan, limits, status").eq("workspace_id", ctx.workspaceId).maybeSingle();
+  const { data: sub } = await ctx.supabase.from("subscriptions").select("plan, limits, status, current_period_end").eq("workspace_id", ctx.workspaceId).maybeSingle();
   const { count } = await ctx.supabase.from("documents").select("id", { count: "exact", head: true }).eq("workspace_id", ctx.workspaceId).gte("created_at", monthStartIso());
   if (!documentAllowance(sub, count ?? 0).ok) return fail(DOCUMENT_LIMIT_MESSAGE);
   const denied = await premiumTemplateError(ctx.supabase, ctx.workspaceId, v.templateKey);

@@ -32,7 +32,7 @@ export async function withAi<T>(operation: string, fn: (ctx: AiContext) => Promi
   let finish: (refund: boolean) => Promise<void> = async () => undefined;
   try {
     const supabase = await createClient();
-    const { data: sub } = await supabase.from("subscriptions").select("plan, limits, status").eq("workspace_id", membership.workspaceId).maybeSingle();
+    const { data: sub } = await supabase.from("subscriptions").select("plan, limits, status, current_period_end").eq("workspace_id", membership.workspaceId).maybeSingle();
     // Only real AI calls count towards the plan. Website scans are logged in the same table for rate limiting.
     const { count: usedThisMonth } = await supabase.from("ai_usage").select("id", { count: "exact", head: true })
       .eq("workspace_id", membership.workspaceId).neq("operation", "audit_scan").gte("created_at", monthStartIso());

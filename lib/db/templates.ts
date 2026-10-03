@@ -9,7 +9,7 @@ export type EditorTemplate = { value: string; label: string; config: TemplateCon
 export async function listEditorTemplates(workspaceId: string, type: DocType): Promise<EditorTemplate[]> {
   const supabase = await createClient();
   const fallback = getSystemTemplate(DEFAULT_TEMPLATE_KEY[type])!.config;
-  const { data: sub } = await supabase.from("subscriptions").select("plan, limits, status").eq("workspace_id", workspaceId).maybeSingle();
+  const { data: sub } = await supabase.from("subscriptions").select("plan, limits, status, current_period_end").eq("workspace_id", workspaceId).maybeSingle();
   const premiumOk = canUsePremiumTemplates(sub);
   const { data } = await supabase.from("document_templates").select("id, name, template_config, is_default").eq("workspace_id", workspaceId).eq("type", type).order("name");
   const custom = (data ?? []).map((t) => ({ value: `custom:${t.id}`, label: `${t.name} (yours)`, config: normalizeConfig((t.template_config as { config?: unknown })?.config, fallback), isDefault: t.is_default as boolean, locked: false }));

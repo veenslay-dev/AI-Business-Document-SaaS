@@ -161,11 +161,11 @@ describe("limits and plans", () => {
     expect(canUsePremiumTemplates({ plan: "free", limits: { premiumTemplates: true } })).toBe(true);
   });
   it("prices plans per month and per year", () => {
-    expect(formatPlanPrice("free", "INR", false).amount).toBe("₹0");
-    expect(formatPlanPrice("professional", "INR", false).amount).toBe("₹999");
-    expect(formatPlanPrice("professional", "INR", true).amount).toBe("₹833");
-    expect(formatPlanPrice("agency", "USD", false).amount).toBe("$35");
-    expect(formatPlanPrice("custom", "INR", false).amount).toBe("Custom");
+    expect(formatPlanPrice("free", false).amount).toBe("₹0");
+    expect(formatPlanPrice("professional", false).amount).toBe("₹999");
+    expect(formatPlanPrice("professional", true).amount).toBe("₹833");
+    expect(formatPlanPrice("agency", false).amount).toBe("₹2,999");
+    expect(formatPlanPrice("custom", false).amount).toBe("Custom");
     expect(PLANS.free).toMatchObject({ monthlyDocuments: 10, aiPerMonth: 3 });
   });
 });
