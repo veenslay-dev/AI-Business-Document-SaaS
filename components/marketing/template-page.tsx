@@ -4,6 +4,8 @@ import { PageSchema } from "@/components/seo/page-schema";
 import { TemplateSample } from "@/components/marketing/template-sample";
 import { Button } from "@/components/ui/button";
 import { getUser } from "@/lib/auth/session";
+import { FaqSection } from "@/components/marketing/faq-section";
+import { PAGE_FAQ } from "@/lib/content/faq";
 import { Markdown } from "@/lib/seo/markdown";
 import { getPageContent } from "@/lib/seo/pages";
 import { TEMPLATE_HUB, TEMPLATE_PAGES, type TemplatePage } from "@/lib/seo/templates";
@@ -118,6 +120,8 @@ export async function TemplateHub() {
         ))}
       </section>
       {c.extraMd && <section className="mx-auto max-w-3xl px-5 pb-12 text-ink-soft"><Markdown md={c.extraMd} /></section>}
+      <FaqSection items={PAGE_FAQ[TEMPLATE_HUB.path]} title="Template questions" />
+
       <section className="bg-brand-soft/50">
         <div className="mx-auto max-w-3xl px-5 py-14 text-center">
           <h2 className="text-2xl font-extrabold">Your branding on every one</h2>

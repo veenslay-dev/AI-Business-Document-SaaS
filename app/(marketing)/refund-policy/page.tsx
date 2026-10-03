@@ -24,7 +24,7 @@ export default function RefundPolicyPage() {
     { id: "request", title: "How to ask for a refund", body: <>
       <P>Use the <A href="/contact">Contact page</A> from the email address on your account, choose the general topic, and include:</P>
       <UL items={["the email address on your account;", "the plan you bought and the date;", "the Razorpay payment ID if you have it (it is in the payment confirmation email you received from Razorpay);", "a short note on why you are asking."]} />
-      <P>We will reply within 2 working days. If your request is approved, we start the refund within 5 working days.</P></> },
+      <P>We usually reply within one working day. If your request is approved, we start the refund within 5 working days.</P></> },
     { id: "timing", title: "How and when the money returns", body: <P>Refunds go back to the same card, UPI account or bank account that made the payment, through Razorpay. After we start a refund, banks and card networks usually take 5 to 10 working days to show it. We cannot speed that part up. If it has not arrived after 10 working days, send us the payment ID and we will check with Razorpay.</P> },
     { id: "after", title: "After a refund", body: <P>When we refund a payment, we switch the workspace back to the Free plan unless you tell us otherwise. Your documents and clients stay in your account, but the Free plan's limits apply again. You can buy a paid plan again at any time.</P> },
     { id: "changes", title: "Changes", body: <P>We may update this policy. The date at the top shows the last change. A change applies to payments made after it, so the policy that was on this page on the day you paid is the one that applies to that payment.</P> },

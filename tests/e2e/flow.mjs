@@ -641,6 +641,32 @@ await step("templates: menu with submenu, hub page, and four template pages with
   await anon.close();
 });
 
+await step("content: every main page has a FAQ section that matches its FAQ schema, and facts agree across pages", async () => {
+  const anon = await anonContext(); const p = await anon.newPage();
+  const counts = {};
+  for (const path of ["/", "/pricing", "/about", "/contact", "/document-templates", "/document-templates/seo-proposal", "/document-templates/website-quotation-gst", "/document-templates/social-media-audit", "/document-templates/digital-marketing-proposal"]) {
+    await p.goto(`${APP}${path}`);
+    const r = await p.evaluate(() => ({
+      shown: [...document.querySelectorAll("main details summary")].map((x) => x.textContent.replace(/\s*\+$/, "").trim()),
+      schema: [...document.querySelectorAll("script[type='application/ld+json']")].flatMap((x) => JSON.parse(x.textContent)["@graph"]).filter((n) => n["@type"] === "FAQPage").flatMap((n) => n.mainEntity.map((q) => q.name)),
+      text: document.body.innerText,
+    }));
+    yes(r.shown.length >= 4, `${path} shows at least four questions`);
+    eq(JSON.stringify(r.schema), JSON.stringify(r.shown), `${path} FAQ schema lists the same questions as the page`);
+    counts[path] = r.text;
+  }
+  // the same facts everywhere
+  for (const [path, t] of Object.entries(counts)) {
+    yes(!/(auto-?renew(s|al)?|renews automatically)/i.test(t.replace(/(do not|does not|never|none|no)\s+(renew\w*\s+(automatically|on its own)|auto-?renew\w*)/gi, "").replace(/\?/g, "?\n").split("\n").filter((l) => !l.endsWith("?")).join("\n")), `${path} makes no auto-renewal claim`);
+    yes(!/online card payments are planned|coming soon/i.test(t), `${path} has no stale payment claims`);
+  }
+  yes(counts["/pricing"].includes("₹999") && counts["/pricing"].includes("₹2,999"), "pricing states the rupee prices");
+  yes(/7 days/.test(counts["/pricing"]) && /7 days/.test(counts["/contact"]), "refund window stated the same on pricing and contact");
+  yes(counts["/"].includes("What is PrioDraft?"), "home answers what the product is");
+  await p.goto(`${APP}/refund-policy`); yes(/within 7 days/.test(await p.locator("main").innerText()), "refund policy agrees on 7 days");
+  await anon.close();
+});
+
 await step("seo: self canonical and schema on every page, admin edits title, content, noindex and schema, reset restores", async () => {
   const anon = await anonContext(); const ap = await anon.newPage();
   const head = async (path) => {
@@ -697,7 +723,7 @@ await step("seo: self canonical and schema on every page, admin edits title, con
   for (const path of ["%2Fpricing", "%2Fabout"]) {
     await page.goto(`${APP}/admin/pages/edit?path=${path}`); await page.click("text=Reset to built-in settings"); await page.waitForSelector("text=Back to the built-in settings", { timeout: 10000 });
   }
-  const back = await head("/about"); yes(back.title.startsWith("About | "), "title back to default: " + back.title); eq(back.h1, "Professional client documents, without the busywork", "heading back to default");
+  const back = await head("/about"); yes(back.title.startsWith("About PrioDraft"), "title back to default: " + back.title); eq(back.h1, "Professional client documents, without the busywork", "heading back to default");
   sm = await (await anon.request.get(`${APP}/sitemap.xml`)).text(); yes(sm.includes("/pricing"), "pricing back in the sitemap");
   await anon.close();
 });

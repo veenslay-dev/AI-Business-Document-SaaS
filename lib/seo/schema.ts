@@ -1,6 +1,6 @@
 import { PRODUCT_NAME } from "@/components/ui/logo";
 import { PLANS, YEARLY_MONTHS, type PlanId } from "@/lib/billing/plans";
-import { FAQ } from "@/lib/marketing";
+import { faqFor } from "@/lib/content/faq";
 import { LEGAL_UPDATED_ISO } from "@/lib/legal";
 import { PAGE_BY_PATH } from "./registry";
 import { TEMPLATE_BY_PATH, TEMPLATE_PAGES } from "./templates";
@@ -73,7 +73,6 @@ export function buildPageSchema(path: string, o: SchemaOverride, base: string, o
   const tpl = TEMPLATE_BY_PATH[path];
   if (def.kind === "template" && tpl) {
     // Both the questions and the steps are shown on the page, which is what search engines require of this markup.
-    graph.push({ "@type": "FAQPage", "@id": `${url}#faq`, mainEntity: tpl.faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) });
     graph.push({ "@type": "HowTo", "@id": `${url}#howto`, name: `How to use the ${tpl.name.toLowerCase()}`, step: tpl.steps.map((s, i) => ({ "@type": "HowToStep", position: i + 1, name: s.title, text: s.body })) });
   }
 
@@ -83,8 +82,10 @@ export function buildPageSchema(path: string, o: SchemaOverride, base: string, o
       description: "Branded proposals, quotations, invoices and SEO audit reports generated with AI from a one-time company profile.",
       offers: planOffers(base), publisher: { "@id": orgId },
     });
-    graph.push({ "@type": "FAQPage", "@id": `${url}#faq`, mainEntity: FAQ.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) });
   }
+  // Every page that shows a Questions section also describes it in schema, from the same list, so the two always match.
+  const faq = faqFor(path);
+  if (faq.length) graph.push({ "@type": "FAQPage", "@id": `${url}#faq`, mainEntity: faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) });
   if (def.kind === "pricing") {
     for (const id of ["free", "professional", "agency"] as PlanId[]) {
       const p = PLANS[id];

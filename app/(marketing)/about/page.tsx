@@ -2,6 +2,10 @@ import Link from "next/link";
 import { FileCheck2, Palette, ShieldCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PRODUCT_NAME } from "@/components/ui/logo";
+import { FaqSection } from "@/components/marketing/faq-section";
+import { FAQ_BANK, PAGE_FAQ } from "@/lib/content/faq";
+import { freePlanLine } from "@/lib/content/facts";
+import { PAGE_BY_PATH } from "@/lib/seo/registry";
 import { PageSchema } from "@/components/seo/page-schema";
 import { Markdown } from "@/lib/seo/markdown";
 import { getPageContent, pageMetadata } from "@/lib/seo/pages";
@@ -23,11 +27,15 @@ export default async function AboutPage() {
       <section className="mx-auto max-w-4xl px-5 pb-12 pt-14 text-center">
         <p className="mb-4 inline-block rounded-full bg-brand-soft px-3.5 py-1.5 text-sm font-semibold text-brand">About {PRODUCT_NAME}</p>
         <h1 className="text-4xl font-extrabold leading-tight sm:text-5xl">{c.heading ?? <>Professional client documents, <span className="text-brand">without the busywork</span></>}</h1>
-        <p className="mx-auto mt-5 max-w-2xl text-lg text-ink-soft">{c.intro ?? `${PRODUCT_NAME} is for agencies, consultants and freelancers who write proposals, quotations, invoices and audit reports and want each one to look like it came from a bigger company.`}</p>
+        <p className="mx-auto mt-5 max-w-2xl text-lg text-ink-soft">{c.intro ?? PAGE_BY_PATH["/about"].intro}</p>
       </section>
 
       <section className="mx-auto max-w-4xl space-y-5 px-5 pb-14 text-ink-soft">
-        <h2 className="text-2xl font-extrabold text-ink">Why it exists</h2>
+        <h2 className="text-2xl font-extrabold text-ink">What {PRODUCT_NAME} does</h2>
+        <p>{FAQ_BANK.what.a}</p>
+        <h2 className="pt-4 text-2xl font-extrabold text-ink">Who it is for</h2>
+        <p>{FAQ_BANK.who.a}</p>
+        <h2 className="pt-4 text-2xl font-extrabold text-ink">Why it exists</h2>
         <p>Most small businesses write client documents in a word processor, copy the last one, and change the names. Logos drift, prices are retyped, terms get lost and nobody knows whether the client even opened the file.</p>
         <p>{PRODUCT_NAME} puts that work in one place. You describe the job, review a draft in your own branding, send a link, and see what happens next. It handles scope of work quotations, invoices, SEO audits and social media audits as well as proposals, because those are the documents agencies actually send.</p>
         <p>We are honest about the limits too. The AI can be wrong, so every draft is editable. A client's online acceptance is a record of who agreed and when, which may not be enough for every contract, so check with a lawyer for anything high stakes.</p>
@@ -46,9 +54,11 @@ export default async function AboutPage() {
 
       {c.extraMd && <section className="mx-auto max-w-3xl px-5 pt-10 text-ink-soft"><Markdown md={c.extraMd} /></section>}
 
+      <FaqSection items={PAGE_FAQ["/about"]} title={`Questions about ${PRODUCT_NAME}`} />
+
       <section className="mx-auto max-w-3xl px-5 py-16 text-center">
         <h2 className="text-2xl font-extrabold">Want to try it?</h2>
-        <p className="mt-2 text-ink-soft">The free plan includes 10 documents and 3 AI actions a month.</p>
+        <p className="mt-2 text-ink-soft">The Free plan includes {freePlanLine}.</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Button asChild size="lg" className="rounded-full px-7"><Link href="/signup">Start Free</Link></Button>
           <Button asChild size="lg" variant="secondary" className="rounded-full px-7"><Link href="/contact">Contact us</Link></Button>

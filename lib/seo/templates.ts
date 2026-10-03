@@ -29,15 +29,15 @@ export const TEMPLATE_HUB = {
   path: "/document-templates",
   h1: "Business document templates for agencies and freelancers",
   title: "Document Templates",
-  description: `Sample proposals, quotations and audits you can reuse: an SEO proposal, a website quotation with GST, a social media audit and a digital marketing proposal, all ready to brand and send with ${PRODUCT_NAME}.`,
-  intro: "Each template below is a real sample document, built with the same engine that makes your own. Open one to see every section, then start with it free. Your logo, colors, fonts and terms are applied automatically.",
+  description: `Free document templates: an SEO proposal, a website quotation with GST, a social media audit and a digital marketing proposal. Brand and send them with ${PRODUCT_NAME}.`,
+  intro: `A business document template is a ready-made structure for a proposal, quotation or audit, so you fill in the client's details instead of designing a page. Each template below is a real sample built with the same engine that makes your own documents. Open one to see every section, then start with it free. Your logo, colors, fonts and terms are applied automatically.`,
 };
 
 export const TEMPLATE_PAGES: TemplatePage[] = [
   {
     slug: "seo-proposal", path: "/document-templates/seo-proposal", name: "SEO Proposal Template", kind: "proposal", appPath: "/proposals/new",
     h1: "SEO proposal template", title: "SEO Proposal Template",
-    description: "A ready to edit SEO proposal with an executive summary, challenges, goals, strategy, timeline, pricing packages and terms. Brand it, send it by link and see when your client opens it.",
+    description: "A ready to edit SEO proposal with a summary, challenges, goals, strategy, timeline, pricing packages and terms. Brand it, send it by link and see when it is opened.",
     intro: "An SEO proposal has one job: help the client see what is wrong, what you will do about it, and what it costs. This template follows that order, so you spend your time on the client's details rather than on layout.",
     bestFor: "Freelance SEOs and agencies pitching a one-time audit and fix, or a monthly retainer.",
     includes: ["Executive summary in plain language", "What is holding the site back today", "Goals with something measurable, such as enquiries", "Strategy split into technical fixes, content, local search and links", "Deliverables list so the scope is clear", "A phased timeline", "Pricing packages shown next to itemised fees", "Terms, and online acceptance with a signature"],
@@ -59,7 +59,7 @@ export const TEMPLATE_PAGES: TemplatePage[] = [
   {
     slug: "website-quotation-gst", path: "/document-templates/website-quotation-gst", name: "Website Quotation with GST", kind: "quotation", appPath: "/quotations/new",
     h1: "Website quotation format with GST", title: "Website Quotation Format with GST",
-    description: "A website design and development quotation with scope of work, line items, discounts, GST at your chosen rate, a payment schedule and acceptance. Your GSTIN prints on every copy.",
+    description: "A website quotation with scope of work, line items, discounts, GST at your rate, a payment schedule and acceptance. Your GSTIN prints on every copy.",
     intro: "A good website quotation says what is included, what it costs and when you will be paid. This format puts the scope first, then the priced line items with GST worked out for you, so the client knows the total before work starts.",
     bestFor: "Web designers, developers and agencies in India quoting a website build, redesign or ongoing maintenance.",
     includes: ["Your company details with GSTIN and PAN", "Quotation number, date and validity period", "Scope of work: overview, what is included, deliverables and timeline", "Line items with quantity, rate and a discount per line", "GST calculated at your rate, with the tax and the total shown clearly", "A payment schedule, for example 50 percent at the start and 50 percent on launch", "Terms and conditions", "Online acceptance by the client"],
@@ -73,7 +73,7 @@ export const TEMPLATE_PAGES: TemplatePage[] = [
     faq: [
       { q: "What GST rate applies to website design and development?", a: "Web design and development services are commonly charged at 18 percent GST in India, but the correct treatment depends on your registration and the place of supply. Confirm with your chartered accountant. The template lets you set whatever rate applies." },
       { q: "Does the quotation show CGST and SGST separately?", a: "It shows GST as one clearly labelled tax line at the rate you choose. If you need the CGST and SGST or IGST split on the paper, add it in the notes or issue it on your tax invoice as your accountant advises." },
-      { q: "What is the difference between a quotation and an invoice?", a: "A quotation is an offer made before work begins. An invoice is issued when you supply the service and ask for payment, and it has its own required details. This tool has a separate invoice document for that stage." },
+      { q: "How is a quotation different from a tax invoice?", a: "A quotation is an offer made before work begins. A tax invoice is issued when you supply the service and ask for payment, and it has its own required details. There is a separate invoice document for that stage, so check the invoice rules with your accountant." },
       { q: "Can I show prices inclusive of GST?", a: "Yes. Turn on tax inclusive pricing and the totals are worked out backwards from your prices. Leave it off to add GST on top." },
     ],
     sampleNote: "Sample quotation for a fictional dental clinic. Names, GSTIN and figures are made up.",
@@ -81,7 +81,7 @@ export const TEMPLATE_PAGES: TemplatePage[] = [
   {
     slug: "social-media-audit", path: "/document-templates/social-media-audit", name: "Social Media Audit Template", kind: "social_audit", appPath: "/social-audits/new",
     h1: "Social media audit template", title: "Social Media Audit Template",
-    description: "A social media audit template with a scorecard, checklists for profiles, content, engagement and each platform, notes, screenshots and prioritised recommendations, ready to send as a branded report.",
+    description: "A social media audit template with a scorecard, checklists for profiles, content, engagement and each platform, notes, screenshots and prioritised fixes.",
     intro: "A social media audit is a checklist you complete while reviewing a brand's accounts. This template gives you the checkpoints, a scorecard that updates as you go, and a report layout your client can read in a few minutes.",
     bestFor: "Social media managers and agencies who want a repeatable audit for pitches, onboarding and quarterly reviews.",
     includes: ["A scorecard with an overall score and a score for each area", "General checklists: profiles and branding, content strategy, creative quality, engagement, growth, conversion, paid social and reporting", "Platform sections for Instagram, Facebook, LinkedIn, YouTube, X, TikTok and Pinterest", "Each checkpoint marked Good, Needs work, Poor or Not applicable", "A note, a recommendation and a priority for each finding", "Space for screenshots that appears only when you add one", "Custom sections for anything specific to the client", "A key findings and recommendations summary"],
@@ -103,7 +103,7 @@ export const TEMPLATE_PAGES: TemplatePage[] = [
   {
     slug: "digital-marketing-proposal", path: "/document-templates/digital-marketing-proposal", name: "Digital Marketing Proposal", kind: "proposal", appPath: "/proposals/new",
     h1: "Digital marketing proposal template", title: "Digital Marketing Proposal Template",
-    description: "A digital marketing proposal template covering SEO, paid ads, social media and email, with deliverables, a 90 day timeline, retainer pricing and terms. Edit it, brand it and send it by link.",
+    description: "A digital marketing proposal covering SEO, paid ads, social media and email, with deliverables, a 90 day timeline, retainer pricing and terms. Brand and send it.",
     intro: "A digital marketing proposal has to make several channels feel like one plan. This template ties search, ads, social and email to the same goals and shows the client exactly what each month of fees buys.",
     bestFor: "Marketing agencies and consultants proposing a multi-channel retainer.",
     includes: ["An executive summary tied to the client's goals", "Current gaps across search, ads, social and email", "Objectives with a way to measure each", "A plan for every channel in scope", "Deliverables per month", "A timeline for the first 90 days", "Retainer packages with ad spend shown separately", "Reporting, terms and online acceptance"],

@@ -57,7 +57,7 @@ export function PlanGrid({ currentPlan, workspace, signedIn = false, onlinePayme
           );
         })}
       </div>
-      <p className="mt-6 text-xs text-ink-faint">Prices exclude taxes where they apply. AI actions reset on the first of each month. Unused actions don't roll over.</p>
+      <p className="mt-6 text-xs text-ink-faint">The price shown at checkout is the price you pay, in Indian rupees. Paid plans do not renew automatically. AI actions reset on the first of each month and unused actions don't roll over.</p>
     </div>
   );
 }

@@ -8,13 +8,18 @@ import { Button } from "@/components/ui/button";
 import { ACME_BRAND, HARBOR_BRAND, sampleAudit, sampleProposal, sampleQuotation, sampleSocialAudit } from "@/lib/documents/samples";
 import { getSystemTemplate, type TemplateConfig } from "@/lib/documents/templates";
 import type { DocumentContent } from "@/lib/documents/content";
-import { FAQ, FEATURES } from "@/lib/marketing";
+import { FEATURES } from "@/lib/marketing";
+import { FaqSection } from "@/components/marketing/faq-section";
+import { FAQ_BANK, PAGE_FAQ } from "@/lib/content/faq";
+import { FACTS, freePlanLine, priceLine } from "@/lib/content/facts";
+import { PAGE_BY_PATH } from "@/lib/seo/registry";
 import { getUser } from "@/lib/auth/session";
 import { PageSchema } from "@/components/seo/page-schema";
 import { Markdown } from "@/lib/seo/markdown";
 import { getPageContent, pageMetadata } from "@/lib/seo/pages";
 
 export const generateMetadata = () => pageMetadata("/");
+const PAGE_DEF = PAGE_BY_PATH["/"];
 
 const FEATURE_ICONS = [Palette, LayoutTemplate, Sparkles, FileText, Share2, BarChart3];
 
@@ -43,18 +48,37 @@ export default async function HomePage() {
       <section className="mx-auto grid max-w-7xl gap-12 px-5 pb-24 pt-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,540px)] lg:pt-16">
         <div className="lg:pt-6">
           <p className="mb-5 inline-block rounded-full bg-brand-soft px-3.5 py-1.5 text-sm font-semibold text-brand">Create. Edit. Share. Professional documents.</p>
-          <h1 className="text-4xl font-extrabold leading-[1.08] sm:text-5xl lg:text-[3.4rem]">{content.heading ?? <>Create proposals, quotations and audits <span className="text-brand">that look like your company created them.</span></>}</h1>
-          <p className="mt-5 max-w-xl text-lg text-ink-soft">{content.intro ?? "Build your company profile once. Generate branded client documents in minutes with AI."}</p>
+          <h1 className="text-4xl font-extrabold leading-[1.08] sm:text-5xl lg:text-[3.4rem]">{content.heading ?? <>Create proposals, quotations, invoices and audits <span className="text-brand">that look like your company made them.</span></>}</h1>
+          <p className="mt-5 max-w-xl text-lg text-ink-soft">{content.intro ?? PAGE_DEF.intro}</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg" className="rounded-full px-7"><Link href={start.href}>{start.label}<ArrowRight className="size-4" aria-hidden /></Link></Button>
             <Button asChild size="lg" variant="secondary" className="rounded-full px-7"><Link href="#how-it-works"><PlayCircle className="size-4" aria-hidden />See How It Works</Link></Button>
           </div>
-          {!signedIn && <p className="mt-4 text-sm text-ink-faint">Free plan includes 10 documents and 3 AI actions a month, with PDF export.</p>}
+          {!signedIn && <p className="mt-4 text-sm text-ink-faint">The Free plan includes {freePlanLine}, with PDF export. No card needed.</p>}
         </div>
         <div className="relative hidden h-[520px] sm:block" aria-label="The same proposal in two different brands">
           <CroppedPreview label="Proposal cover in a deep red brand" height={560} className="absolute left-0 top-0 w-[320px] rounded-sm">{heroA}</CroppedPreview>
           <CroppedPreview label="The same proposal in a green and amber brand" height={560} className="absolute right-0 top-20 w-[300px] rounded-sm">{heroB}</CroppedPreview>
         </div>
+      </section>
+
+      <section aria-labelledby="what-is" className="mx-auto max-w-5xl px-5 pb-20">
+        <h2 id="what-is" className="text-3xl font-extrabold">What is {FACTS.name}?</h2>
+        <p className="mt-4 max-w-3xl text-lg text-ink-soft">{FAQ_BANK.what.a}</p>
+        <dl className="mt-8 grid gap-5 md:grid-cols-3">
+          <div className="rounded-2xl border border-line bg-surface p-6 shadow-soft">
+            <dt className="font-bold">Documents it creates</dt>
+            <dd className="mt-2 text-sm text-ink-soft">
+              <ul className="space-y-1.5">
+                <li><Link href="/document-templates/seo-proposal" className="font-medium text-brand hover:underline">SEO proposals</Link> and <Link href="/document-templates/digital-marketing-proposal" className="font-medium text-brand hover:underline">digital marketing proposals</Link></li>
+                <li><Link href="/document-templates/website-quotation-gst" className="font-medium text-brand hover:underline">Quotations with GST</Link> and invoices</li>
+                <li><Link href="/document-templates/social-media-audit" className="font-medium text-brand hover:underline">Social media audits</Link> and SEO audits</li>
+              </ul>
+            </dd>
+          </div>
+          <div className="rounded-2xl border border-line bg-surface p-6 shadow-soft"><dt className="font-bold">Who uses it</dt><dd className="mt-2 text-sm text-ink-soft">{FAQ_BANK.who.a}</dd></div>
+          <div className="rounded-2xl border border-line bg-surface p-6 shadow-soft"><dt className="font-bold">What it costs</dt><dd className="mt-2 text-sm text-ink-soft">Free to start, with {freePlanLine}. Paid plans are {priceLine}, charged in Indian rupees and never renewed automatically.</dd></div>
+        </dl>
       </section>
 
       <section id="how-it-works" className="scroll-mt-8 bg-brand-soft/50">
@@ -146,19 +170,15 @@ export default async function HomePage() {
       <section id="pricing" className="scroll-mt-8 bg-brand-soft/50">
         <div className="mx-auto max-w-7xl px-5 py-20">
           <h2 className="text-3xl font-extrabold">Pricing</h2>
-          <p className="mb-8 mt-2 max-w-xl text-ink-soft">Start free with 10 documents and 3 AI actions a month. Upgrade when you need more.</p>
+          <p className="mb-8 mt-2 max-w-xl text-ink-soft">Start free with {freePlanLine}. Upgrade when you need more documents, more AI actions or more people.</p>
           <PlanGrid signedIn={signedIn} />
         </div>
       </section>
 
-      <section id="faq" className="mx-auto max-w-3xl scroll-mt-8 px-5 py-20">
-        <h2 className="text-3xl font-extrabold">Questions</h2>
-        <div className="mt-8 divide-y divide-line border-y border-line">
-          {FAQ.map((f) => (
-            <details key={f.q} className="group py-4"><summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium">{f.q}<span aria-hidden className="text-ink-faint transition-transform group-open:rotate-45">+</span></summary><p className="mt-2 text-ink-soft">{f.a}</p></details>))}
-        </div>
-        <div className="mt-12 text-center"><Button asChild size="lg" className="rounded-full px-8"><Link href={start.href}>{start.label}<ArrowRight className="size-4" aria-hidden /></Link></Button></div>
-      </section>
+      <FaqSection items={PAGE_FAQ["/"]} title="Questions about PrioDraft" />
+      <div className="mx-auto max-w-3xl px-5 pb-20">
+        <div className="text-center"><Button asChild size="lg" className="rounded-full px-8"><Link href={start.href}>{start.label}<ArrowRight className="size-4" aria-hidden /></Link></Button></div>
+      </div>
       {content.extraMd && <section className="mx-auto max-w-3xl px-5 pb-16 text-ink-soft"><Markdown md={content.extraMd} /></section>}
     </main>
   );

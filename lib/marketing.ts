@@ -17,18 +17,6 @@ export const PLAN_CARDS: PlanCard[] = [
     features: ["AI, document and team limits set for you", "Onboarding help", "Dedicated support", "Invoice and contract billing"] },
 ];
 
-export const FAQ: { q: string; a: string }[] = [
-  { q: "Do I need design skills?", a: "No. You choose colors, fonts and upload a logo once, and the templates handle layout, spacing and page breaks. You can still edit every section by hand." },
-  { q: "Will the AI make things up?", a: "It is told to use only your company profile, services and knowledge base entries, and to leave out facts it doesn't have. It can still get things wrong, so every draft is editable and nothing is sent until you share it." },
-  { q: "What happens to sent documents if I change my brand or phone number?", a: "New documents use your latest brand kit and details. When you share a document, its branding is saved with it, so documents you already sent keep the look and contact details they had." },
-  { q: "Can clients sign?", a: "Clients can accept a proposal or quotation online by entering their name and email, agreeing to the terms and drawing or typing a signature. We record who accepted and when. Whether that is enough for your contracts depends on your jurisdiction, so check with a lawyer for anything high stakes." },
-  { q: "What does the SEO audit check?", a: "HTTPS, indexability, robots.txt, sitemap, canonical tags, redirects, a sample of internal links, titles, descriptions, headings, image alt text, content length, structured data, server speed and, when available, Google PageSpeed results. It reads the home page and a handful of inner pages, so it is a fast health check rather than a full crawl." },
-  { q: "Who can see my data?", a: "Only members of your workspace. Data lives in a Postgres database with row level security, so one company's records are never returned to another. Shared documents are reachable only through their private link." },
-  { q: "What counts as an AI action?", a: "Each time the assistant drafts a proposal, rewrites a section, writes a line description or explains audit findings in plain language, that is one action. If the AI service fails and you get no result, the action is not counted." },
-  { q: "How do I upgrade?", a: "Open Settings, then Subscription, and choose a plan. We'll confirm the payment details with you and switch the plan on for your workspace. Online card payments are planned." },
-  { q: "Can I take payments from my clients through it?", a: "Not yet. You can create invoices with your payment details on them, but clients pay you directly." },
-];
-
 export const FEATURES = [
   { title: "One company profile", body: "Company details, logo, colors, fonts, terms and signature live in one place. Nobody retypes a phone number into a proposal again." },
   { title: "AI that knows your business", body: "Drafts come back as structured sections, not one wall of text. Rewrite, shorten, simplify or generate a timeline for any part." },

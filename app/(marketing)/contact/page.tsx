@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Clock, Mail, MessageSquareText } from "lucide-react";
 import { ContactForm } from "@/components/marketing/contact-form";
 import { PageSchema } from "@/components/seo/page-schema";
+import { FaqSection } from "@/components/marketing/faq-section";
+import { PAGE_FAQ } from "@/lib/content/faq";
 import { getUser } from "@/lib/auth/session";
 import { Markdown } from "@/lib/seo/markdown";
 import { getPageContent, pageMetadata } from "@/lib/seo/pages";
@@ -18,11 +20,12 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
   const email = process.env.NEXT_PUBLIC_CONTACT_EMAIL;
   const c = await getPageContent("/contact");
   const heading = topic === "upgrade" ? "Upgrade your plan" : topic === "custom" ? "Ask for a custom plan" : c.heading ?? "Get in touch";
-  const sub = topic === "upgrade" ? "Tell us which plan you want. We'll reply with the payment details and switch it on for your workspace."
+  const sub = topic === "upgrade" ? "Tell us which plan you want and we'll set it up. You can also pay online yourself from Settings, then Subscription, and the plan switches on as soon as the payment clears."
     : topic === "custom" ? "Need more AI actions, documents or team members than the standard plans? Tell us what you need and we'll put together a plan."
     : c.intro ?? "Questions, feedback or a problem with your account? Send us a message and we'll reply by email.";
 
   return (
+    <>
     <main className="mx-auto grid max-w-6xl gap-10 px-5 py-12 lg:grid-cols-[minmax(0,1fr)_340px]">
       <PageSchema path="/contact" />
       <div>
@@ -44,5 +47,7 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
       <p className="text-xs text-ink-faint">See also our <Link href="/terms" className="text-brand hover:underline">Terms of Service</Link>, <Link href="/privacy" className="text-brand hover:underline">Privacy Policy</Link> and <Link href="/refund-policy" className="text-brand hover:underline">Refund Policy</Link>.</p>
       </aside>
     </main>
+    <FaqSection items={PAGE_FAQ["/contact"]} title="Before you write" />
+    </>
   );
 }
