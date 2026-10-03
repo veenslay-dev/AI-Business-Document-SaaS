@@ -565,7 +565,7 @@ await step("razorpay: pay for Pro online, signature checked, plan switches on, w
   await up.goto(`${APP}/settings/subscription`); await up.waitForSelector("h2:has-text('Free plan')", { timeout: 15000 });
   eq(await up.getByRole("button", { name: /USD/ }).count(), 0, "no USD option");
   yes((await up.locator("main").innerText()).includes("₹999"), "INR prices");
-  eq(await up.locator("a:has-text('Upgrade plan')").first().getAttribute("href"), "#plans", "top Upgrade button goes to the payable plan cards, not the contact form");
+  eq(await up.locator("main a:has-text('Upgrade plan')").first().getAttribute("href"), "#plans", "top Upgrade button goes to the payable plan cards, not the contact form");
 
   // stand-in for Razorpay's checkout window: it signs the payment the way Razorpay would
   let orderId = "", paymentId = "pay_e2e_" + suffix;
@@ -626,7 +626,7 @@ await step("seo: self canonical and schema on every page, admin edits title, con
   };
   for (const path of ["/", "/pricing", "/about", "/contact", "/terms", "/privacy", "/refund-policy", "/login", "/signup", "/forgot-password"]) {
     const h = await head(path);
-    eq(h.canonical, `${APP}${path}`, `self canonical on ${path}`);
+    eq(h.canonical, path === "/" ? APP : `${APP}${path}`, `self canonical on ${path}`);
     yes(h.ld.length >= 1 && h.ld.every(Boolean), `valid JSON-LD on ${path}`);
     const types = h.ld.flatMap((d) => d["@graph"].map((n) => n["@type"]));
     yes(types.includes("Organization") && types.includes("WebSite"), `organization and site schema on ${path}`);
