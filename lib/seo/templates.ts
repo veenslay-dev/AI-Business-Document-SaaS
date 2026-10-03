@@ -1,7 +1,7 @@
 import { PRODUCT_NAME } from "@/components/ui/logo";
 import { PLANS } from "@/lib/billing/plans";
 
-export type TemplateSlug = "seo-proposal" | "website-quotation-gst" | "social-media-audit" | "digital-marketing-proposal";
+export type TemplateSlug = "seo-proposal" | "website-quotation-gst" | "invoice-template" | "social-media-audit" | "digital-marketing-proposal";
 
 export type TemplatePage = {
   slug: TemplateSlug;
@@ -13,7 +13,7 @@ export type TemplatePage = {
   description: string;
   intro: string;
   /** What kind of document it makes, and where it opens in the app. */
-  kind: "proposal" | "quotation" | "social_audit";
+  kind: "proposal" | "quotation" | "invoice" | "social_audit";
   appPath: string;
   bestFor: string;
   includes: string[];
@@ -21,6 +21,8 @@ export type TemplatePage = {
   tips: string[];
   faq: { q: string; a: string }[];
   sampleNote: string;
+  /** How much of the sample page to show, in document pixels. Short documents need less. */
+  previewHeight?: number;
 };
 
 const free = `${PLANS.free.monthlyDocuments} documents and ${PLANS.free.aiPerMonth} AI actions a month`;
@@ -29,7 +31,7 @@ export const TEMPLATE_HUB = {
   path: "/document-templates",
   h1: "Business document templates for agencies and freelancers",
   title: "Document Templates",
-  description: `Free document templates: an SEO proposal, a website quotation with GST, a social media audit and a digital marketing proposal. Brand and send them with ${PRODUCT_NAME}.`,
+  description: `Free document templates: SEO proposal, website quotation with GST, invoice, social media audit and digital marketing proposal. Brand and send them with ${PRODUCT_NAME}.`,
   intro: `A business document template is a ready-made structure for a proposal, quotation or audit, so you fill in the client's details instead of designing a page. Each template below is a real sample built with the same engine that makes your own documents. Open one to see every section, then start with it free. Your logo, colors, fonts and terms are applied automatically.`,
 };
 
@@ -77,6 +79,28 @@ export const TEMPLATE_PAGES: TemplatePage[] = [
       { q: "Can I show prices inclusive of GST?", a: "Yes. Turn on tax inclusive pricing and the totals are worked out backwards from your prices. Leave it off to add GST on top." },
     ],
     sampleNote: "Sample quotation for a fictional dental clinic. Names, GSTIN and figures are made up.",
+  },
+  {
+    slug: "invoice-template", path: "/document-templates/invoice-template", name: "Invoice Template", kind: "invoice", appPath: "/invoices/new", previewHeight: 820,
+    h1: "Invoice template with GST", title: "Invoice Template with GST",
+    description: "A clean invoice template with your logo, GSTIN, line items, tax, bank and UPI details and a clear amount due. Download the PDF or send a private link.",
+    intro: "An invoice has to be easy to pay. This template puts the amount due, the due date and your payment details where the client looks first, and works out the discounts, tax and total from your line items.",
+    bestFor: "Freelancers, agencies and consultants billing for projects, retainers and one-off work.",
+    includes: ["Your logo, address, GSTIN and PAN from the company profile", "Invoice number, issue date and due date", "Client name, contact and address", "Line items with quantity, rate and a discount per line", "Tax at your rate, with the tax name you choose, such as GST", "A clear amount due strip", "Bank, UPI and other payment details", "Notes and payment terms, then a PDF or a private link"],
+    steps: [
+      { title: "Start from your company profile", body: "Your logo, colors, address, GSTIN and payment details are filled in for you. Set them once." },
+      { title: "Add the client and line items", body: "Pick the client, add what you are billing for, and set the quantity and rate. Totals update as you type." },
+      { title: "Set the tax and the due date", body: "Choose the tax name and rate, or leave tax off. Columns you do not use, such as discount or tax, are left out of the invoice." },
+      { title: "Send it", body: "Download the PDF or share a private link. You can see when the client opens it." },
+    ],
+    tips: ["Put the due date and the payment details on the first page so the client does not have to look for them.", "Describe each line in terms the client recognises, such as the project name and the month, so it matches their records.", "Use a numbering scheme that never repeats, for example a prefix and the year, then the next number.", "Send the invoice as soon as the work or milestone is done, and say when payment is due."],
+    faq: [
+      { q: "What should an invoice include?", a: "Your business name and address, your tax registration number if you have one, a unique invoice number, the issue and due dates, the client's details, a description of what you are billing for, the amounts and any tax, the total due and how to pay." },
+      { q: "Is this a GST tax invoice?", a: "The template prints your GSTIN, the tax name and rate, and a tax line in the totals. Whether an invoice counts as a tax invoice depends on it carrying every detail the law requires for your registration, so confirm the required fields with your accountant before you rely on it." },
+      { q: "Can I hide the discount and tax columns?", a: "Yes. If you do not use a discount or tax on an invoice, those columns are left out automatically, so a simple invoice stays simple." },
+      { q: "Can I collect payments from my clients through PrioDraft?", a: "Not yet. You can create invoices with your own payment details on them, and your clients pay you directly." },
+    ],
+    sampleNote: "Sample invoice for a fictional dental clinic. Names, GSTIN, bank details and figures are made up.",
   },
   {
     slug: "social-media-audit", path: "/document-templates/social-media-audit", name: "Social Media Audit Template", kind: "social_audit", appPath: "/social-audits/new",

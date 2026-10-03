@@ -42,7 +42,7 @@ export async function TemplateDetail({ tpl }: { tpl: TemplatePage }) {
           </ul>
         </div>
         <figure className="min-w-0">
-          <TemplateSample slug={tpl.slug} height={1180} />
+          <TemplateSample slug={tpl.slug} height={tpl.previewHeight ?? 1180} />
           <figcaption className="mt-3 text-xs text-ink-faint">{tpl.sampleNote}</figcaption>
         </figure>
       </section>

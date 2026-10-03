@@ -617,7 +617,7 @@ await step("templates: menu with submenu, hub page, and four template pages with
   await p.goto(`${APP}/`);
   const menu = p.locator("header a:has-text('Templates')").first(); await menu.waitFor({ timeout: 10000 });
   await menu.hover();
-  for (const l of ["All templates", "SEO Proposal Template", "Website Quotation with GST", "Social Media Audit Template", "Digital Marketing Proposal"]) await p.locator(`header a:has-text('${l}')`).first().waitFor({ state: "visible", timeout: 5000 });
+  for (const l of ["All templates", "SEO Proposal Template", "Website Quotation with GST", "Invoice Template", "Social Media Audit Template", "Digital Marketing Proposal"]) await p.locator(`header a:has-text('${l}')`).first().waitFor({ state: "visible", timeout: 5000 });
   await p.locator("header a:has-text('Website Quotation with GST')").click(); await p.waitForURL("**/document-templates/website-quotation-gst", { timeout: 15000 });
   const q = await p.locator("main").innerText();
   yes(/GST/.test(q) && q.includes("Bright Dental") && q.includes("29ABCDE1234F1Z5"), "GST quotation sample shows the GSTIN and tax");
@@ -626,8 +626,8 @@ await step("templates: menu with submenu, hub page, and four template pages with
   yes(await p.locator("main a[href='/signup']").first().isVisible(), "call to action for visitors");
   await p.goto(`${APP}/document-templates`);
   await p.locator("h1:has-text('Business document templates')").waitFor({ timeout: 10000 });
-  eq(await p.locator("main article").count(), 4, "four template cards");
-  for (const [slug, h1, needle] of [["seo-proposal", "SEO proposal template", "Nova Furniture"], ["social-media-audit", "Social media audit template", "Bright Dental"], ["digital-marketing-proposal", "Digital marketing proposal template", "Urban Properties"]]) {
+  eq(await p.locator("main article").count(), 5, "five template cards");
+  for (const [slug, h1, needle] of [["seo-proposal", "SEO proposal template", "Nova Furniture"], ["invoice-template", "Invoice template with GST", "INV-2026-0001"], ["social-media-audit", "Social media audit template", "Bright Dental"], ["digital-marketing-proposal", "Digital marketing proposal template", "Urban Properties"]]) {
     await p.goto(`${APP}/document-templates/${slug}`);
     await p.locator(`h1:has-text('${h1}')`).waitFor({ timeout: 10000 });
     yes((await p.locator("main").innerText()).includes(needle), `${slug} sample content`);
@@ -644,7 +644,7 @@ await step("templates: menu with submenu, hub page, and four template pages with
 await step("content: every main page has a FAQ section that matches its FAQ schema, and facts agree across pages", async () => {
   const anon = await anonContext(); const p = await anon.newPage();
   const counts = {};
-  for (const path of ["/", "/pricing", "/about", "/contact", "/document-templates", "/document-templates/seo-proposal", "/document-templates/website-quotation-gst", "/document-templates/social-media-audit", "/document-templates/digital-marketing-proposal"]) {
+  for (const path of ["/", "/pricing", "/about", "/contact", "/document-templates", "/document-templates/seo-proposal", "/document-templates/website-quotation-gst", "/document-templates/invoice-template", "/document-templates/social-media-audit", "/document-templates/digital-marketing-proposal"]) {
     await p.goto(`${APP}${path}`);
     const r = await p.evaluate(() => ({
       shown: [...document.querySelectorAll("main details summary")].map((x) => x.textContent.replace(/\s*\+$/, "").trim()),
