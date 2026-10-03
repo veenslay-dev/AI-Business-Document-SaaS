@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { NOINDEX_HEADER, PRIVATE_PREFIXES } from "./lib/seo/robots";
 
 const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
   ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
@@ -57,9 +58,10 @@ const nextConfig: NextConfig = {
           ...(isProd ? [{ key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" }, { key: "Content-Security-Policy", value: csp }] : []),
         ],
       },
-      // Shared documents and their APIs must never be indexed or leak the token through referrers.
-      { source: "/view/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }, { key: "Referrer-Policy", value: "no-referrer" }] },
-      { source: "/api/public/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex" }] },
+      // Documents, PDFs, share and invite links, exports and the signed-in app are never indexed or followed.
+      ...PRIVATE_PREFIXES.map((p) => ({ source: `${p}/:path*`, headers: [{ key: "X-Robots-Tag", value: NOINDEX_HEADER }] })),
+      // Shared documents must also not leak the token through referrers.
+      { source: "/view/:path*", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] },
     ];
   },
   experimental: {

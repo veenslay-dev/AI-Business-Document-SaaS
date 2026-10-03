@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { NOINDEX_META } from "@/lib/seo/robots";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Wordmark } from "@/components/ui/logo";
@@ -6,7 +7,7 @@ import { AcceptInviteButton } from "@/components/team/accept-invite";
 import { getUser } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export const metadata: Metadata = { title: "Join a workspace", robots: { index: false, follow: false }, referrer: "no-referrer" };
+export const metadata: Metadata = { title: "Join a workspace", robots: NOINDEX_META, referrer: "no-referrer" };
 export const dynamic = "force-dynamic";
 
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { NOINDEX_META } from "@/lib/seo/robots";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import { DocumentRenderer } from "@/components/documents/document-renderer";
 import { ResponsePanel } from "@/components/public/response-panel";
@@ -7,7 +8,7 @@ import { getPublicDocument } from "@/lib/db/public";
 import { canRespond } from "@/lib/public/access";
 import { formatDate, safeImageUrl } from "@/lib/documents/util";
 
-export const metadata: Metadata = { title: "Shared document", robots: { index: false, follow: false, nocache: true }, referrer: "no-referrer" };
+export const metadata: Metadata = { title: "Shared document", robots: NOINDEX_META, referrer: "no-referrer" };
 export const dynamic = "force-dynamic";
 
 function Notice({ icon: Icon, title, children }: { icon: typeof Clock; title: string; children: React.ReactNode }) {

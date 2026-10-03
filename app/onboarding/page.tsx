@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { NOINDEX_META } from "@/lib/seo/robots";
 import { redirect } from "next/navigation";
 import { Wordmark } from "@/components/ui/logo";
 import { createFirstWorkspace } from "@/lib/auth/bootstrap";
@@ -7,7 +8,7 @@ import { getActiveMembership, getMemberships, getUser } from "@/lib/auth/session
 import { getWorkspaceBranding } from "@/lib/db/workspace";
 import { FIRST_DOCUMENT_HREF } from "@/lib/onboarding";
 
-export const metadata: Metadata = { title: "Set up your workspace", robots: { index: false } };
+export const metadata: Metadata = { title: "Set up your workspace", robots: NOINDEX_META };
 export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {

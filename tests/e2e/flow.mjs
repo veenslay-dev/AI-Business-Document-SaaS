@@ -136,6 +136,7 @@ await step("PDF download returns a real PDF for the owner", async () => {
   const r = await ctx.request.get(`${APP}/api/documents/${docId}/pdf`);
   eq(r.status(), 200, "status"); eq(r.headers()["content-type"], "application/pdf", "type");
   const body = await r.body(); eq(body.subarray(0, 5).toString(), "%PDF-", "magic"); writeFileSync(`${OUT}/proposal.pdf`, body);
+  yes(/noindex/.test(r.headers()["x-robots-tag"] ?? "") && /nofollow/.test(r.headers()["x-robots-tag"] ?? ""), "owner PDF is noindex, nofollow: " + r.headers()["x-robots-tag"]);
 });
 
 await step("share creates a private link and freezes branding", async () => {
@@ -174,6 +175,7 @@ await step("public PDF works for the link holder and is logged as a download", a
   const token = shareUrl.split("/").pop();
   const r = await (await anonContext()).request.get(`${APP}/api/public/${token}/pdf`);
   eq(r.status(), 200, "public pdf status"); eq((await r.body()).subarray(0, 5).toString(), "%PDF-", "pdf magic");
+  yes(/noindex/.test(r.headers()["x-robots-tag"] ?? "") && /nofollow/.test(r.headers()["x-robots-tag"] ?? ""), "public PDF is noindex, nofollow: " + r.headers()["x-robots-tag"]);
   eq((await (await anonContext()).request.get(`${APP}/api/public/${"f".repeat(48)}/pdf`)).status(), 404, "unknown token");
 });
 
@@ -736,6 +738,22 @@ await step("seo: self canonical and schema on every page, admin edits title, con
   }
   const back = await head("/about"); yes(back.title.startsWith("About PrioDraft"), "title back to default: " + back.title); eq(back.h1, "Professional client documents, without the busywork", "heading back to default");
   sm = await (await anon.request.get(`${APP}/sitemap.xml`)).text(); yes(sm.includes("/pricing"), "pricing back in the sitemap");
+  await anon.close();
+});
+
+await step("indexing: generated links, PDFs and exports are noindex and nofollow; public pages stay indexable", async () => {
+  const anon = await anonContext();
+  const tag = async (path, opts) => (await anon.request.get(`${APP}${path}`, { maxRedirects: 0, ...opts })).headers()["x-robots-tag"] ?? "";
+  for (const path of [`/view/p/${"0".repeat(48)}`, `/invite/${"0".repeat(48)}`, `/api/public/${"f".repeat(48)}/pdf`, `/api/public/${"f".repeat(48)}/view`, "/api/documents/00000000-0000-0000-0000-000000000000/pdf", "/dashboard", "/proposals", "/admin", "/admin/costs/export", "/onboarding"]) {
+    const t = await tag(path);
+    yes(/noindex/.test(t) && /nofollow/.test(t) && /noarchive/.test(t), `${path} sends noindex, nofollow, noarchive (got "${t}")`);
+  }
+  for (const path of ["/", "/pricing", "/about", "/document-templates", "/document-templates/seo-proposal", "/og?path=/pricing"]) yes(!/noindex/.test(await tag(path)), `${path} is not blocked from indexing`);
+  const robotsTxt = await (await anon.request.get(`${APP}/robots.txt`)).text();
+  yes(robotsTxt.includes("Disallow: /dashboard") && robotsTxt.includes("Sitemap:"), "robots.txt blocks the app and lists the sitemap");
+  yes(!/Disallow: \/(view|invite|api)\b/.test(robotsTxt), "robots.txt leaves generated links crawlable so their noindex is read");
+  const html = await (await anon.request.get(`${APP}/view/p/${"0".repeat(48)}`)).text();
+  yes(/<meta name="robots" content="[^"]*noindex[^"]*nofollow/.test(html), "share page also says noindex, nofollow in its HTML");
   await anon.close();
 });
 

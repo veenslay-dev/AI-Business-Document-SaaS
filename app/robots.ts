@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
+import { ROBOTS_DISALLOW } from "@/lib/seo/robots";
 import { siteUrl } from "@/lib/utils";
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: [{ userAgent: "*", allow: "/", disallow: ["/dashboard", "/clients", "/projects", "/proposals", "/quotations", "/invoices", "/seo-audits", "/social-audits", "/templates", "/brand-kit", "/team", "/settings", "/onboarding", "/search", "/admin", "/view/", "/invite/", "/api/", "/auth/"] }],
+    rules: [{ userAgent: "*", allow: "/", disallow: [...ROBOTS_DISALLOW] }],
     sitemap: `${siteUrl()}/sitemap.xml`,
   };
 }

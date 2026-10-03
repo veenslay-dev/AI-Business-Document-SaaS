@@ -1,3 +1,4 @@
+import { NOINDEX_HEADER } from "@/lib/seo/robots";
 import { NextResponse } from "next/server";
 import { isPlatformAdmin } from "@/lib/auth/admin";
 import { csvCell, getAiCosts, parsePeriod } from "@/lib/db/admin-costs";
@@ -15,6 +16,6 @@ export async function GET(req: Request) {
     ["Total", "", "", summary.calls, summary.tokens, summary.costInr.toFixed(2), summary.avgInr.toFixed(2), "100", ""].map(csvCell).join(","),
   ];
   return new NextResponse(lines.join("\r\n"), {
-    headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": `attachment; filename="ai-spend-${period}.csv"`, "cache-control": "private, no-store", "x-robots-tag": "noindex" },
+    headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": `attachment; filename="ai-spend-${period}.csv"`, "cache-control": "private, no-store", "x-robots-tag": NOINDEX_HEADER },
   });
 }

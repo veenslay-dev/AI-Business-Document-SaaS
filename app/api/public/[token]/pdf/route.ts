@@ -1,3 +1,4 @@
+import { NOINDEX_HEADER } from "@/lib/seo/robots";
 import { NextResponse } from "next/server";
 import { documentToPdf } from "@/lib/db/pdf-document";
 import { clientIp, getPublicDocument, hashIp } from "@/lib/db/public";
@@ -24,7 +25,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
   await admin.from("document_actions").insert({ document_id: found.doc.id, action: "downloaded", metadata: { ip: hashIp(clientIp(req.headers), found.doc.id) } });
   try {
     const pdf = await documentToPdf({ render: found.render, type: found.doc.type, title: found.doc.title, acceptance: found.acceptance });
-    return new NextResponse(new Uint8Array(pdf), { headers: { "content-type": "application/pdf", "content-disposition": `attachment; filename="${pdfFileName(found.doc.title)}"`, "cache-control": "private, no-store" } });
+    return new NextResponse(new Uint8Array(pdf), { headers: { "content-type": "application/pdf", "content-disposition": `attachment; filename="${pdfFileName(found.doc.title)}"`, "cache-control": "private, no-store", "x-robots-tag": NOINDEX_HEADER } });
   } catch (e) {
     console.error("[pdf] route failed", e instanceof Error ? e.message : "unknown");
     const busy = e instanceof PdfError && e.code === "busy";

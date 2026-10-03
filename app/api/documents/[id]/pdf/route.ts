@@ -1,3 +1,4 @@
+import { NOINDEX_HEADER } from "@/lib/seo/robots";
 import { NextResponse } from "next/server";
 import { getActiveMembership, getUser } from "@/lib/auth/session";
 import { documentToPdf } from "@/lib/db/pdf-document";
@@ -27,7 +28,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   try {
     const pdf = await documentToPdf({ render, type: doc.type, title: doc.title, acceptance: accepted ? { name: m.name ?? "", designation: m.designation, date: accepted.created_at, signatureDataUrl: m.signature } : null });
     return new NextResponse(new Uint8Array(pdf), {
-      headers: { "content-type": "application/pdf", "content-disposition": `attachment; filename="${pdfFileName(doc.title)}"`, "cache-control": "private, no-store" },
+      headers: { "content-type": "application/pdf", "content-disposition": `attachment; filename="${pdfFileName(doc.title)}"`, "cache-control": "private, no-store", "x-robots-tag": NOINDEX_HEADER },
     });
   } catch (e) {
     console.error("[pdf] route failed", e instanceof Error ? e.message : "unknown");

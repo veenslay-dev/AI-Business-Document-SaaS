@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { NOINDEX_META } from "@/lib/seo/robots";
 import { AppShell } from "@/components/dashboard/shell";
 import { getMemberships, requireWorkspace } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/admin";
@@ -6,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { listActivity } from "@/lib/db/activity";
 import { documentHref } from "@/lib/db/documents";
 
-export const metadata: Metadata = { robots: { index: false, follow: false } };
+export const metadata: Metadata = { robots: NOINDEX_META };
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, membership } = await requireWorkspace();
