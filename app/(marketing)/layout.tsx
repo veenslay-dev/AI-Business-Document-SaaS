@@ -18,7 +18,6 @@ export default async function MarketingLayout({ children }: { children: React.Re
         <Link href="/" aria-label="Home"><Wordmark /></Link>
         <nav aria-label="Main" className="flex items-center gap-1 text-sm font-medium">
           <Link href="/#how-it-works" className="hidden rounded px-3 py-2 text-ink-soft hover:text-brand md:block">How it works</Link>
-          <Link href="/#examples" className="hidden rounded px-3 py-2 text-ink-soft hover:text-brand md:block">Examples</Link>
           {/* Templates menu: opens on hover or keyboard focus and lists every template page. */}
           <div className="group relative hidden md:block">
             <Link href={TEMPLATE_HUB.path} className="inline-flex items-center gap-1 rounded px-3 py-2 text-ink-soft hover:text-brand">Templates<ChevronDown className="size-3.5 transition group-hover:rotate-180 group-focus-within:rotate-180" aria-hidden /></Link>
@@ -32,7 +31,6 @@ export default async function MarketingLayout({ children }: { children: React.Re
           <Link href="/pricing" className="hidden rounded px-3 py-2 text-ink-soft hover:text-brand sm:block">Pricing</Link>
           <Link href="/about" className="hidden rounded px-3 py-2 text-ink-soft hover:text-brand lg:block">About</Link>
           <Link href="/contact" className="hidden rounded px-3 py-2 text-ink-soft hover:text-brand lg:block">Contact</Link>
-          <Link href="/#faq" className="hidden rounded px-3 py-2 text-ink-soft hover:text-brand md:block">FAQ</Link>
           {user ? (
             // Hovering or focusing the button reveals a small menu with Log out.
             <div className="group relative ml-1">
