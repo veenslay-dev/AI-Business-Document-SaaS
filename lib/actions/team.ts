@@ -34,7 +34,7 @@ export async function inviteMemberAction(input: InviteInput): Promise<ActionResu
   if (error || !data) return fail(error?.code === "23505" ? "That person already has a pending invite." : GENERIC_ERROR);
 
   const link = `${siteUrl()}/invite/${data.token}`;
-  await getEmailProvider().send({ to: parsed.data.email, subject: `You're invited to join ${ctx.membership.name}`, text: `Join ${ctx.membership.name} on Docuzumo: ${link}` });
+  await getEmailProvider().send({ to: parsed.data.email, subject: `You're invited to join ${ctx.membership.name}`, text: `Join ${ctx.membership.name} on PrioDraft: ${link}` });
   revalidatePath("/team");
   return { ok: true, data: { link }, message: "Invite created. Share the link with them." };
 }

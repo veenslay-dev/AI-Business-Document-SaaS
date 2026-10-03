@@ -12,7 +12,7 @@ export type FetchResult = {
 
 export type FetchOptions = { method?: "GET" | "HEAD"; timeoutMs?: number; maxBytes?: number; maxRedirects?: number; allowPrivate?: boolean };
 
-const UA = "Mozilla/5.0 (compatible; DocuzumoAuditBot/1.0; +site audit requested by the site owner's agency)";
+const UA = "Mozilla/5.0 (compatible; PrioDraftAuditBot/1.0; +site audit requested by the site owner's agency)";
 
 /**
  * GET/HEAD with SSRF protection. The address check happens inside the socket's DNS lookup,

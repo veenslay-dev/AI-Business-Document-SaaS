@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /** Product wordmark. Change the name in one place. */
-export const PRODUCT_NAME = "Docuzumo";
+export const PRODUCT_NAME = "PrioDraft";
 
 export function Wordmark({ className }: { className?: string }) {
   return (

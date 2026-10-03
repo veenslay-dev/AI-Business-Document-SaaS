@@ -1,4 +1,4 @@
-# Docuzumo
+# PrioDraft
 
 A multi-tenant SaaS for branded business documents: proposals, quotations, invoices, SEO audit reports and social media audits. A company sets up its profile and brand kit once, and every document picks it up automatically.
 
