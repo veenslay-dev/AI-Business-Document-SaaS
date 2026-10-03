@@ -7,19 +7,22 @@ const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
 const isProd = process.env.NODE_ENV === "production";
 
 // Production only: Next's dev server needs eval and websockets that this policy would block.
+// Our own storage host is always allowed for images, including a plain-http local Supabase.
+const storageOrigin = (() => { try { return process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin : ""; } catch { return ""; } })();
+
 const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
-  "img-src 'self' data: blob: https:",
+  `img-src 'self' data: blob: https: ${storageOrigin}`.trim(),
   "connect-src 'self'",
   "frame-src 'none'",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'self'",
-  "upgrade-insecure-requests",
+  ...(storageOrigin.startsWith("http://") ? [] : ["upgrade-insecure-requests"]),
 ].join("; ");
 
 const nextConfig: NextConfig = {
