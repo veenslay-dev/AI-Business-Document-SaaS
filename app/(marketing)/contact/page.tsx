@@ -25,7 +25,6 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
     : c.intro ?? "Questions, feedback or a problem with your account? Send us a message and we'll reply by email.";
 
   return (
-    <>
     <main className="mx-auto grid max-w-6xl gap-10 px-5 py-12 lg:grid-cols-[minmax(0,1fr)_340px]">
       <PageSchema path="/contact" />
       <div>
@@ -46,8 +45,7 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
         </ul>
       <p className="text-xs text-ink-faint">See also our <Link href="/terms" className="text-brand hover:underline">Terms of Service</Link>, <Link href="/privacy" className="text-brand hover:underline">Privacy Policy</Link> and <Link href="/refund-policy" className="text-brand hover:underline">Refund Policy</Link>.</p>
       </aside>
+      <div className="lg:col-span-2"><FaqSection items={PAGE_FAQ["/contact"]} title="Before you write" className="!px-0" /></div>
     </main>
-    <FaqSection items={PAGE_FAQ["/contact"]} title="Before you write" />
-    </>
   );
 }
