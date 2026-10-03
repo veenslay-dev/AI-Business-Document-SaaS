@@ -135,7 +135,7 @@ function Letterhead({ content, brand, meta, template }: { content: DocumentConte
   if (template.headerStyle === "banner") {
     return (
       <header className="lh banner">
-        <div><Logo brand={brand} onDark /><div className="co">{[co.email, co.phone, co.website].filter(Boolean).join("  ·  ")}</div></div>
+        <div><Logo brand={brand} onDark /><div className="co">{[co.email, co.phone, co.website, co.gst ? `GST: ${co.gst}` : ""].filter(Boolean).join("  ·  ")}</div></div>
         <div className="title"><div className="doctype">{kind || c.title}</div>{kind && <div className="doctitle">{c.title}</div>}<div className="ref">{refLine}</div></div>
       </header>
     );
