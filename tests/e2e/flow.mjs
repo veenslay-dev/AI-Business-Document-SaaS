@@ -548,6 +548,18 @@ await step("security: headers, upload checks, contact flood limit, admin-only ex
   eq(cspViolations.length, 0, "no CSP violations: " + cspViolations.join(" | "));
 });
 
+await step("public pages recognise a signed-in visitor", async () => {
+  await page.goto(`${APP}/`);
+  await page.locator("header a:has-text('Go to dashboard')").waitFor({ timeout: 10000 });
+  eq(await page.locator("header a:has-text('Sign in')").count(), 0, "no sign in link when signed in");
+  yes((await page.locator("main").innerText()).includes("Go to dashboard"), "hero button says dashboard");
+  await page.locator("header a:has-text('Go to dashboard')").click(); await page.waitForURL("**/dashboard", { timeout: 15000 });
+  await page.goto(`${APP}/pricing`); await page.locator("a:has-text('Upgrade')").first().waitFor({ timeout: 10000 });
+  const anon = await anonContext(); const p = await anon.newPage(); await p.goto(`${APP}/`);
+  await p.locator("header a:has-text('Start Free')").waitFor({ timeout: 10000 });
+  eq(await p.locator("header a:has-text('Go to dashboard')").count(), 0, "visitors still see Start Free"); await anon.close();
+});
+
 yes(consoleErrors.length === 0 || true);
 if (consoleErrors.length) console.log("Uncaught page errors:", consoleErrors.slice(0, 5));
 await browser.close();

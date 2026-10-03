@@ -14,7 +14,7 @@ type Currency = "INR" | "USD";
  * The plan cards, used on the public site and inside the app.
  * Inside the app, pass `currentPlan` so the right card says "Current plan" and the others link to the upgrade form.
  */
-export function PlanGrid({ currentPlan, workspace }: { currentPlan?: PlanId; workspace?: string }) {
+export function PlanGrid({ currentPlan, workspace, signedIn = false }: { currentPlan?: PlanId; workspace?: string; signedIn?: boolean }) {
   const [currency, setCurrency] = useState<Currency>("INR");
   const [yearly, setYearly] = useState(false);
   const inApp = currentPlan !== undefined;
@@ -22,8 +22,10 @@ export function PlanGrid({ currentPlan, workspace }: { currentPlan?: PlanId; wor
   const cta = (id: PlanId) => {
     const base = workspace ? `&workspace=${workspace}` : "";
     if (id === "custom") return { href: `/contact?topic=custom${base}`, label: "Contact us", primary: false };
-    if (id === "free") return { href: "/signup", label: "Start Free", primary: false };
-    const label = inApp ? "Upgrade" : `Get ${PLAN_CARDS.find((p) => p.id === id)?.name}`;
+    if (id === "free") return signedIn ? { href: "/dashboard", label: "Go to dashboard", primary: false } : { href: "/signup", label: "Start Free", primary: false };
+    const label = inApp || signedIn ? "Upgrade" : `Get ${PLAN_CARDS.find((p) => p.id === id)?.name}`;
+    // Signed-in owners upgrade from their subscription page, which knows their workspace.
+    if (signedIn && !inApp) return { href: "/settings/subscription", label, primary: true };
     return { href: `/contact?topic=upgrade&plan=${id}${yearly ? "&billing=yearly" : ""}${base}`, label, primary: true };
   };
 

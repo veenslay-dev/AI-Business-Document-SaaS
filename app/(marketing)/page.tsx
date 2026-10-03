@@ -11,6 +11,7 @@ import { ACME_BRAND, HARBOR_BRAND, sampleAudit, sampleProposal, sampleQuotation,
 import { getSystemTemplate, type TemplateConfig } from "@/lib/documents/templates";
 import type { DocumentContent } from "@/lib/documents/content";
 import { FAQ, FEATURES } from "@/lib/marketing";
+import { getUser } from "@/lib/auth/session";
 import { siteUrl } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -29,7 +30,9 @@ function only(content: DocumentContent, titles: string[]): DocumentContent {
   return { ...content, sections: content.sections.filter((s) => titles.includes(s.title)) };
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  const signedIn = !!(await getUser());
+  const start = signedIn ? { href: "/dashboard", label: "Go to dashboard" } : { href: "/signup", label: "Start Free" };
   const proposal = sampleProposal();
   const investment = only(proposal, ["Timeline", "Investment"]);
   const RED_BRAND = { ...ACME_BRAND, brand: { ...ACME_BRAND.brand, primary: "#dc1c26", header: "#5a0b10", accent: "#dc1c26" } };
@@ -53,10 +56,10 @@ export default function HomePage() {
           <h1 className="text-4xl font-extrabold leading-[1.08] sm:text-5xl lg:text-[3.4rem]">Create proposals, quotations and audits <span className="text-brand">that look like your company created them.</span></h1>
           <p className="mt-5 max-w-xl text-lg text-ink-soft">Build your company profile once. Generate branded client documents in minutes with AI.</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild size="lg" className="rounded-full px-7"><Link href="/signup">Start Free<ArrowRight className="size-4" aria-hidden /></Link></Button>
+            <Button asChild size="lg" className="rounded-full px-7"><Link href={start.href}>{start.label}<ArrowRight className="size-4" aria-hidden /></Link></Button>
             <Button asChild size="lg" variant="secondary" className="rounded-full px-7"><Link href="#how-it-works"><PlayCircle className="size-4" aria-hidden />See How It Works</Link></Button>
           </div>
-          <p className="mt-4 text-sm text-ink-faint">Free plan includes 10 documents and 3 AI actions a month, with PDF export.</p>
+          {!signedIn && <p className="mt-4 text-sm text-ink-faint">Free plan includes 10 documents and 3 AI actions a month, with PDF export.</p>}
         </div>
         <div className="relative hidden h-[520px] sm:block" aria-label="The same proposal in two different brands">
           <CroppedPreview label="Proposal cover in a deep red brand" height={560} className="absolute left-0 top-0 w-[320px] rounded-sm">{heroA}</CroppedPreview>
@@ -154,7 +157,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-5 py-20">
           <h2 className="text-3xl font-extrabold">Pricing</h2>
           <p className="mb-8 mt-2 max-w-xl text-ink-soft">Start free with 10 documents and 3 AI actions a month. Upgrade when you need more.</p>
-          <PlanGrid />
+          <PlanGrid signedIn={signedIn} />
         </div>
       </section>
 
@@ -164,7 +167,7 @@ export default function HomePage() {
           {FAQ.map((f) => (
             <details key={f.q} className="group py-4"><summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium">{f.q}<span aria-hidden className="text-ink-faint transition-transform group-open:rotate-45">+</span></summary><p className="mt-2 text-ink-soft">{f.a}</p></details>))}
         </div>
-        <div className="mt-12 text-center"><Button asChild size="lg" className="rounded-full px-8"><Link href="/signup">Start Free<ArrowRight className="size-4" aria-hidden /></Link></Button></div>
+        <div className="mt-12 text-center"><Button asChild size="lg" className="rounded-full px-8"><Link href={start.href}>{start.label}<ArrowRight className="size-4" aria-hidden /></Link></Button></div>
       </section>
     </main>
   );
