@@ -627,7 +627,7 @@ await step("templates: menu with submenu, hub page, and four template pages with
   await p.goto(`${APP}/document-templates`);
   await p.locator("h1:has-text('Business document templates')").waitFor({ timeout: 10000 });
   eq(await p.locator("main article").count(), 4, "four template cards");
-  for (const [slug, h1, needle] of [["seo-proposal", "SEO proposal template", "Nova Furniture"], ["social-media-audit", "Social media audit template", "Scorecard"], ["digital-marketing-proposal", "Digital marketing proposal template", "Urban Properties"]]) {
+  for (const [slug, h1, needle] of [["seo-proposal", "SEO proposal template", "Nova Furniture"], ["social-media-audit", "Social media audit template", "Bright Dental"], ["digital-marketing-proposal", "Digital marketing proposal template", "Urban Properties"]]) {
     await p.goto(`${APP}/document-templates/${slug}`);
     await p.locator(`h1:has-text('${h1}')`).waitFor({ timeout: 10000 });
     yes((await p.locator("main").innerText()).includes(needle), `${slug} sample content`);
