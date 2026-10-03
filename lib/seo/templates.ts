@@ -81,7 +81,7 @@ export const TEMPLATE_PAGES: TemplatePage[] = [
     sampleNote: "Sample quotation for a fictional dental clinic. Names, GSTIN and figures are made up.",
   },
   {
-    slug: "invoice-template", path: "/document-templates/invoice-template", name: "Invoice Template", kind: "invoice", appPath: "/invoices/new", previewHeight: 820,
+    slug: "invoice-template", path: "/document-templates/invoice-template", name: "Invoice Template", kind: "invoice", appPath: "/invoices/new", previewHeight: 1100,
     h1: "Invoice template with GST", title: "Invoice Template with GST",
     description: "A clean invoice template with your logo, GSTIN, line items, tax, bank and UPI details and a clear amount due. Download the PDF or send a private link.",
     intro: "An invoice has to be easy to pay. This template puts the amount due, the due date and your payment details where the client looks first, and works out the discounts, tax and total from your line items.",
