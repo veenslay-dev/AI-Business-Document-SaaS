@@ -13,5 +13,12 @@ export function demoteHeadings(html: string): string {
 
 /** A sample document for a marketing page: the real renderer, shown as an illustration rather than as page content. */
 export function StaticDocument(props: ComponentProps<typeof DocumentRenderer>) {
-  return <div dangerouslySetInnerHTML={{ __html: demoteHeadings(renderToStaticMarkup(<DocumentRenderer {...props} />)) }} />;
+  let html: string | null = null;
+  try {
+    html = demoteHeadings(renderToStaticMarkup(<DocumentRenderer {...props} />));
+  } catch (e) {
+    // The renderer is loaded at runtime. If a deployment ever lacks it, show the sample as it is rather than failing the whole page.
+    console.error("[static-document] using the plain preview:", e instanceof Error ? e.message : "unknown");
+  }
+  return html !== null ? <div dangerouslySetInnerHTML={{ __html: html }} /> : <DocumentRenderer {...props} />;
 }
