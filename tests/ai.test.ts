@@ -144,7 +144,7 @@ describe("limits and plans", () => {
     expect(documentAllowance({ plan: "professional" }, 99).ok).toBe(true);
     expect(documentAllowance({ plan: "professional" }, 100).ok).toBe(false);
     expect(documentAllowance({ plan: "agency" }, 5000).ok).toBe(true);
-    expect(aiAllowance({ plan: "agency" }, 600).ok).toBe(false);
+    expect(aiAllowance({ plan: "agency" }, 200).ok).toBe(false);
   });
   it("applies per-workspace limits, suspension and unknown plans", () => {
     const custom = { plan: "custom", limits: { aiPerMonth: 5000, monthlyDocuments: 40, teamMembers: 25 } };

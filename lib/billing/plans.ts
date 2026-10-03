@@ -14,8 +14,8 @@ export type PlanFeatures = {
 
 export const PLANS: Record<PlanId, PlanFeatures> = {
   free: { name: "Free", priceInr: 0, monthlyDocuments: 10, aiPerMonth: 3, teamMembers: 1, premiumTemplates: false, support: "Community" },
-  professional: { name: "Pro", priceInr: 999, monthlyDocuments: 100, aiPerMonth: 150, teamMembers: 3, premiumTemplates: true, support: "Email support" },
-  agency: { name: "Agency", priceInr: 2999, monthlyDocuments: null, aiPerMonth: 600, teamMembers: 10, premiumTemplates: true, support: "Priority support" },
+  professional: { name: "Pro", priceInr: 999, monthlyDocuments: 100, aiPerMonth: 50, teamMembers: 3, premiumTemplates: true, support: "Email support" },
+  agency: { name: "Agency", priceInr: 2999, monthlyDocuments: null, aiPerMonth: 200, teamMembers: 10, premiumTemplates: true, support: "Priority support" },
   // Custom limits are set per workspace by the admin. These are only the starting values.
   custom: { name: "Custom", priceInr: null, monthlyDocuments: null, aiPerMonth: 2000, teamMembers: null, premiumTemplates: true, support: "Dedicated support" },
 };
