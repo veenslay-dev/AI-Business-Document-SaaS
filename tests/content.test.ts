@@ -55,7 +55,7 @@ describe("page content is consistent", () => {
   });
   it("the free plan line matches the plan table", () => { expect(freePlanLine).toBe(`${PLANS.free.monthlyDocuments} documents and ${PLANS.free.aiPerMonth} AI actions a month`); });
   it("page titles and descriptions are the right length for search results", () => {
-    for (const p of PAGES) {
+    for (const p of PAGES.filter((x) => !x.noindex)) {
       const shown = p.absoluteTitle ? p.title : `${p.title} | PrioDraft`;
       expect(shown.length, `${p.path} title: ${shown}`).toBeLessThanOrEqual(65);
       expect(p.description.length, `${p.path} description`).toBeGreaterThanOrEqual(80);
