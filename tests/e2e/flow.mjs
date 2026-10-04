@@ -801,6 +801,15 @@ await step("mobile: menu opens and works for visitors and signed-in users, nothi
   await wide.close();
 });
 
+await step("analytics: the Google tag is off outside production, so tests and previews send nothing to Google", async () => {
+  const anon = await anonContext();
+  for (const path of ["/", "/pricing", "/document-templates", "/login", `/view/p/${"0".repeat(48)}`]) {
+    const html = await (await anon.request.get(`${APP}${path}`)).text();
+    yes(!/googletagmanager|gtag\(/.test(html), `${path} has no Google tag in this environment`);
+  }
+  await anon.close();
+});
+
 await step("public pages recognise a signed-in visitor", async () => {
   await page.goto(`${APP}/`);
   await page.locator("header a:has-text('Go to dashboard')").waitFor({ timeout: 10000 });

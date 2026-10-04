@@ -18,6 +18,7 @@ export default function PrivacyPage() {
         <><strong>Messages to us.</strong> What you write in the contact form (name, email, topic and message), plus a scrambled form of your IP address that we use to limit spam.</>,
         <><strong>Payment records.</strong> The plan, amount, status, and the order and payment reference numbers from Razorpay. Your card, UPI or bank details go to Razorpay and are never seen or stored by us.</>,
         <><strong>Usage records.</strong> How many documents and AI actions your workspace has used, and the technical size of each AI request, so we can enforce plan limits and understand running costs.</>,
+        <><strong>Website analytics.</strong> On our public pages (such as the home, pricing, template, about and contact pages) Google Analytics records which pages are viewed, roughly where in the world the visit comes from, the device and browser type, and how the visitor arrived. It uses cookies to tell visits apart. According to Google, Analytics 4 does not store IP addresses. We do not run it inside the app or on shared document links.</>,
         <><strong>Technical logs.</strong> Our hosting and database providers keep ordinary server logs such as request times, errors and IP addresses for security and troubleshooting.</>]} />
       <P>We do not knowingly ask for sensitive personal data such as health information or government ID numbers. Please do not put that kind of data into the service.</P></> },
     { id: "roles", title: "Your clients' information", body: <P>If you put information about your own clients into {PRODUCT_NAME}, such as contact names, emails and phone numbers, that information belongs to your business. You decide why it is used. We store and process it on your behalf, to provide the service to you, and we do not use it for our own marketing. You are responsible for having a proper basis to collect it and to share it with us, and for telling your clients how you use it.</P> },
@@ -41,11 +42,12 @@ export default function PrivacyPage() {
         "Vercel, for hosting the website and application;",
         "Razorpay, for taking payments;",
         "OpenAI or Anthropic, for the AI features, as explained above;",
+        "Google Analytics, to understand how the public pages are used;",
         "an email delivery service, for sign in and account emails sent on our behalf."]} />
       <P>We may also share information if the law requires it, to respond to a valid legal request, to protect the rights or safety of our users or us, or as part of a sale or restructuring of the business, in which case this policy would continue to apply to your information unless we tell you of a change.</P>
       <P>Anything you choose to share through a link is visible to whoever has that link.</P></> },
     { id: "transfers", title: "Where information is stored", body: <P>Our providers run servers in several countries, so your information may be processed outside India. We choose established providers and rely on their security commitments, but the laws of those countries may differ from the laws of India.</P> },
-    { id: "cookies", title: "Cookies", body: <P>We use only the cookies the service needs to work: one keeps you signed in, and another remembers which workspace you were using. We do not use advertising or tracking cookies, and we do not run third party analytics on the pages you use. Your browser lets you block cookies, but then you will not be able to sign in.</P> },
+    { id: "cookies", title: "Cookies", body: <><P>The service sets two cookies it needs to work: one keeps you signed in, and another remembers which workspace you were using.</P><P>On the public pages, Google Analytics also sets its own cookies (their names start with _ga) to measure visits. We have turned off Google's advertising features, and we do not use advertising cookies or share analytics data for ads. Analytics is not loaded inside the signed-in app or on shared document and invite links. You can block or delete cookies in your browser settings, or install Google's Analytics opt-out add-on. Blocking the sign-in cookie means you will not be able to sign in.</P></> },
     { id: "keep", title: "How long we keep it", body: <>
       <UL items={[
         "Account and workspace content is kept while your account is open.",

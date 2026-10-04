@@ -1,8 +1,8 @@
 import { PRODUCT_NAME } from "@/components/ui/logo";
 
 /** Bump this whenever any legal page changes in substance. */
-export const LEGAL_UPDATED = "3 October 2026";
-export const LEGAL_UPDATED_ISO = "2026-10-03";
+export const LEGAL_UPDATED = "4 October 2026";
+export const LEGAL_UPDATED_ISO = "2026-10-04";
 
 /**
  * Who runs the service. Set NEXT_PUBLIC_LEGAL_NAME (for example "Naveen Pandey" or your registered company name) and,
