@@ -765,7 +765,7 @@ await step("mobile: menu opens and works for visitors and signed-in users, nothi
   const open = m.getByRole("button", { name: "Open menu" }); await open.waitFor({ timeout: 10000 });
   yes(!(await m.locator("header a:has-text('How it works')").first().isVisible()), "desktop links are hidden on a phone");
   await open.click();
-  yes((await open.getAttribute("aria-expanded")) === "true" || (await m.getByRole("button", { name: "Close menu" }).getAttribute("aria-expanded")) === "true", "menu reports itself open");
+  eq(await m.locator("button[aria-controls=mobile-menu]").getAttribute("aria-expanded"), "true", "menu reports itself open");
   for (const l of ["How it works", "All templates", "Invoice Template", "Pricing", "About", "Contact", "Start Free", "Sign in"]) await m.locator(`#mobile-menu a:has-text('${l}')`).first().waitFor({ state: "visible", timeout: 5000 });
   await m.keyboard.press("Escape"); await m.locator("#mobile-menu").waitFor({ state: "detached", timeout: 5000 });
   await m.getByRole("button", { name: "Open menu" }).click();
