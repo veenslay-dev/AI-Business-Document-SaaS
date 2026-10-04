@@ -1,5 +1,4 @@
-export const ROLES = ["owner", "admin", "member"] as const;
-export type WorkspaceRole = (typeof ROLES)[number];
+export type WorkspaceRole = "owner" | "admin" | "member";
 
 export type Permission =
   | "workspace:update"

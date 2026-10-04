@@ -22,7 +22,7 @@ export async function listAdminWorkspaces(): Promise<AdminWorkspace[]> {
   }));
 }
 
-export type AttentionItem = { id: string; kind: "limit" | "loss" | "paused"; workspaceId: string; workspaceName: string; plan: string; text: string };
+type AttentionItem = { id: string; kind: "limit" | "loss" | "paused"; workspaceId: string; workspaceName: string; plan: string; text: string };
 
 export type AdminOverview = {
   users: number; workspaces: number; documentsMonth: number; documentsTotal: number; aiMonth: number; tokensIn: number; tokensOut: number;
@@ -62,7 +62,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
   };
 }
 
-export type AdminUserWorkspace = { id: string; name: string; role: string; plan: string; status: string; limits: Record<string, unknown> | null; documents_month: number; ai_month: number };
+type AdminUserWorkspace = { id: string; name: string; role: string; plan: string; status: string; limits: Record<string, unknown> | null; documents_month: number; ai_month: number };
 export type AdminUser = {
   id: string; email: string; created_at: string; last_sign_in_at: string | null; confirmed: boolean; fullName: string; paused: boolean; isAdmin: boolean;
   workspaces: AdminUserWorkspace[];

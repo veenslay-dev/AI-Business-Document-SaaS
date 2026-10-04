@@ -757,6 +757,48 @@ await step("indexing: generated links, PDFs and exports are noindex and nofollow
   await anon.close();
 });
 
+await step("mobile: menu opens and works for visitors and signed-in users, nothing overflows, fonts are self-hosted", async () => {
+  const mobile = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true };
+  const anon = await browser.newContext({ userAgent: UA, ...mobile }); const m = await anon.newPage();
+  const external = []; m.on("request", (r) => { if (/fonts\.(googleapis|gstatic)\.com/.test(r.url())) external.push(r.url()); });
+  await m.goto(`${APP}/pricing`);
+  const open = m.getByRole("button", { name: "Open menu" }); await open.waitFor({ timeout: 10000 });
+  yes(!(await m.locator("header a:has-text('How it works')").first().isVisible()), "desktop links are hidden on a phone");
+  await open.click();
+  yes((await open.getAttribute("aria-expanded")) === "true" || (await m.getByRole("button", { name: "Close menu" }).getAttribute("aria-expanded")) === "true", "menu reports itself open");
+  for (const l of ["How it works", "All templates", "Invoice Template", "Pricing", "About", "Contact", "Start Free", "Sign in"]) await m.locator(`#mobile-menu a:has-text('${l}')`).first().waitFor({ state: "visible", timeout: 5000 });
+  await m.keyboard.press("Escape"); await m.locator("#mobile-menu").waitFor({ state: "detached", timeout: 5000 });
+  await m.getByRole("button", { name: "Open menu" }).click();
+  await m.locator("#mobile-menu a:has-text('Invoice Template')").click(); await m.waitForURL("**/document-templates/invoice-template", { timeout: 15000 });
+  eq(await m.locator("#mobile-menu").count(), 0, "menu closes after a tap on a link");
+  // no sideways scrolling on any public page at phone width
+  for (const path of ["/", "/pricing", "/about", "/contact", "/document-templates", "/document-templates/seo-proposal", "/terms", "/login", "/signup"]) {
+    await m.goto(`${APP}${path}`); await m.waitForSelector("h1");
+    const w = await m.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }));
+    yes(w.sw <= w.cw + 1, `${path} fits a 390px phone (${w.sw} vs ${w.cw})`);
+  }
+  // fonts come from this site: the main font loads from /fonts with a long cache, and nothing blocks on Google
+  await m.goto(`${APP}/pricing`);
+  yes(await m.evaluate(async () => { await document.fonts.ready; return document.fonts.check('16px "Plus Jakarta Sans"'); }), "site font is available");
+  const font = await anon.request.get(`${APP}/fonts/plus-jakarta-sans-latin-wght-normal.woff2`);
+  yes(font.status() === 200 && /immutable/.test(font.headers()["cache-control"] ?? ""), "font file served with a long cache");
+  eq(external.length, 0, "no Google Fonts requests on the pricing page: " + external.join(","));
+  yes(!(await m.content()).includes('href="https://fonts.googleapis.com'), "no render-blocking Google Fonts stylesheet in the page");
+  await anon.close();
+  // signed in on a phone: dashboard and log out are in the menu
+  const owner = await browser.newContext({ storageState: await ctx.storageState(), ...mobile }); const o = await owner.newPage();
+  await o.goto(`${APP}/`); await o.getByRole("button", { name: "Open menu" }).click();
+  await o.locator("#mobile-menu a:has-text('Go to dashboard')").waitFor({ state: "visible", timeout: 5000 });
+  await o.locator("#mobile-menu button:has-text('Log out')").waitFor({ state: "visible", timeout: 5000 });
+  yes((await o.locator("#mobile-menu").innerText()).includes("Start Free") === false, "signed-in menu has no Start Free");
+  await owner.close(); // signing out is covered by the desktop step that follows, which ends the shared session
+  // desktop width keeps the full navigation and no hamburger
+  const wide = await browser.newContext({ userAgent: UA, viewport: { width: 1360, height: 900 } }); const d = await wide.newPage();
+  await d.goto(`${APP}/`); await d.locator("header a:has-text('Pricing')").waitFor({ state: "visible", timeout: 10000 });
+  eq(await d.getByRole("button", { name: "Open menu" }).isVisible(), false, "no hamburger on desktop");
+  await wide.close();
+});
+
 await step("public pages recognise a signed-in visitor", async () => {
   await page.goto(`${APP}/`);
   await page.locator("header a:has-text('Go to dashboard')").waitFor({ timeout: 10000 });

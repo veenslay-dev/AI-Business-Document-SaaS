@@ -2,7 +2,7 @@ import { PRODUCT_NAME } from "@/components/ui/logo";
 import { FACTS, freePlanLine } from "@/lib/content/facts";
 import { TEMPLATE_HUB, TEMPLATE_PAGES } from "./templates";
 
-export type PageKind = "home" | "pricing" | "about" | "contact" | "legal" | "auth" | "templates" | "template";
+type PageKind = "home" | "pricing" | "about" | "contact" | "legal" | "auth" | "templates" | "template";
 
 export type PageDef = {
   path: string;

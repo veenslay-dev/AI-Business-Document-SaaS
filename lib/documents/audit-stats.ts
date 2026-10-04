@@ -1,6 +1,6 @@
+import type { Severity } from "@/lib/audit/types";
 import type { DocumentContent } from "./content";
 
-export type Severity = "critical" | "high" | "medium" | "low" | "passed";
 export type AuditStats = {
   bySeverity: Record<Severity, number>;
   total: number;

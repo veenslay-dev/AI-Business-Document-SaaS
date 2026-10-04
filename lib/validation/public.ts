@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const signatureSchema = z.string().regex(/^data:image\/png;base64,[A-Za-z0-9+/=]+$/, "Add your signature").max(200_000, "That signature is too large");
+const signatureSchema = z.string().regex(/^data:image\/png;base64,[A-Za-z0-9+/=]+$/, "Add your signature").max(200_000, "That signature is too large");
 
 export const acceptSchema = z.object({
   name: z.string().trim().min(2, "Enter your full name").max(120),

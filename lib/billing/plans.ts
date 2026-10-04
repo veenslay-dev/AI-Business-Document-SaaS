@@ -52,8 +52,6 @@ export function effectivePlan(sub: SubLike): EffectivePlan {
   return { ...base, id, suspended: sub?.status === "suspended", expiredOn: ended ? (sub!.current_period_end as string) : null };
 }
 
-export function planOf(sub: SubLike): PlanFeatures { return effectivePlan(sub); }
-
 export type Allowance = { ok: boolean; limit: number | null; used: number; reason?: "suspended" | "limit" };
 
 export function documentAllowance(sub: SubLike, usedThisMonth: number): Allowance {
@@ -72,7 +70,6 @@ export function aiAllowance(sub: SubLike, usedThisMonth: number): Allowance {
   return { ok, limit: p.aiPerMonth, used: usedThisMonth, reason: ok ? undefined : "limit" };
 }
 
-export const withinDocumentLimit = (sub: SubLike, usedThisMonth: number) => documentAllowance(sub, usedThisMonth).ok;
 export const canUsePremiumTemplates = (sub: SubLike) => !enforcementOn() || effectivePlan(sub).premiumTemplates;
 
 export const DOCUMENT_LIMIT_MESSAGE = "You've reached this month's document limit on your plan. Upgrade in Settings, then Subscription.";

@@ -15,7 +15,7 @@ export function checklistScore(items: ChecklistItem[]): { score: number | null; 
   return { score: Math.round((100 * sum) / scoredItems.length), scored: scoredItems.length, checked: scoredItems.length, total };
 }
 
-export type SectionScore = { title: string; score: number | null; checked: number; total: number };
+type SectionScore = { title: string; score: number | null; checked: number; total: number };
 export type Scorecard = {
   sections: SectionScore[];
   overall: number | null;

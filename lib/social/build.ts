@@ -1,7 +1,7 @@
 import type { BrandContext } from "@/lib/documents/branding";
 import type { ClientInfo } from "@/lib/documents/builders";
 import { newId, type Block, type DocumentContent, type Section } from "@/lib/documents/content";
-import { GENERAL_SECTIONS, LIBRARY, getLibrarySection, platformLabel, type LibrarySection, type PlatformKey } from "./library";
+import { GENERAL_SECTIONS, LIBRARY, platformLabel, type LibrarySection, type PlatformKey } from "./library";
 
 export type SocialAccount = { platform: PlatformKey; handle: string; url: string };
 
@@ -72,4 +72,3 @@ export function buildSocialAuditContent(args: {
   };
 }
 
-export { getLibrarySection };

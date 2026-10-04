@@ -87,7 +87,7 @@ export function sampleQuotation(client = SAMPLE_CLIENTS[1]): DocumentContent {
   });
 }
 
-export const SAMPLE_MARKETING_AI: ProposalAi = {
+const SAMPLE_MARKETING_AI: ProposalAi = {
   title: "Digital marketing plan for Urban Properties",
   executive_summary: "Urban Properties lists new apartments every quarter but depends almost entirely on brokers and walk-ins for leads. This plan builds a steady flow of direct enquiries by combining local search, Google Ads for launch periods, Instagram content from the sites and a monthly email to past enquirers. Every channel is reported in one monthly summary, so you can see which spend produced site visits.",
   client_challenges: ["Project pages rank for the project name only, not for what buyers search, such as 2 BHK in Bandra West.", "Paid campaigns were run for one launch with no tracking of calls or form fills.", "The Instagram page posts renders only, with no walkthroughs, site progress or buyer questions.", "Past enquirers are never contacted again once a project sells out."],

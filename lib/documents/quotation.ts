@@ -10,10 +10,10 @@ import type { Currency, QuotationData, QuotationItem } from "./content";
  * With `taxInclusive`, unit prices already include tax, so tax is extracted, not added.
  */
 
-export type LineResult = {
+type LineResult = {
   id: string; gross: number; discount: number; net: number; taxRate: number; tax: number; total: number;
 };
-export type TaxBucket = { label: string; rate: number; taxable: number; tax: number };
+type TaxBucket = { label: string; rate: number; taxable: number; tax: number };
 export type QuotationTotals = {
   lines: Record<string, LineResult>;
   subtotal: number;          // sum of line gross

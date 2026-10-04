@@ -85,7 +85,7 @@ function channels(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-export function relativeLuminance(hex: string): number {
+function relativeLuminance(hex: string): number {
   const [r, g, b] = channels(hex).map((c) => {
     const s = c / 255;
     return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
@@ -117,7 +117,7 @@ export function ensureReadableOnWhite(hex: string, minRatio = 4.5): string {
 }
 
 /** Mixes a color with white. `share` is how much of the original color stays (0 to 1). */
-export function mixWithWhite(hex: string, share: number): string {
+function mixWithWhite(hex: string, share: number): string {
   const c = channels(hex);
   return toHex([c[0] * share + 255 * (1 - share), c[1] * share + 255 * (1 - share), c[2] * share + 255 * (1 - share)]);
 }

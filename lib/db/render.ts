@@ -17,12 +17,12 @@ export type DocRecord = {
 export const DOC_COLUMNS =
   "id, workspace_id, client_id, type, title, status, content_json, template_id, template_key, brand_snapshot, finalized_at, total_amount, currency, expires_at, public_token, created_at, updated_at";
 
-export const COMPANY_COLS =
+const COMPANY_COLS =
   "company_name, tagline, description, website, email, phone, address, gst_number, pan_number, services, default_terms, authorized_name, authorized_designation, signature_url";
-export const BRAND_COLS =
+const BRAND_COLS =
   "primary_color, secondary_color, accent_color, heading_font, body_font, logo_url, dark_logo_url, favicon_url, default_footer, header_color, heading_color";
 
-export const BRAND_COLS_LEGACY = BRAND_COLS.replace(", header_color, heading_color", "");
+const BRAND_COLS_LEGACY = BRAND_COLS.replace(", header_color, heading_color", "");
 
 /** Reads the brand kit. Falls back to the older column set when migration 0003 has not been applied yet. */
 export async function selectBrandKit(client: SupabaseClient, workspaceId: string) {

@@ -37,7 +37,7 @@ export const FAQ_BANK = {
   editTemplates: { q: `Can I change the text and layout of a template?`, a: `Yes. Every section can be edited, added, removed and reordered, and you can switch the layout without rewriting anything. Your logo, colors, fonts and terms are applied automatically.` },
 } as const;
 
-export type FaqId = keyof typeof FAQ_BANK;
+type FaqId = keyof typeof FAQ_BANK;
 export type FaqItem = { q: string; a: string };
 
 const pick = (...ids: FaqId[]): FaqItem[] => ids.map((id) => FAQ_BANK[id]);

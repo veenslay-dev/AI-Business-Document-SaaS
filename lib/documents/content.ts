@@ -11,7 +11,7 @@ export type Currency = (typeof CURRENCIES)[number];
 const id = z.string().min(1).max(40);
 const text = (max = 4000) => z.string().max(max);
 
-export const quotationItemSchema = z.discriminatedUnion("kind", [
+const quotationItemSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("item"),
     id,
@@ -30,7 +30,7 @@ export const quotationItemSchema = z.discriminatedUnion("kind", [
 ]);
 export type QuotationItem = z.infer<typeof quotationItemSchema>;
 
-export const quotationDataSchema = z.object({
+const quotationDataSchema = z.object({
   number: text(40),
   issueDate: text(20),
   validUntil: text(20).default(""),
@@ -54,7 +54,7 @@ const packageSchema = z.object({
   selected: z.boolean().default(false),
 });
 
-export const blockSchema = z.discriminatedUnion("type", [
+const blockSchema = z.discriminatedUnion("type", [
   z.object({ id, type: z.literal("heading"), level: z.union([z.literal(2), z.literal(3)]).default(3), content: text(200) }),
   z.object({ id, type: z.literal("paragraph"), content: text() }),
   z.object({ id, type: z.literal("list"), style: z.enum(["bullet", "number"]).default("bullet"), items: z.array(text(600)).max(60) }),
@@ -114,7 +114,7 @@ export const blockSchema = z.discriminatedUnion("type", [
 export type Block = z.infer<typeof blockSchema>;
 export type BlockType = Block["type"];
 
-export const sectionSchema = z.object({
+const sectionSchema = z.object({
   id,
   title: text(160),
   /** Hide the section title (used by sections that are a single self-titled block). */
@@ -124,7 +124,7 @@ export const sectionSchema = z.object({
 });
 export type Section = z.infer<typeof sectionSchema>;
 
-export const coverSchema = z.object({
+const coverSchema = z.object({
   kicker: text(60).default(""),
   title: text(200),
   subtitle: text(300).default(""),
@@ -133,7 +133,6 @@ export const coverSchema = z.object({
   date: text(30).default(""),
   reference: text(60).default(""),
 });
-export type Cover = z.infer<typeof coverSchema>;
 
 export const documentContentSchema = z.object({
   version: z.literal(1).default(1),

@@ -45,7 +45,7 @@ export async function clientOptions(workspaceId: string) {
   return (data ?? []).map((c) => ({ id: c.id as string, name: c.company_name as string }));
 }
 
-export type ProjectRow = { id: string; name: string; description: string | null; status: string; client_id: string; client_name: string | null; created_at: string };
+type ProjectRow = { id: string; name: string; description: string | null; status: string; client_id: string; client_name: string | null; created_at: string };
 export async function listProjects(f: { workspaceId: string; clientId?: string; page?: number }) {
   const supabase = await createClient();
   const page = Math.max(1, f.page ?? 1);

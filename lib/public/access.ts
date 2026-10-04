@@ -12,7 +12,7 @@ export function resolvePublicState(doc: { status: string; expires_at: string | n
 }
 
 /** Statuses from which a client can still respond. */
-export const RESPONDABLE = ["sent", "viewed"] as const;
+const RESPONDABLE = ["sent", "viewed"] as const;
 export const canRespond = (status: string, type: string, state: PublicState) =>
   state === "ok" && (RESPONDABLE as readonly string[]).includes(status) && (type === "proposal" || type === "quotation");
 

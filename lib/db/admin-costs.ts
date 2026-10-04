@@ -31,12 +31,12 @@ async function usage(from: string | null, to: string | null): Promise<UsageRow[]
   }));
 }
 
-export type CostSummary = { calls: number; tokens: number; costInr: number; costUsd: number; avgInr: number };
-export type UserCost = {
+type CostSummary = { calls: number; tokens: number; costInr: number; costUsd: number; avgInr: number };
+type UserCost = {
   userId: string; email: string; name: string; workspaces: { id: string; name: string; plan: string }[];
   calls: number; tokens: number; costInr: number; avgInr: number; planPriceInr: number; share: number; overPlan: boolean;
 };
-export type OperationCost = { operation: string; calls: number; tokens: number; costInr: number; avgInr: number };
+type OperationCost = { operation: string; calls: number; tokens: number; costInr: number; avgInr: number };
 
 const OPERATION_LABEL: Record<string, string> = {
   assist: "Rewrite a section", generate_proposal: "Draft a proposal", quotation_description: "Line item description", follow_up: "Follow-up message", audit_analysis: "Audit write-up",

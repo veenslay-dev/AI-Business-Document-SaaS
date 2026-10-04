@@ -6,7 +6,7 @@ import type { PageSignals, SiteSignals } from "./types";
 const MAX_EXTRA_PAGES = 5;
 const MAX_LINK_CHECKS = 10;
 
-export function parsePage(url: string, r: FetchResult): PageSignals {
+function parsePage(url: string, r: FetchResult): PageSignals {
   const $ = cheerio.load(r.body);
   const text = (sel: string) => $(sel).first().text().replace(/\s+/g, " ").trim();
   const origin = new URL(r.finalUrl).origin;

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Sparkles, Trash2 } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { IconButton, Labeled, MoveControls, inputCls, move } from "./ui";
+import { Labeled, MoveControls, inputCls, move } from "./ui";
 import { newId, CURRENCIES, type Block, type QuotationItem } from "@/lib/documents/content";
 import { calculateQuotation, formatMinor } from "@/lib/documents/quotation";
 import { generateQuotationDescriptionAction } from "@/lib/actions/ai";
@@ -95,4 +95,3 @@ export function QuotationEditor({ block, onChange, disabled }: { block: Q; onCha
   );
 }
 
-export { IconButton, Trash2 };

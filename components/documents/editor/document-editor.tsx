@@ -20,17 +20,17 @@ import { QuotationEditor } from "./quotation-editor";
 import { SaveTemplateButton } from "./save-template";
 import { PageColorButton } from "./page-color";
 import { ShareDialog } from "./share-dialog";
-import { IconButton, Labeled, MoveControls, inputCls, move } from "./ui";
+import { Labeled, MoveControls, inputCls, move } from "./ui";
+import type { EditorTemplate } from "@/lib/db/templates";
 import { useRouter } from "next/navigation";
 import { refreshBrandingAction, saveDocumentAction } from "@/lib/actions/documents";
 import type { BrandContext } from "@/lib/documents/branding";
 import { GENERAL_SECTIONS, PLATFORM_SECTIONS } from "@/lib/social/library";
 import { checklistSection, customChecklistSection, customFindingsSection } from "@/lib/social/build";
 import { BLOCK_LABELS, emptyBlock, emptySection, type Block, type BlockType, type DocumentContent } from "@/lib/documents/content";
-import type { DocType, TemplateConfig } from "@/lib/documents/templates";
+import type { DocType } from "@/lib/documents/templates";
 import { cn } from "@/lib/utils";
 
-export type EditorTemplate = { value: string; label: string; config: TemplateConfig; locked?: boolean };
 export type EditorProps = {
   doc: { id: string; type: DocType; title: string; status: string; templateValue: string; publicUrl: string; frozen: boolean; hasAcceptance: boolean };
   initialContent: DocumentContent;
@@ -253,4 +253,3 @@ function BlockEditor({ block, ctx, onChange }: { block: Block; ctx: BlockCtx; on
   }
 }
 
-export { IconButton };

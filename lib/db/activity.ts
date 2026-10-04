@@ -9,7 +9,7 @@ export type ActivityItem = {
 
 type Meta = { name?: string; comment?: string; email?: string; reason?: string };
 
-export function describeAction(action: string, m: Meta): { text: string; detail: string | null } {
+function describeAction(action: string, m: Meta): { text: string; detail: string | null } {
   switch (action) {
     case "viewed": return { text: "was opened by the client", detail: null };
     case "downloaded": return { text: "was downloaded as a PDF", detail: null };

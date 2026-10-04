@@ -7,6 +7,7 @@ import { getUser } from "@/lib/auth/session";
 import { initials } from "@/lib/utils";
 import { TEMPLATE_HUB, TEMPLATE_PAGES } from "@/lib/seo/templates";
 import { ChevronDown } from "lucide-react";
+import { MobileMenu } from "@/components/marketing/mobile-menu";
 
 export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
   // The public pages know who is signed in, so the buttons say "Dashboard" instead of "Sign in".
@@ -14,12 +15,12 @@ export default async function MarketingLayout({ children }: { children: React.Re
   const name = (user?.user_metadata?.full_name as string | undefined) ?? user?.email ?? "";
   return (
     <div className="min-h-dvh">
-      <header className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-5">
+      <header className="relative mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-4 sm:py-5">
         <Link href="/" aria-label="Home"><Wordmark /></Link>
         <nav aria-label="Main" className="flex items-center gap-1 text-sm font-medium">
-          <Link href="/#how-it-works" className="hidden rounded px-3 py-2 text-ink-soft hover:text-brand md:block">How it works</Link>
+          <Link href="/#how-it-works" className="hidden rounded px-3 py-2 text-ink-soft hover:text-brand lg:block">How it works</Link>
           {/* Templates menu: opens on hover or keyboard focus and lists every template page. */}
-          <div className="group relative hidden md:block">
+          <div className="group relative hidden lg:block">
             <Link href={TEMPLATE_HUB.path} className="inline-flex items-center gap-1 rounded px-3 py-2 text-ink-soft hover:text-brand">Templates<ChevronDown className="size-3.5 transition group-hover:rotate-180 group-focus-within:rotate-180" aria-hidden /></Link>
             <div className="invisible absolute left-0 top-full z-40 w-72 pt-2 opacity-0 transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
               <ul className="rounded-xl border border-line bg-surface p-1.5 shadow-pop">
@@ -28,12 +29,12 @@ export default async function MarketingLayout({ children }: { children: React.Re
               </ul>
             </div>
           </div>
-          <Link href="/pricing" className="hidden rounded px-3 py-2 text-ink-soft hover:text-brand sm:block">Pricing</Link>
+          <Link href="/pricing" className="hidden rounded px-3 py-2 text-ink-soft hover:text-brand lg:block">Pricing</Link>
           <Link href="/about" className="hidden rounded px-3 py-2 text-ink-soft hover:text-brand lg:block">About</Link>
           <Link href="/contact" className="hidden rounded px-3 py-2 text-ink-soft hover:text-brand lg:block">Contact</Link>
           {user ? (
             // Hovering or focusing the button reveals a small menu with Log out.
-            <div className="group relative ml-1">
+            <div className="group relative ml-1 hidden sm:block">
               <Link href="/dashboard" className="inline-flex h-10 items-center gap-2.5 rounded-full bg-brand pl-1.5 pr-5 font-semibold text-white shadow-soft hover:bg-brand-hover">
                 <span aria-hidden className="grid size-7 place-items-center rounded-full bg-white/20 text-xs font-bold">{initials(name)}</span>Go to dashboard
               </Link>
@@ -48,11 +49,12 @@ export default async function MarketingLayout({ children }: { children: React.Re
               </div>
             </div>
           ) : (
-            <>
+            <div className="hidden items-center gap-1 sm:flex">
               <Button asChild variant="ghost"><Link href="/login">Sign in</Link></Button>
               <Button asChild className="rounded-full px-5"><Link href="/signup">Start Free</Link></Button>
-            </>
+            </div>
           )}
+          <MobileMenu templates={TEMPLATE_PAGES.map((t) => ({ name: t.name, path: t.path }))} user={user ? { email: user.email ?? "" } : null} />
         </nav>
       </header>
       {children}

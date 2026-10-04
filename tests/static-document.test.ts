@@ -21,8 +21,8 @@ describe("StaticDocument", () => {
     vi.resetModules();
     vi.doMock("@/lib/pdf/static-markup", () => ({ renderToStaticMarkup: () => '<div class="doc"><h1>Title</h1><h2>Section</h2></div>' }));
     const { StaticDocument } = await import("@/components/marketing/static-document");
-    const out = StaticDocument(props) as { props: { dangerouslySetInnerHTML: { __html: string } } };
-    expect(out.props.dangerouslySetInnerHTML.__html).toBe('<div class="doc"><div data-h="1">Title</div><div data-h="2">Section</div></div>');
+    const out = StaticDocument(props) as { props: { children: { props: { dangerouslySetInnerHTML: { __html: string } } }[] } };
+    expect(out.props.children[0].props.dangerouslySetInnerHTML.__html).toBe('<div class="doc"><div data-h="1">Title</div><div data-h="2">Section</div></div>');
     vi.doUnmock("@/lib/pdf/static-markup");
   });
 });

@@ -7,7 +7,7 @@ const s = z.string().nullable();
 const hex = z.string().refine(isHexColor);
 const font = z.string().refine((f) => ALL_FONTS.includes(f));
 
-export const brandContextSchema = z.object({
+const brandContextSchema = z.object({
   company: z.object({
     name: z.string(), tagline: s, description: s, website: s, email: s, phone: s, address: s, gst: s, pan: s,
     services: z.array(z.string()), terms: s,

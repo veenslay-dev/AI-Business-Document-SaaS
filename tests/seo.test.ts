@@ -113,3 +113,14 @@ describe("sample documents on marketing pages", () => {
     expect(out).toContain("<header>keep</header>");
   });
 });
+
+import { splitFontLinks } from "@/components/marketing/static-document";
+describe("sample document fonts", () => {
+  it("moves Google Fonts stylesheets out of the markup so they do not block rendering", () => {
+    const html = '<div class="doc"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter&amp;family=Fraunces&amp;display=swap"/><p>x</p></div>';
+    const out = splitFontLinks(html);
+    expect(out.html).toBe('<div class="doc"><p>x</p></div>');
+    expect(out.hrefs).toEqual(["https://fonts.googleapis.com/css2?family=Inter&family=Fraunces&display=swap"]);
+    expect(splitFontLinks("<p>no fonts</p>")).toEqual({ html: "<p>no fonts</p>", hrefs: [] });
+  });
+});

@@ -186,9 +186,3 @@ export function buildInvoiceContent(args: {
     sections,
   };
 }
-
-/** First quotation block in a document, if any. Used to keep documents.total_amount in sync. */
-export function findQuotation(content: DocumentContent) {
-  for (const s of content.sections) for (const b of s.blocks) if (b.type === "quotation") return b.data;
-  return null;
-}

@@ -1,4 +1,4 @@
-export type EmailMessage = { to: string; subject: string; text: string; html?: string };
+type EmailMessage = { to: string; subject: string; text: string; html?: string };
 
 /** Email boundary. Swap in Resend, Postmark or SES by implementing `send`. */
 export interface EmailProvider {

@@ -62,6 +62,8 @@ const nextConfig: NextConfig = {
           ...(isProd ? [{ key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" }, { key: "Content-Security-Policy", value: csp }] : []),
         ],
       },
+      // Fonts never change under the same name, so browsers and CDNs can keep them for a year.
+      { source: "/fonts/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
       // Documents, PDFs, share and invite links, exports and the signed-in app are never indexed or followed.
       ...PRIVATE_PREFIXES.map((p) => ({ source: `${p}/:path*`, headers: [{ key: "X-Robots-Tag", value: NOINDEX_HEADER }] })),
       // Shared documents must also not leak the token through referrers.
