@@ -778,10 +778,12 @@ await step("mobile: menu opens and works for visitors and signed-in users, nothi
     yes(w.sw <= w.cw + 1, `${path} fits a 390px phone (${w.sw} vs ${w.cw})`);
   }
   // fonts come from this site: the main font loads from /fonts with a long cache, and nothing blocks on Google
+  external.length = 0; // the template pages above load their sample documents' brand fonts once idle, by design
   await m.goto(`${APP}/pricing`);
   yes(await m.evaluate(async () => { await document.fonts.ready; return document.fonts.check('16px "Plus Jakarta Sans"'); }), "site font is available");
   const font = await anon.request.get(`${APP}/fonts/plus-jakarta-sans-latin-wght-normal.woff2`);
   yes(font.status() === 200 && /immutable/.test(font.headers()["cache-control"] ?? ""), "font file served with a long cache");
+  await m.waitForTimeout(1500);
   eq(external.length, 0, "no Google Fonts requests on the pricing page: " + external.join(","));
   yes(!(await m.content()).includes('href="https://fonts.googleapis.com'), "no render-blocking Google Fonts stylesheet in the page");
   await anon.close();
