@@ -81,9 +81,11 @@ export async function forgotPasswordAction(input: ForgotPasswordInput): Promise<
   if (!parsed.success) return fromZod(parsed.error);
   const supabase = await createClient();
   // Always report success so the form can't be used to discover which emails have accounts.
-  await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${siteUrl()}/auth/callback?next=/reset-password`,
-  });
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, { redirectTo: `${siteUrl()}/auth/callback?next=/reset-password` });
+    // Rate limits and mail provider errors would otherwise be silent, so the cause is at least in the server log.
+    if (error) console.error("[auth] password reset email was not sent:", error.message);
+  } catch (e) { isNetworkFailure(e); return fail(UNREACHABLE); }
   return { ok: true, message: "If an account exists for that email, a reset link is on its way." };
 }
 

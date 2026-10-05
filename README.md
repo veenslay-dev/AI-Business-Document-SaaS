@@ -60,6 +60,19 @@ PDF generation needs Chromium. On serverless hosts it uses `@sparticuz/chromium`
 
 Never put the service role key or an AI key in a `NEXT_PUBLIC_` variable.
 
+## Email sign up, sign in and password reset
+
+These flows are built on Supabase Auth, so they work once Supabase is set up to send email and to trust your domain.
+
+1. **URL configuration.** Supabase, Authentication, URL Configuration. Set Site URL to `https://www.priodraft.com`. Add `https://www.priodraft.com/**` to Redirect URLs. Set `NEXT_PUBLIC_SITE_URL` in Vercel to the same address and redeploy.
+2. **Your own email sender.** Supabase, Authentication, Emails, SMTP Settings, turn on Custom SMTP. Supabase's built-in sender only allows a couple of emails an hour and only delivers to your own team members, so real customers never get their confirmation or reset email. Use any provider (Resend, Brevo, Zoho, SendGrid, Amazon SES), verify `priodraft.com` there so SPF and DKIM pass, and use a sender such as `no-reply@priodraft.com`.
+3. **Email templates.** Supabase, Authentication, Emails, Templates. Use these links, which also work when the email is opened on another device:
+   - Confirm sign up: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/onboarding`
+   - Reset password: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/reset-password`
+   - Magic link and Change email address: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=magiclink&next=/dashboard` and `...&type=email_change&next=/settings`
+4. **Confirm email.** Supabase, Authentication, Sign In / Providers, Email. With Confirm email on, new users must click the emailed link before they can sign in (recommended once step 2 works). With it off, sign up logs them straight in.
+5. **Test.** Sign up with a real address, click the link, sign out, use Forgot password, click the link, set a new password.
+
 ## Online payments (Razorpay, INR only)
 
 Prices are charged in rupees exactly as listed (GST is not added on top). Paying extends the workspace's plan by one month or one year; there is no auto-renewal, and a plan that runs past its end date drops back to Free limits.

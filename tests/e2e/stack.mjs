@@ -95,6 +95,11 @@ export async function start() {
         await db.query("insert into auth.users (id,email,raw_user_meta_data,encrypted_password) values ($1,$2,$3,$4)", [id, b.email, b.data ?? {}, hashPw(b.password)]);
         return send(res, 200, session(await byId(id)));
       }
+      if (p === "/auth/v1/verify" && req.method === "POST") {
+        const b = JSON.parse((await readBody(req)).toString() || "{}");
+        const u = /^e2e:/.test(b.token_hash ?? "") ? await byEmail(String(b.token_hash).slice(4)) : null;
+        return u ? send(res, 200, session(u)) : send(res, 403, { code: 403, error_code: "otp_expired", msg: "Email link is invalid or has expired" });
+      }
       if (p === "/auth/v1/token" && req.method === "POST") {
         const b = JSON.parse((await readBody(req)).toString() || "{}");
         if (url.searchParams.get("grant_type") === "refresh_token") { const u = await byId(String(b.refresh_token).replace("rt_", "")); return u ? send(res, 200, session(u)) : send(res, 400, { error: "invalid_grant" }); }

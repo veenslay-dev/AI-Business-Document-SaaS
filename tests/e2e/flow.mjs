@@ -810,6 +810,24 @@ await step("analytics: the Google tag is off outside production, so tests and pr
   await anon.close();
 });
 
+await step("auth emails: a reset link opened in a different browser works, and bad or tampered links are refused", async () => {
+  // A brand new browser with no cookies stands in for opening the email on a phone.
+  const phone = await browser.newContext({ userAgent: UA }); const p = await phone.newPage();
+  await p.goto(`${APP}/auth/confirm?token_hash=${encodeURIComponent("e2e:" + email)}&type=recovery&next=/reset-password`);
+  await p.locator("h1:has-text('Choose a new password')").waitFor({ timeout: 15000 });
+  yes(p.url().endsWith("/reset-password"), "lands on the reset page: " + p.url());
+  await phone.close();
+  const bad = await browser.newContext({ userAgent: UA }); const b = await bad.newPage();
+  for (const url of [`/auth/confirm?token_hash=nope&type=recovery`, `/auth/confirm?type=recovery`, `/auth/confirm?token_hash=${encodeURIComponent("e2e:" + email)}&type=bogus`]) {
+    await b.goto(`${APP}${url}`); await b.waitForURL("**/login?error=link_expired", { timeout: 15000 });
+    yes(await b.locator("text=expired").first().isVisible(), `refused: ${url}`);
+  }
+  // a link cannot send someone to another site
+  await b.goto(`${APP}/auth/confirm?token_hash=${encodeURIComponent("e2e:" + email)}&type=recovery&next=${encodeURIComponent("//evil.example/x")}`);
+  yes(new URL(b.url()).origin === new URL(APP).origin, "stays on this site: " + b.url());
+  await bad.close();
+});
+
 await step("public pages recognise a signed-in visitor", async () => {
   await page.goto(`${APP}/`);
   await page.locator("header a:has-text('Go to dashboard')").waitFor({ timeout: 10000 });
