@@ -169,6 +169,27 @@ export function sampleAudit(client = SAMPLE_CLIENTS[0]): DocumentContent {
   return content;
 }
 
+/** PrioDraft's own brand, for the audit of our own website that the SEO Audit Report Generator page shows. */
+export function priodraftBrand(site: string, email: string | null): BrandContext {
+  return buildBrandContext(
+    {
+      company_name: "PrioDraft", tagline: "Branded proposals, quotations and audits", website: site, email, phone: null, address: null, gst_number: null, pan_number: null,
+      description: null, services: [], default_terms: null, authorized_name: null, authorized_designation: null, signature_url: null,
+    },
+    { primary_color: "#dc1c26", secondary_color: "#fdecee", accent_color: "#dc1c26", heading_font: "Plus Jakarta Sans", body_font: "Plus Jakarta Sans", logo_url: null, dark_logo_url: null, favicon_url: null, default_footer: null },
+  );
+}
+
+/** The report for an audit of our own site: PrioDraft is both the author and the client, so no made-up company appears. */
+export function ownSiteAudit(signals: SiteSignals, scannedAt: string, url: string, brand: BrandContext): DocumentContent {
+  const host = url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  const content = buildAuditContent({
+    brand, client: { company: "PrioDraft", contact: "", email: "", phone: "", address: "" }, url, findings: analyze(signals), scannedAt,
+  });
+  content.cover.title = `SEO Audit: ${host}`;
+  return content;
+}
+
 /** A partly completed social media audit, the way an auditor would leave it mid-review. */
 export function sampleSocialAudit(client = SAMPLE_CLIENTS[1]): DocumentContent {
   const c = buildSocialAuditContent({

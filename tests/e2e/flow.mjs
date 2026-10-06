@@ -619,7 +619,7 @@ await step("templates: menu with submenu, hub page, and four template pages with
   await p.goto(`${APP}/`);
   const menu = p.locator("header a:has-text('Templates')").first(); await menu.waitFor({ timeout: 10000 });
   await menu.hover();
-  for (const l of ["All templates", "SEO Proposal Template", "Website Quotation with GST", "Invoice Template", "Social Media Audit Template", "Digital Marketing Proposal"]) await p.locator(`header a:has-text('${l}')`).first().waitFor({ state: "visible", timeout: 5000 });
+  for (const l of ["All templates", "SEO Proposal Template", "SEO Audit Report Generator", "Website Quotation with GST", "Invoice Template", "Social Media Audit Template", "Digital Marketing Proposal"]) await p.locator(`header a:has-text('${l}')`).first().waitFor({ state: "visible", timeout: 5000 });
   await p.locator("header a:has-text('Website Quotation with GST')").click(); await p.waitForURL("**/document-templates/website-quotation-gst", { timeout: 15000 });
   const q = await p.locator("main").innerText();
   yes(/GST/.test(q) && q.includes("Bright Dental") && q.includes("29ABCDE1234F1Z5"), "GST quotation sample shows the GSTIN and tax");
@@ -628,7 +628,7 @@ await step("templates: menu with submenu, hub page, and four template pages with
   yes(await p.locator("main a[href='/signup']").first().isVisible(), "call to action for visitors");
   await p.goto(`${APP}/document-templates`);
   await p.locator("h1:has-text('Business document templates')").waitFor({ timeout: 10000 });
-  eq(await p.locator("main article").count(), 5, "five template cards");
+  eq(await p.locator("main article").count(), 6, "five template cards and the SEO audit generator");
   for (const [slug, h1, needle] of [["seo-proposal", "SEO proposal template", "Nova Furniture"], ["invoice-template", "Invoice template with GST", "INV-2026-0001"], ["social-media-audit", "Social media audit template", "Bright Dental"], ["digital-marketing-proposal", "Digital marketing proposal template", "Urban Properties"]]) {
     await p.goto(`${APP}/document-templates/${slug}`);
     await p.locator(`h1:has-text('${h1}')`).waitFor({ timeout: 10000 });
@@ -646,7 +646,7 @@ await step("templates: menu with submenu, hub page, and four template pages with
 await step("content: every main page has a FAQ section that matches its FAQ schema, and facts agree across pages", async () => {
   const anon = await anonContext(); const p = await anon.newPage();
   const counts = {};
-  for (const path of ["/", "/pricing", "/about", "/contact", "/document-templates", "/document-templates/seo-proposal", "/document-templates/website-quotation-gst", "/document-templates/invoice-template", "/document-templates/social-media-audit", "/document-templates/digital-marketing-proposal"]) {
+  for (const path of ["/", "/pricing", "/about", "/contact", "/document-templates", "/document-templates/seo-proposal", "/document-templates/website-quotation-gst", "/document-templates/invoice-template", "/document-templates/social-media-audit", "/document-templates/digital-marketing-proposal", "/seo-audit-report-generator"]) {
     await p.goto(`${APP}${path}`);
     const r = await p.evaluate(() => ({
       shown: [...document.querySelectorAll("main details summary")].map((x) => x.textContent.replace(/\s*\+$/, "").trim()),
@@ -681,7 +681,7 @@ await step("seo: self canonical and schema on every page, admin edits title, con
       ld: [...document.querySelectorAll("script[type='application/ld+json']")].map((x) => { try { return JSON.parse(x.textContent); } catch { return null; } }),
     }));
   };
-  for (const path of ["/", "/pricing", "/about", "/contact", "/terms", "/privacy", "/refund-policy", "/login", "/signup", "/forgot-password", "/document-templates", "/document-templates/seo-proposal", "/document-templates/website-quotation-gst", "/document-templates/social-media-audit", "/document-templates/digital-marketing-proposal"]) {
+  for (const path of ["/", "/pricing", "/about", "/contact", "/terms", "/privacy", "/refund-policy", "/login", "/signup", "/forgot-password", "/document-templates", "/document-templates/seo-proposal", "/document-templates/website-quotation-gst", "/document-templates/social-media-audit", "/document-templates/digital-marketing-proposal", "/seo-audit-report-generator"]) {
     const h = await head(path);
     eq(h.canonical, path === "/" ? APP : `${APP}${path}`, `self canonical on ${path}`);
     const seo = await ap.evaluate(() => {
@@ -826,6 +826,57 @@ await step("auth emails: a reset link opened in a different browser works, and b
   await b.goto(`${APP}/auth/confirm?token_hash=${encodeURIComponent("e2e:" + email)}&type=recovery&next=${encodeURIComponent("//evil.example/x")}`);
   yes(new URL(b.url()).origin === new URL(APP).origin, "stays on this site: " + b.url());
   await bad.close();
+});
+
+await step("seo audit report generator: briefed structure, real checks only, menu entry, sample report from a stored real audit, admin guard", async () => {
+  const anon = await anonContext(); const p = await anon.newPage(); await p.setViewportSize({ width: 1360, height: 900 });
+  const URL_PATH = "/seo-audit-report-generator";
+  await p.goto(`${APP}${URL_PATH}`);
+  eq(await p.locator("h1").count(), 1, "one H1");
+  eq(await p.locator("h1").innerText(), "SEO Audit Report Generator for Agencies and Freelancers", "H1 as briefed");
+  eq(await p.title(), "SEO Audit Report Generator for Agencies and Freelancers", "title as briefed");
+  eq(await p.locator("meta[name=description]").getAttribute("content"), "Generate a branded SEO audit report for your client or lead, share it as a tracked link, and turn it into a proposal. INR pricing, flat seats.", "description as briefed");
+  eq(await p.locator("link[rel=canonical]").getAttribute("href"), `${APP}${URL_PATH}`, "self canonical");
+  const h2 = await p.locator("main h2").allInnerTexts();
+  eq(JSON.stringify(h2.slice(0, 9)), JSON.stringify(["What's inside the SEO audit report", "See a sample SEO audit report", "How to create an SEO audit report in PrioDraft", "Branded SEO audit reports for your clients", "From SEO audit to proposal and quotation", "Built for agencies, freelancers and consultants", "SEO audit tool pricing in INR", "PrioDraft vs SEOptimer and SE Ranking", "SEO audit report questions"]), "H2s in the briefed order: " + h2.join(" | "));
+  eq(await p.locator("main a:has-text('See a sample report')").getAttribute("href"), "#sample", "secondary CTA scrolls to the sample");
+  eq(await p.locator("#sample").count(), 1, "sample anchor exists");
+  eq(await p.locator("main a:has-text('Try it free')").first().getAttribute("href"), "/signup", "primary CTA for visitors");
+  const text = await p.locator("main").innerText();
+  yes(/not a full site crawl/i.test(text) && /No\.? It reads the home page/i.test(text.replace(/\n/g, " ")) || /home page and up to 5 inner pages/.test(text), "says plainly that it is not a full crawl");
+  yes(!/reseller|complete site audit/i.test(text), "no reseller or complete-audit claims");
+  yes(text.includes("Not available. Reports use your logo, colors and fonts."), "honest about white label in the comparison");
+  yes(text.includes("₹999") && text.includes("₹2,999") && /Flat seats, not per user/.test(text), "INR prices and flat seats");
+  yes(!/\$\s?\d/.test(text), "no dollar prices anywhere on the page");
+  eq(await p.locator("main details summary").count(), 8, "eight FAQ questions");
+  yes(!/Nova Furniture|Acme|Bright Dental/.test(text), "no made-up client names");
+  // before any audit has been run, the sample section is a plain call to action rather than a fake preview
+  yes(!(await p.locator("#sample figure").count()) , "no preview before an audit has been stored");
+  // the menu lists it
+  await p.goto(`${APP}/`); await p.locator("header a:has-text('Templates')").first().hover();
+  yes(await p.locator("header a[href='/seo-audit-report-generator']").first().isVisible(), "listed under Templates");
+  // store a real-shaped audit through the server's own database access and see the preview appear
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const page1 = { url: "https://www.priodraft.example/", status: 200, finalUrl: "https://www.priodraft.example/", redirects: 0, contentType: "text/html", bytes: 60000, ms: 400, title: "PrioDraft", metaDescription: "Proposal software", canonical: "https://www.priodraft.example/", robotsMeta: "index, follow", xRobots: "", h1: ["Create proposals"], h2: ["How it works"], imgTotal: 4, imgMissingAlt: 0, wordCount: 900, hasViewport: true, lang: "en-IN", jsonLdTypes: ["Organization"], jsonLdErrors: 0, internalLinks: [], externalLinkCount: 1, isHttps: true, hsts: true, blogLink: false };
+  const signals = { origin: "https://www.priodraft.example", scannedAt: "2026-10-06T08:00:00.000Z", home: page1, pages: [], robots: { status: 200, blocksAll: false, sitemapUrls: [] }, sitemap: { found: true, urlCount: 12 }, brokenLinks: [], httpToHttps: true, psi: null };
+  const saved = await fetch(`${base}/rest/v1/sample_audits`, { method: "POST", headers: { apikey: key, authorization: `Bearer ${key}`, "content-type": "application/json", prefer: "resolution=merge-duplicates" }, body: JSON.stringify({ key: "site", url: "https://www.priodraft.example", scanned_at: signals.scannedAt, signals }) });
+  yes(saved.status < 300, "stored the sample audit: " + saved.status);
+  await p.goto(`${APP}${URL_PATH}`); await p.locator("#sample figure").waitFor({ timeout: 15000 });
+  const cap = await p.locator("#sample figcaption").innerText();
+  yes(cap.includes("www.priodraft.example") && cap.includes("6 October 2026") && cap.includes("no made-up company"), "caption names the audited site and the date: " + cap);
+  await p.waitForFunction(() => document.querySelector("#sample")?.textContent?.includes("SEO Audit: www.priodraft.example"), null, { timeout: 15000 });
+  eq(await p.locator("h1").count(), 1, "still one H1 with the report preview on the page");
+  await p.goto(`${APP}/document-templates`); yes(await p.locator("main article:has-text('SEO Audit Report Generator')").first().isVisible(), "hub card for the generator");
+  // admin: the panel is there, and running the audit on a non-public address is refused with a clear reason
+  await page.goto(`${APP}/admin/pages/edit?path=${encodeURIComponent(URL_PATH)}`);
+  await page.locator("h3:has-text('Sample report on this page')").waitFor({ timeout: 10000 });
+  yes((await page.locator("main").innerText()).includes("www.priodraft.example"), "panel shows the last stored audit");
+  await page.getByRole("button", { name: "Run a fresh audit now" }).click();
+  await page.locator("text=is not your real domain yet").waitFor({ timeout: 15000 });
+  // visitors cannot run it, and an anonymous request to the database table is refused
+  const direct = await fetch(`${base}/rest/v1/sample_audits?select=key`, { headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY } });
+  yes(direct.status >= 400 || (await direct.json()).length === 0, "the stored audit is not readable with the public key");
+  await anon.close();
 });
 
 await step("public pages recognise a signed-in visitor", async () => {

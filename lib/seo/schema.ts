@@ -3,6 +3,7 @@ import { PLANS, YEARLY_MONTHS, type PlanId } from "@/lib/billing/plans";
 import { faqFor } from "@/lib/content/faq";
 import { LEGAL_UPDATED_ISO } from "@/lib/legal";
 import { PAGE_BY_PATH } from "./registry";
+import { AUDIT_LANDING } from "./audit-landing";
 import { TEMPLATE_BY_PATH, TEMPLATE_PAGES } from "./templates";
 
 type Json = Record<string, unknown>;
@@ -71,6 +72,13 @@ export function buildPageSchema(path: string, o: SchemaOverride, base: string, o
     graph.push({ "@type": "ItemList", "@id": `${url}#list`, name: "Document templates", itemListElement: TEMPLATE_PAGES.map((t, i) => ({ "@type": "ListItem", position: i + 1, name: t.name, url: abs(base, t.path) })) });
   }
   const tpl = TEMPLATE_BY_PATH[path];
+  if (def.kind === "tool" && path === AUDIT_LANDING.path) {
+    graph.push({
+      "@type": "SoftwareApplication", "@id": `${url}#software`, name: `${PRODUCT_NAME} SEO audit report generator`, url, applicationCategory: "BusinessApplication", operatingSystem: "Web",
+      description: AUDIT_LANDING.description, offers: planOffers(base), publisher: { "@id": orgId },
+    });
+    graph.push({ "@type": "HowTo", "@id": `${url}#howto`, name: "How to create an SEO audit report in PrioDraft", step: AUDIT_LANDING.steps.map((s, i) => ({ "@type": "HowToStep", position: i + 1, name: s.title, text: s.body })) });
+  }
   if (def.kind === "template" && tpl) {
     // Both the questions and the steps are shown on the page, which is what search engines require of this markup.
     graph.push({ "@type": "HowTo", "@id": `${url}#howto`, name: `How to use the ${tpl.name.toLowerCase()}`, step: tpl.steps.map((s, i) => ({ "@type": "HowToStep", position: i + 1, name: s.title, text: s.body })) });

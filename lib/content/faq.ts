@@ -1,4 +1,5 @@
 import { FACTS, freePlanLine, priceLine } from "./facts";
+import { AUDIT_LANDING } from "@/lib/seo/audit-landing";
 import { TEMPLATE_BY_PATH, TEMPLATE_HUB } from "@/lib/seo/templates";
 
 const { name, free, pro, agency, inr } = FACTS;
@@ -48,6 +49,7 @@ export const PAGE_FAQ: Record<string, FaqItem[]> = {
   "/pricing": pick("plans", "freePlan", "planDifference", "howPay", "autoRenew", "refund", "currency", "aiAction", "customPlan", "team"),
   "/about": pick("what", "who", "aiAccuracy", "data", "clientPayments", "quoteVsInvoice"),
   "/contact": pick("reply", "customPlan", "refund", "howPay", "deleteAccount"),
+  [AUDIT_LANDING.path]: [...AUDIT_LANDING.faq.first, FAQ_BANK.freePlan, ...AUDIT_LANDING.faq.second, FAQ_BANK.plans],
   [TEMPLATE_HUB.path]: pick("templatesFree", "editTemplates", "gstOnPlans", "quoteVsInvoice", "socialAudit", "design"),
 };
 

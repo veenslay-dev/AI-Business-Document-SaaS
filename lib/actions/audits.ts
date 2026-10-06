@@ -7,6 +7,7 @@ import { withAi } from "@/lib/ai/service";
 import { analyze } from "@/lib/audit/analyze";
 import { buildAuditContent } from "@/lib/audit/build";
 import { collectSite } from "@/lib/audit/collect";
+import { AUDITS_PER_HOUR } from "@/lib/audit/limits";
 import { parsePublicUrl, UnsafeUrlError } from "@/lib/audit/ssrf";
 import { DOCUMENT_LIMIT_MESSAGE, documentAllowance, monthStartIso } from "@/lib/billing/plans";
 import { premiumTemplateError } from "./plan-guard";
@@ -16,7 +17,7 @@ import { loadLiveBrand } from "@/lib/db/render";
 import { actionContext } from "./context";
 import { fail, fromZod, GENERIC_ERROR, type ActionResult } from "./result";
 
-const MAX_AUDITS_PER_HOUR = 10;
+const MAX_AUDITS_PER_HOUR = AUDITS_PER_HOUR;
 const schema = z.object({
   clientId: z.string().uuid("Choose a client"),
   url: z.string().trim().min(3, "Enter the website address").max(500),

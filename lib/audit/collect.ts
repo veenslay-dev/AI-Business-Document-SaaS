@@ -1,10 +1,11 @@
 import "server-only";
 import * as cheerio from "cheerio";
+import { AUDIT_EXTRA_PAGES, AUDIT_LINK_CHECKS } from "./limits";
 import { safeFetch, type FetchOptions, type FetchResult } from "./fetcher";
 import type { PageSignals, SiteSignals } from "./types";
 
-const MAX_EXTRA_PAGES = 5;
-const MAX_LINK_CHECKS = 10;
+const MAX_EXTRA_PAGES = AUDIT_EXTRA_PAGES;
+const MAX_LINK_CHECKS = AUDIT_LINK_CHECKS;
 
 function parsePage(url: string, r: FetchResult): PageSignals {
   const $ = cheerio.load(r.body);

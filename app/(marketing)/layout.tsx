@@ -5,7 +5,8 @@ import { LogOut } from "lucide-react";
 import { signOutAction } from "@/lib/actions/auth";
 import { getUser } from "@/lib/auth/session";
 import { initials } from "@/lib/utils";
-import { TEMPLATE_HUB, TEMPLATE_PAGES } from "@/lib/seo/templates";
+import { templateMenu } from "@/lib/seo/menu";
+import { TEMPLATE_HUB } from "@/lib/seo/templates";
 import { ChevronDown } from "lucide-react";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { MobileMenu } from "@/components/marketing/mobile-menu";
@@ -27,7 +28,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
             <div className="invisible absolute left-0 top-full z-40 w-72 pt-2 opacity-0 transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
               <ul className="rounded-xl border border-line bg-surface p-1.5 shadow-pop">
                 <li><Link href={TEMPLATE_HUB.path} className="block rounded-lg px-3 py-2 text-sm font-semibold text-brand hover:bg-brand-soft">All templates</Link></li>
-                {TEMPLATE_PAGES.map((t) => <li key={t.slug}><Link href={t.path} className="block rounded-lg px-3 py-2 text-sm font-medium text-ink hover:bg-brand-soft hover:text-brand">{t.name}</Link></li>)}
+                {templateMenu().map((t) => <li key={t.path}><Link href={t.path} className="block rounded-lg px-3 py-2 text-sm font-medium text-ink hover:bg-brand-soft hover:text-brand">{t.name}</Link></li>)}
               </ul>
             </div>
           </div>
@@ -56,7 +57,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
               <Button asChild className="rounded-full px-5"><Link href="/signup">Start Free</Link></Button>
             </div>
           )}
-          <MobileMenu templates={TEMPLATE_PAGES.map((t) => ({ name: t.name, path: t.path }))} user={user ? { email: user.email ?? "" } : null} />
+          <MobileMenu templates={templateMenu()} user={user ? { email: user.email ?? "" } : null} />
         </nav>
       </header>
       {children}

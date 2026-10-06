@@ -2,9 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { collectSite } from "@/lib/audit/collect";
+import { parsePublicUrl } from "@/lib/audit/ssrf";
 import { isPlatformAdmin } from "@/lib/auth/admin";
 import { PAGE_BY_PATH } from "@/lib/seo/registry";
 import { parseCustomSchema } from "@/lib/seo/schema";
+import { siteUrl } from "@/lib/utils";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fail, fromZod, GENERIC_ERROR, type ActionResult } from "./result";
 
@@ -57,4 +60,29 @@ export async function resetPageAction(path: string): Promise<ActionResult> {
   if (error) { console.error("[admin-pages] reset failed", error.message); return fail(GENERIC_ERROR); }
   revalidatePath(path); revalidatePath("/admin/pages"); revalidatePath("/sitemap.xml");
   return { ok: true, message: "Back to the built-in settings." };
+}
+
+/**
+ * Runs the real SEO audit scan on our own website and saves it as the sample report on the SEO Audit Report Generator page.
+ * Admin only. It scans the address in NEXT_PUBLIC_SITE_URL, which must be the real public domain.
+ */
+export async function refreshSampleAuditAction(): Promise<ActionResult<{ url: string; scannedAt: string }>> {
+  if (!(await isPlatformAdmin())) return fail("Not allowed.");
+  const url = siteUrl();
+  if (!/^https:\/\//.test(url) || /localhost|127\.0\.0\.1|vercel\.app/i.test(url)) return fail("NEXT_PUBLIC_SITE_URL is not your real domain yet (it is " + url + "). Set it to https://www.priodraft.com in Vercel, redeploy, then run the audit.");
+  const admin = createAdminClient();
+  const { data: last } = await admin.from("sample_audits").select("updated_at").eq("key", "site").maybeSingle();
+  if (last?.updated_at && Date.now() - new Date(last.updated_at as string).getTime() < 60_000) return fail("An audit was saved less than a minute ago. Wait a moment and try again.");
+  try {
+    parsePublicUrl(url);
+    const signals = await collectSite(url, { pageSpeed: true });
+    const scannedAt = signals.scannedAt;
+    const { error } = await admin.from("sample_audits").upsert({ key: "site", url, scanned_at: scannedAt, signals, updated_at: new Date().toISOString() }, { onConflict: "key" });
+    if (error) { console.error("[sample-audit] save failed", error.message); return fail(GENERIC_ERROR); }
+    revalidatePath("/seo-audit-report-generator"); revalidatePath("/document-templates"); revalidatePath("/admin/pages/edit");
+    return { ok: true, data: { url, scannedAt }, message: "Audit saved. The sample report on the page now shows it." };
+  } catch (e) {
+    console.error("[sample-audit] scan failed", e instanceof Error ? e.message : "unknown");
+    return fail("The scan could not finish. Check that the site is reachable from the internet and try again.");
+  }
 }

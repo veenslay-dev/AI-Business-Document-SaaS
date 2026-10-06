@@ -1,8 +1,9 @@
 import { PRODUCT_NAME } from "@/components/ui/logo";
 import { FACTS, freePlanLine } from "@/lib/content/facts";
+import { AUDIT_LANDING } from "./audit-landing";
 import { TEMPLATE_HUB, TEMPLATE_PAGES } from "./templates";
 
-type PageKind = "home" | "pricing" | "about" | "contact" | "legal" | "auth" | "templates" | "template";
+type PageKind = "home" | "pricing" | "about" | "contact" | "legal" | "auth" | "templates" | "template" | "tool";
 
 export type PageDef = {
   path: string;
@@ -39,6 +40,7 @@ export const PAGES: PageDef[] = [
   { path: "/contact", name: "Contact", kind: "contact", content: true, title: `Contact ${PRODUCT_NAME}: Support, Upgrades and Custom Plans`, absoluteTitle: true,
     description: `Contact ${PRODUCT_NAME} for help with your account, plan upgrades, refunds or a custom plan. We reply by email, usually within ${FACTS.replyTime}.`,
     heading: "Get in touch", intro: `Questions, feedback or a problem with your account? Send us a message and we'll reply by email, usually within ${FACTS.replyTime}.` },
+  { path: AUDIT_LANDING.path, name: AUDIT_LANDING.name, kind: "tool", absoluteTitle: true, content: true, title: AUDIT_LANDING.title, description: AUDIT_LANDING.description, heading: AUDIT_LANDING.h1, intro: AUDIT_LANDING.intro },
   { path: TEMPLATE_HUB.path, name: "Templates", kind: "templates", content: true, title: TEMPLATE_HUB.title, description: TEMPLATE_HUB.description, heading: TEMPLATE_HUB.h1, intro: TEMPLATE_HUB.intro },
   ...TEMPLATE_PAGES.map((t) => ({ path: t.path, name: t.name, kind: "template" as const, content: true, title: t.title, description: t.description, heading: t.h1, intro: t.intro, parent: TEMPLATE_HUB.path })),
   { path: "/terms", name: "Terms of Service", kind: "legal", content: true, title: "Terms of Service",

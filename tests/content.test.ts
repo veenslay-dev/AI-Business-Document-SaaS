@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { FACTS, freePlanLine } from "@/lib/content/facts";
 import { FAQ_BANK, PAGE_FAQ, faqFor } from "@/lib/content/faq";
 import { PAGES } from "@/lib/seo/registry";
+import { AUDIT_LANDING } from "@/lib/seo/audit-landing";
 import { TEMPLATE_HUB, TEMPLATE_PAGES } from "@/lib/seo/templates";
 import { PLAN_CARDS, FEATURES } from "@/lib/marketing";
 import { PLANS } from "@/lib/billing/plans";
@@ -14,7 +15,7 @@ const allCopy = [
   ...faqText.flatMap((f) => [f.q, f.a]),
   ...Object.values(FAQ_BANK).flatMap((f) => [f.q, f.a]),
   ...TEMPLATE_PAGES.flatMap((t) => [t.intro, t.bestFor, ...t.includes, ...t.tips, ...t.steps.flatMap((s) => [s.title, s.body])]),
-  TEMPLATE_HUB.intro, TEMPLATE_HUB.description,
+  TEMPLATE_HUB.intro, TEMPLATE_HUB.description, JSON.stringify(AUDIT_LANDING),
   ...PLAN_CARDS.flatMap((p) => [p.blurb, ...p.features]), ...FEATURES.flatMap((f) => [f.title, f.body]),
 ].join("\n");
 
@@ -48,7 +49,7 @@ describe("page content is consistent", () => {
     for (const f of faqText) { if (seen.has(f.q)) expect(seen.get(f.q), `"${f.q}" is answered two ways`).toBe(f.a); seen.set(f.q, f.a); }
   });
   it("every main page has a FAQ section with direct answers", () => {
-    for (const path of ["/", "/pricing", "/about", "/contact", TEMPLATE_HUB.path, ...TEMPLATE_PAGES.map((t) => t.path)]) {
+    for (const path of ["/", "/pricing", "/about", "/contact", AUDIT_LANDING.path, TEMPLATE_HUB.path, ...TEMPLATE_PAGES.map((t) => t.path)]) {
       const list = faqFor(path); expect(list.length, `${path} needs questions`).toBeGreaterThanOrEqual(4);
       for (const f of list) { expect(f.q.endsWith("?")).toBe(true); expect(f.a.length).toBeGreaterThan(60); expect(f.a.length).toBeLessThan(600); }
     }

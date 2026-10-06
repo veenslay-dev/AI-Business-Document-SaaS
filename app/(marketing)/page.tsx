@@ -72,7 +72,7 @@ export default async function HomePage() {
               <ul className="space-y-1.5">
                 <li><Link href="/document-templates/seo-proposal" className="font-medium text-brand hover:underline">SEO proposals</Link> and <Link href="/document-templates/digital-marketing-proposal" className="font-medium text-brand hover:underline">digital marketing proposals</Link></li>
                 <li><Link href="/document-templates/website-quotation-gst" className="font-medium text-brand hover:underline">Quotations with GST</Link> and <Link href="/document-templates/invoice-template" className="font-medium text-brand hover:underline">invoices</Link></li>
-                <li><Link href="/document-templates/social-media-audit" className="font-medium text-brand hover:underline">Social media audits</Link> and SEO audits</li>
+                <li><Link href="/document-templates/social-media-audit" className="font-medium text-brand hover:underline">Social media audits</Link> and <Link href="/seo-audit-report-generator" className="font-medium text-brand hover:underline">SEO audit reports</Link></li>
               </ul>
             </dd>
           </div>

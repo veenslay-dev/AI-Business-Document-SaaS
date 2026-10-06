@@ -8,7 +8,7 @@ import { siteUrl } from "@/lib/utils";
 
 export const runtime = "nodejs";
 
-const KICKER: Record<string, string> = { home: "Client document software", pricing: "Plans and pricing", about: "About", contact: "Contact", legal: "Policies", auth: PRODUCT_NAME, templates: "Templates", template: "Free template" };
+const KICKER: Record<string, string> = { home: "Client document software", pricing: "Plans and pricing", about: "About", contact: "Contact", legal: "Policies", auth: PRODUCT_NAME, templates: "Templates", template: "Free template", tool: "SEO audit tool" };
 
 /**
  * A 1200 by 630 share card for a public page. Only pages we list can be drawn and the words come from our own page

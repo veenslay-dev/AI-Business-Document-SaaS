@@ -386,3 +386,22 @@ begin
   end;
 end $$;
 reset role;
+
+-- 18. Sample audits: server only.
+reset role;
+insert into public.sample_audits (key, url, scanned_at, signals) values ('site', 'https://example.test', now(), '{}'::jsonb);
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+do $$
+begin
+  begin
+    perform 1 from public.sample_audits;
+    raise exception 'FAIL: a member read sample_audits';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    insert into public.sample_audits (key, url, scanned_at, signals) values ('x', 'https://x.test', now(), '{}'::jsonb);
+    raise exception 'FAIL: a member wrote sample_audits';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+reset role;

@@ -8,7 +8,10 @@ import { FaqSection } from "@/components/marketing/faq-section";
 import { PAGE_FAQ } from "@/lib/content/faq";
 import { Markdown } from "@/lib/seo/markdown";
 import { getPageContent } from "@/lib/seo/pages";
+import { AUDIT_LANDING } from "@/lib/seo/audit-landing";
 import { TEMPLATE_HUB, TEMPLATE_PAGES, type TemplatePage } from "@/lib/seo/templates";
+import { OwnSiteAudit } from "@/components/marketing/own-site-audit";
+import { getSampleAudit } from "@/lib/audit/sample";
 
 /** One template's page: the sample, what is in it, how to use it, tips and questions. */
 export async function TemplateDetail({ tpl }: { tpl: TemplatePage }) {
@@ -99,6 +102,7 @@ export async function TemplateDetail({ tpl }: { tpl: TemplatePage }) {
 /** The Templates page: a card for every template with a preview and a link to its own page. */
 export async function TemplateHub() {
   const c = await getPageContent(TEMPLATE_HUB.path);
+  const hasSample = !!(await getSampleAudit());
   return (
     <main>
       <PageSchema path={TEMPLATE_HUB.path} />
@@ -118,6 +122,17 @@ export async function TemplateHub() {
             </div>
           </article>
         ))}
+        <article className="flex flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-soft">
+          <Link href={AUDIT_LANDING.path} aria-label={`Open the ${AUDIT_LANDING.name}`} className="block bg-brand-soft/40 px-6 pt-6">
+            {hasSample ? <OwnSiteAudit height={420} /> : <div className="grid h-[260px] place-items-center rounded-sm bg-white text-center shadow-pop ring-1 ring-black/5"><p className="px-8 text-lg font-extrabold text-ink">SEO audit report<span className="mt-1 block text-sm font-medium text-brand">scored by category, with a fix for every finding</span></p></div>}
+          </Link>
+          <div className="flex flex-1 flex-col p-6">
+            <h2 className="text-xl font-extrabold"><Link href={AUDIT_LANDING.path} className="hover:text-brand">{AUDIT_LANDING.name}</Link></h2>
+            <p className="mt-2 flex-1 text-sm text-ink-soft">{AUDIT_LANDING.description}</p>
+            <p className="mt-3 text-xs text-ink-faint"><span className="font-semibold text-ink-soft">Best for:</span> Agencies, freelancers and consultants who audit a lead's website before they pitch.</p>
+            <div className="mt-5"><Button asChild variant="secondary"><Link href={AUDIT_LANDING.path}>{AUDIT_LANDING.name}<ArrowRight className="size-4" aria-hidden /></Link></Button></div>
+          </div>
+        </article>
       </section>
       {c.extraMd && <section className="mx-auto max-w-3xl px-5 pb-12 text-ink-soft"><Markdown md={c.extraMd} /></section>}
       <FaqSection items={PAGE_FAQ[TEMPLATE_HUB.path]} title="Template questions" />
