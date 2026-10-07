@@ -8,7 +8,7 @@ import { initials } from "@/lib/utils";
 import { templateMenu } from "@/lib/seo/menu";
 import { TEMPLATE_HUB } from "@/lib/seo/templates";
 import { ChevronDown } from "lucide-react";
-import { GoogleAnalytics } from "@/components/analytics/google-analytics";
+import { Analytics } from "@/components/analytics/google-analytics";
 import { MobileMenu } from "@/components/marketing/mobile-menu";
 
 export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
@@ -17,7 +17,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
   const name = (user?.user_metadata?.full_name as string | undefined) ?? user?.email ?? "";
   return (
     <div className="min-h-dvh">
-      <GoogleAnalytics />
+      <Analytics />
       <header className="relative mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-4 sm:py-5">
         <Link href="/" aria-label="Home"><Wordmark /></Link>
         <nav aria-label="Main" className="flex items-center gap-1 text-sm font-medium">

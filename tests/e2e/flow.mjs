@@ -805,7 +805,7 @@ await step("analytics: the Google tag is off outside production, so tests and pr
   const anon = await anonContext();
   for (const path of ["/", "/pricing", "/document-templates", "/login", `/view/p/${"0".repeat(48)}`]) {
     const html = await (await anon.request.get(`${APP}${path}`)).text();
-    yes(!/googletagmanager|gtag\(/.test(html), `${path} has no Google tag in this environment`);
+    yes(!/googletagmanager|gtag\(|GTM-WJM6W8LG/.test(html), `${path} has no Google tag or Tag Manager in this environment`);
   }
   await anon.close();
 });
